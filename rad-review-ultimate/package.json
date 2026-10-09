@@ -1,0 +1,37 @@
+{
+  "name": "rad-review-ultimate",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:lan": "vite --host",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit",
+    "test": "vitest run",
+    "index:build": "vite-node scripts/build-match-index.ts",
+    "index:watch": "vite-node scripts/build-match-index.ts -- --watch",
+    "nucleus:import": "vite-node scripts/import-nucleus.ts",
+    "studio:patch": "node scripts/patch-studio.mjs",
+    "audit:images": "vite-node scripts/audit-images.ts",
+    "qa": "vite-node scripts/qa-agent.ts",
+    "studio:qa": "vite build --config vite.qa-agent.config.ts",
+    "studio:atlas": "vite build --config vite.radatlas-page.config.ts",
+    "studio:build": "npm run studio:qa && npm run studio:atlas && node scripts/patch-studio.mjs"
+  },
+  "dependencies": {
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5",
+    "vitest": "^3.2.4"
+  }
+}

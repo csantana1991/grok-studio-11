@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "RAD ATLAS Search Panel",
+  "version": "1.0.0",
+  "description": "Show RAD ATLAS radiology figures and public studies directly below a web search, served by RAD REVIEW ULTIMATE.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "action": {
+    "default_title": "RAD ATLAS Search Panel",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.google.com/search*",
+        "https://www.google.co.uk/search*",
+        "https://www.google.ca/search*",
+        "https://www.bing.com/search*",
+        "https://duckduckgo.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

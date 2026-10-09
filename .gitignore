@@ -1,0 +1,17 @@
+node_modules/
+.vercel/
+dist/
+screenshots/
+attachments/
+artifacts/
+.grok/
+*.log
+.DS_Store
+.env
+.env.*
+.output/
+.project_id
+__pycache__/
+*.pyc
+*.tsbuildinfo
+

@@ -1,0 +1,40 @@
+[
+  {
+    "id": "mpsi-0001",
+    "study": "Ten labeled transaxial source slices - no diagnostic outcome label",
+    "modality": "NM",
+    "region": "Heart",
+    "collection": "Myocardial perfusion scintigraphy image database",
+    "caseType": "Source-label case",
+    "images": [
+      { "label": "A · SLICE 9", "url": "https://example.org/mpsi/0001/slice09.png" },
+      { "label": "B · SLICE 12", "url": "https://example.org/mpsi/0001/slice12.png" },
+      { "label": "C · SLICE 16", "url": "https://example.org/mpsi/0001/slice16.png" },
+      { "label": "D · SLICE 20", "url": "https://example.org/mpsi/0001/slice20.png" },
+      { "label": "E · SLICE 23", "url": "https://example.org/mpsi/0001/slice23.png" },
+      { "label": "F · SLICE 27", "url": "https://example.org/mpsi/0001/slice27.png" },
+      { "label": "G · SLICE 31", "url": "https://example.org/mpsi/0001/slice31.png" },
+      { "label": "H · SLICE 34", "url": "https://example.org/mpsi/0001/slice34.png" },
+      { "label": "I · SLICE 38", "url": "https://example.org/mpsi/0001/slice38.png" },
+      { "label": "J · SLICE 42", "url": "https://example.org/mpsi/0001/slice42.png" }
+    ],
+    "source": "Calixto et al. · Myocardial perfusion scintigraphy image database v1.0.0 · PhysioNet",
+    "license": "Open Data Commons Open Database License v1.0",
+    "sourceUrl": "https://physionet.org/content/myocardial-perfusion-spect/1.0.0/"
+  },
+  {
+    "id": "cmmd-0001",
+    "study": "Breast / fluoro / procedures examination",
+    "modality": "MG",
+    "region": "Breast",
+    "collection": "CMMD",
+    "caseType": "Interpretation case",
+    "images": [
+      "https://example.org/cmmd/0001/view1.png",
+      "https://example.org/cmmd/0001/view2.png"
+    ],
+    "source": "Chinese Mammography Database (CMMD)",
+    "license": "CC BY-NC 4.0",
+    "sourceUrl": "https://www.cancerimagingarchive.net/collection/cmmd/"
+  }
+]
