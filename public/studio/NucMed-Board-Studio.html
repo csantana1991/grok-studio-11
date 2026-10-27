@@ -1953,6 +1953,10 @@ function openOutside(url) {
   const href = String(url || "").trim();
   if (!href) return false;
   if (/\/rru(\/|\/index\.html)?$/i.test(href) || href === "/rru/index.html") {
+    if (window.matchMedia("(max-width: 980px)").matches || /iPhone|iPad|iPod/i.test(navigator.userAgent || "")) {
+      window.location.assign("/rru/index.html");
+      return true;
+    }
     if (typeof state !== "undefined" && state.view !== "rrultimate") {
       state.view = "rrultimate";
       if (typeof render === "function") render();
@@ -10779,7 +10783,16 @@ function raPaintWorkspace(){
 }
 
 
+function goRadUltimate() {
+  window.location.assign("/rru/index.html");
+}
+
 function renderRadUltimate(){
+  const phone = window.matchMedia("(max-width: 980px)").matches || /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+  if (phone) {
+    goRadUltimate();
+    return;
+  }
   document.body.classList.remove("rru-full");
   const stage = $("#stage");
   stage.classList.add("rru-stage");
@@ -10796,7 +10809,7 @@ function renderRadUltimate(){
       </div>
       <iframe id="rruFrame" title="RAD REVIEW Ultimate" src="/rru/index.html" allow="autoplay" style="flex:1;width:100%;min-height:68vh;border:0;background:#0a0a0b"></iframe>
     </section>`;
-  if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>RAD REVIEW Ultimate</b><span>Worklist widget · Open full page if the frame is blank</span>`;
+  if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>RAD REVIEW Ultimate</b><span>Worklist · the phone opens the full page</span>`;
   bindPanelChrome(stage);
   const frame = document.getElementById("rruFrame");
   const reload = document.getElementById("rruReload");
@@ -10804,21 +10817,16 @@ function renderRadUltimate(){
   const full = document.getElementById("rruOpenFull");
   if (full) full.onclick = (e) => {
     e.preventDefault();
-    document.body.classList.add("rru-full");
-    if (frame) frame.src = "/rru/index.html";
+    goRadUltimate();
   };
   setTimeout(() => {
     try {
       const doc = frame && frame.contentDocument;
       const ok = doc && doc.body && doc.body.innerText && doc.body.innerText.length > 20;
-      if (!ok && frame && !frame.dataset.fallback) {
-        frame.dataset.fallback = "1";
-        const note = document.createElement("p");
-        note.style.cssText = "padding:14px;color:#e8fffa";
-        note.innerHTML = 'If this panel is blank, use <b>Open full page</b> — iPad blocks nested windows.';
-        frame.parentNode.insertBefore(note, frame);
-      }
-    } catch (e) {}
+      if (!ok) goRadUltimate();
+    } catch (e) {
+      goRadUltimate();
+    }
   }, 1800);
 }
 function render() {
