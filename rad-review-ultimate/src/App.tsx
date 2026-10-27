@@ -111,8 +111,12 @@ export default function App() {
   }, [])
 
   // Open on a PET/Hybrid ankle study at slice 095 -- the regression level.
+  // Seed once. A later empty selection must not jump back to that case while
+  // a category filter is on.
+  const seeded = useRef(false)
   useEffect(() => {
-    if (selected) return
+    if (seeded.current || selected) return
+    seeded.current = true
     const seed =
       cases.find((c) => c.categoryId === 'PETHYB' && c.stationId === 'ANKLE') ??
       cases.find((c) => c.categoryId === 'PETHYB') ??
@@ -137,6 +141,13 @@ export default function App() {
     () => (filter === 'ALL' ? byQuery : byQuery.filter((c) => c.categoryId === filter)),
     [byQuery, filter],
   )
+
+  // A category or a search must show a case from that list, not the one left on screen.
+  useEffect(() => {
+    if (!filtered.length) return
+    if (selected && filtered.some((c) => c.idx === selected.idx)) return
+    setSelected(filtered[0])
+  }, [filtered, selected])
 
   const station = getStationForSlice(slice)
   const cat = selected ? CATEGORY_BY_ID[selected.categoryId] : null
