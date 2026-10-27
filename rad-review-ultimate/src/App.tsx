@@ -11,6 +11,7 @@ import NucleusCase from './components/NucleusCase'
 import NucleusExplorer from './components/NucleusExplorer'
 import QaConsole from './components/QaConsole'
 import RadAtlasPanel from './components/RadAtlasPanel'
+import AiImageAnalysis from './components/AiImageAnalysis'
 import AudiobookBar from './components/AudiobookBar'
 import type { LiveMatch } from './data/liveMatch'
 import { useImageQa } from './hooks/useImageQa'
@@ -532,6 +533,16 @@ export default function App() {
           slice={slice}
           station={station}
           onSlice={setSlice}
+          analysis={
+            <AiImageAnalysis
+              imageUrl={caseImage?.url}
+              finding={selected?.finding ?? ''}
+              stationId={selected?.stationId ?? station.id}
+              stationName={selected?.stationName ?? station.name}
+              modality={cat?.label ?? ''}
+              accession={selected?.accession ?? ''}
+            />
+          }
           literature={
             <>
             <NucleusCase

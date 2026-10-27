@@ -198,7 +198,7 @@ export default function CaseList({
       <div className="shrink-0 border-b border-rr-line px-3 py-2">
         <div className="flex items-baseline gap-2">
           <h2 className="text-[11px] font-bold tracking-[0.16em] text-white">
-            Q-READY CASES
+            {filter === 'ALL' ? 'ALL ENCOUNTERS' : (CATEGORY_BY_ID[filter]?.pill ?? filter) + ' CASES'}
           </h2>
           <span className="text-[15px] font-bold text-rr-blue-lit tabular-nums">
             {cases.length.toLocaleString()}
