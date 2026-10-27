@@ -575,7 +575,11 @@ body.sheet-min #widgetSheet { height: 44px; overflow: hidden; }
 .rr-missing { color: var(--muted) !important; }
 
 .case-zoom { overflow: hidden; position: relative; }
-.case-zoom.is-crop img { max-width: none; }
+.case-zoom.is-band { position: relative; }
+.case-zoom.is-band img {
+  position: absolute; left: 0; width: 100%; height: 260%;
+  max-width: none; object-fit: fill;
+}
 .case-gal .rr-cap, #caseCap {
   position: static !important;
   left: auto !important; right: auto !important; bottom: auto !important;
@@ -2957,7 +2961,7 @@ const RR_STATIONS = [
 ];
 function rrStationForSlice(slice){const s=Math.max(0,Math.min(100,slice|0));return RR_STATIONS.find(st=>s>=st.start&&s<=st.end)||RR_STATIONS[0];}
 function rrSliceFromClick(yFrac){return Math.round(Math.max(0,Math.min(1,yFrac))*100);}
-const RR_NAMED=[[/subdural|epidural|intracranial|cerebral|brain|calvari|convexity|falx|tentorium|ventricle/i,"vertex"],[/skull base|cavernous|temporal bone|clivus|foramen magnum/i,"skullbase"],[/thyroid|larynx|cervical node|carotid space|jugulodigastric/i,"neck"],[/lung|pulmonary|mediastin|hilar|cardiac pet|myocard|breast|rib/i,"chest"],[/liver|hepatic|kidney|renal|adrenal|spleen|pancrea|porta/i,"uabd"],[/mesenter|small bowel|colon|infra-?renal aorta/i,"mabd"],[/prostate|uterus|bladder|ovary|iliac|acetabul|psma/i,"pelvis"],[/femoral neck|femoral shaft|thigh|hip musculature|inguinal/i,"thigh"],[/menisc|cruciate|patella|popliteal|knee/i,"knee"],[/tibiotalar|talus|calcaneus|malleol|ankle/i,"ankle"],[/phalanx|metatarsal|toe|forefoot|mtp/i,"toes"]];
+const RR_NAMED=[[/subdural|epidural|intracranial|cerebral|brain|calvari|convexity|falx|tentorium|ventricle/i,"vertex"],[/skull base|cavernous|temporal bone|clivus|foramen magnum/i,"skullbase"],[/thyroid|larynx|cervical node|carotid space|jugulodigastric/i,"neck"],[/lung|pulmonary|mediastin|hilar|cardiac pet|myocard|breast|rib/i,"chest"],[/liver|hepatic|kidney|renal|adrenal|spleen|pancrea|porta hepatis|\bporta\b/i,"uabd"],[/mesenter|small bowel|colon|infra-?renal aorta/i,"mabd"],[/prostate|uterus|bladder|ovary|iliac|acetabul|psma/i,"pelvis"],[/femoral neck|femoral shaft|thigh|hip musculature|inguinal/i,"thigh"],[/menisc|cruciate|patella|popliteal|knee/i,"knee"],[/tibiotalar|talus|calcane|malleol|ankle|achilles|mortise|os calcis|hindfoot/i,"ankle"],[/phalanx|metatarsal|toe|forefoot|mtp|lisfranc/i,"toes"]];
 const RR_REGION=[[/\bhead\b|\bbrain\b|\bvertex\b/i,"vertex"],[/skull base/i,"skullbase"],[/\bneck\b|\bcervical\b/i,"neck"],[/\bchest\b|\bthorax\b|\blung\b/i,"chest"],[/upper abdomen|abdomen/i,"uabd"],[/mid abdomen|mesenter/i,"mabd"],[/\bpelvis\b|\bpelvic\b/i,"pelvis"],[/\bthigh\b|\bhip\b/i,"thigh"],[/\bknee\b/i,"knee"],[/\bankle\b|\bhindfoot\b/i,"ankle"],[/\btoes?\b|\bforefoot\b/i,"toes"]];
 function rrDeriveStationId(finding){const t=String(finding||"");for(const [re,id] of RR_NAMED) if(re.test(t)) return id;for(const [re,id] of RR_REGION) if(re.test(t)) return id;return null;}
 function rowFitsStation(r, sid){
@@ -2979,7 +2983,7 @@ function rrFixStations(rows){
         r.slice = st.start + ((r.slice || 0) % span);
       }
     }
-    const plate = plateForRow(r.finding, r.stationId, r.categoryId, r.idx || 0);
+    const plate = plateForRow(r.finding, r.stationId, r.categoryId, 0);
     if (plate) r.plate = plate;
   });
   return rows;
@@ -3006,82 +3010,71 @@ function rrWeightedFallback(rng){const sum=RR_STATIONS.reduce((s,st)=>s+st.weigh
 let RR_CACHE={seed:null,rows:null,v:3};
 function plateForRow(finding, stationId, categoryId, salt){
   const t = (String(finding||"")+" "+String(stationId||"")+" "+String(categoryId||"")).toLowerCase();
-  let list;
-  // Pixels were inspected. Filenames often lie — lists below follow the pixels.
-  if (/datscan|ioflupane|striatum|parkinson/.test(t))
-    list=["nm-petmri-brain.jpg","brain-petct.webp","mri-brain-t2.jpg"];
-  else if (/amyloid|temporoparietal|alzheimer/.test(t))
-    list=["nm-petmri-brain.jpg","brain-petct.webp","mri-brain-t2.jpg"];
-  else if (/vertex|subdural|brain|skull|meningioma|cerebral|glioblast|perineural|convexity/.test(t))
-    list=["mri-brain-t2.jpg","nm-petmri-brain.jpg"];
-  else if (/parathyroid|thyroid|graves|iodine|i-123|i-131/.test(t))
-    list=["thyroid-scan-i123.jpg","thyroid-patterns.jpg","nm-iodine.jpg"];
-  else if (categoryId==="cardiac" || /sestamibi|myocard|pyp|muga|viability|heart/.test(t))
-    list=["cardiac-ac.jpg"];
-  else if (/psma|prostate bed|prostate fossa|prostate/.test(t))
-    list=["nm-psma.jpg"];
-  else if (/dotatate|sstr/.test(t))
-    list=["nm-dotatate.jpg"];
-  else if (/fdg/.test(t) || (/\bpet\b/.test(t) && !/psma/.test(t)))
-    list=["nm-fdg-mip.jpg","nm-fdg-wb.jpg"];
-  else if (/\bv\/?q\b|ventilation|perfusion scan/.test(t))
-    list=["nm-vq1.jpg","nm-vq2.jpg"];
-  else if (/hida|gallbladder|cholecyst/.test(t))
-    list=["nm-hida.jpg"];
-  else if (categoryId==="us" || /\bultrasound\b/.test(t)) {
-    if (/thyroid|neck|carotid|cervical/.test(t)) list=["thyroid-patterns.jpg","thyroid-scan-i123.jpg"];
-    else if (/popliteal|patella|\bknee\b/.test(t)) list=["case-mr-2.jpg"];
-    else if (/ankle|tibiotalar|calcane|morton|mtp|forefoot/.test(t)) list=["bone-scan-wb.jpg"];
-    else list=["case-us-2.jpg"];
+  const cat = String(categoryId||"");
+  const sid = String(stationId||"");
+  const head = sid==="vertex"||sid==="skullbase";
+  const chest = sid==="chest";
+  const neck = sid==="neck";
+  const abd = sid==="uabd"||sid==="mabd";
+  const pel = sid==="pelvis";
+  const knee = sid==="knee" || /knee|menisc|patella|popliteal|\bacl\b/.test(t);
+  const us = cat==="us" || (/\bultrasound\b|\bdoppler\b/.test(t) && !/nuclear|pethybrid|qready|therapy/.test(cat));
+  const wantsMr = (cat==="mri" || /\bmri\b/.test(t)) && cat!=="cardiac";
+  const wantsCt = cat==="ct" || (cat==="peds" && /\bct\b/.test(t));
+  const wantsRad = cat==="rad";
+  if (cat==="mammo" && /breast|mammo|gynecomastia|implant/.test(t) && !/fdg|bone scan|liver|brain|femoral|menisc/.test(t))
+    return "breast-calcs.jpg";
+  if (/dotatate|octreotide|\bsstr\b/.test(t) && !us && !wantsCt && !wantsMr && !wantsRad)
+    return "nm-dotatate.jpg";
+  if (/\bpsma\b/.test(t) && !us && !wantsCt && !wantsMr && !wantsRad)
+    return "nm-psma.jpg";
+  if (us) return /gallbladder|cholecyst|hepatic|liver|hida/.test(t) ? "case-us-2.jpg" : "case-us-1.jpg";
+  if (wantsMr) {
+    if (knee) return "case-mr-2.jpg";
+    if (head || /brain|subdural|convexity|skull/.test(t)) return "mri-brain-t2.jpg";
+    if (neck) return "case-mr-3.jpg";
+    return "case-mr-1.jpg";
   }
-  else if (/intussuscept/.test(t))
-    list=["case-ct-1.jpg"];
-  else if (/round pneumonia|croup|steeple|pediatric chest|pediatric neck abscess/.test(t))
-    list=["case-xr-3.jpg","xr-chest.jpg"];
-  else if (/wilms|neuroblastoma/.test(t))
-    list=["case-ct-1.jpg","nm-fdg-mip.jpg"];
-  else if (/mag3|dmsa/.test(t))
-    list=["nm-mag3.jpg"];
-  else if (/kidney|renal|hydroneph|adrenal/.test(t))
-    list=["case-ct-1.jpg","abd-petct.webp"];
-  else if (/ipmn|pancrea/.test(t))
-    list=["case-ct-1.jpg"];
-  else if (/hepatic|liver|spleen|segment vii/.test(t))
-    list=["case-ct-1.jpg","nm-hida.jpg"];
-  else if (/small.?bowel|sbo|mesenteric|bowel|intestine/.test(t))
-    list=["case-ct-1.jpg","abd-petct.webp"];
-  else if (categoryId==="mammo" || /breast|mammo|gynecomastia/.test(t))
-    list=["breast-calcs.jpg","breast-mri-malign.jpg"];
-  else if (stationId==="knee"||/popliteal|menisc|patella|\bknee\b|acl/.test(t))
-    list=["case-mr-2.jpg"];
-  else if (stationId==="ankle"||stationId==="toes"||/calcaneus|talus|tibiotalar|forefoot|mtp|lisfranc|osteomyelitis three-phase/.test(t))
-    list=["bone-scan-wb.jpg"];
-  else if (stationId==="thigh"||/femoral|sarcoma/.test(t))
-    list=["bone-scan-wb.jpg","nm-fdg-mip.jpg"];
-  else if (/lung|pulmonary|hilar|chest|mediastinal|deauville|rib fdg/.test(t) || stationId==="chest")
-    list=["xr-chest.jpg","case-xr-3.jpg","nm-fdg-mip.jpg"];
-  else if (stationId==="neck")
-    list=["thyroid-scan-i123.jpg","case-us-2.jpg"];
-  else if (stationId==="pelvis" || /bladder|uterus|iliac nodal/.test(t))
-    list=["case-ct-1.jpg","nm-fdg-mip.jpg"];
-  else if (categoryId==="pethybrid"||categoryId==="qready")
-    list=["nm-fdg-mip.jpg","nm-fdg-wb.jpg"];
-  else if (categoryId==="therapy")
-    list=["thyroid-scan-i123.jpg","thyroid-patterns.jpg"];
-  else if (categoryId==="us")
-    list=["case-us-2.jpg"];
-  else if (categoryId==="rad")
-    list=["xr-chest.jpg","case-ct-2.jpg"];
-  else if (categoryId==="ct")
-    list=["case-ct-1.jpg","case-ct-2.jpg"];
-  else if (categoryId==="mri")
-    list=["mri-brain-t2.jpg"];
-  else if (stationId==="uabd"||stationId==="mabd")
-    list=["case-ct-1.jpg","abd-petct.webp"];
-  else
-    list=["case-ct-1.jpg","xr-chest.jpg","nm-fdg-mip.jpg"];
-  const name = list[Math.abs(salt|0) % list.length];
-  return name;
+  if (wantsCt) {
+    if (head) return "mri-brain-t2.jpg";
+    if (knee) return "case-mr-2.jpg";
+    if (sid==="ankle"||sid==="toes"||sid==="thigh") return "bone-scan-wb.jpg";
+    if (chest) return "case-ct-3.jpg";
+    return "case-ct-1.jpg";
+  }
+  if (wantsRad) {
+    if (chest || /chest|lung|rib|pulmonary/.test(t)) return "case-xr-3.jpg";
+    if (knee) return "case-mr-2.jpg";
+    if (head) return "mri-brain-t2.jpg";
+    if (abd || pel) return "case-ct-1.jpg";
+    return "bone-scan-wb.jpg";
+  }
+  if (cat==="cardiac" || /sestamibi|myocard|\bpyp\b|\bmuga\b|flurpiridaz/.test(t)) {
+    if (/fdg/.test(t)) return "nm-fdg-mip.jpg";
+    if (/\bmri\b/.test(t)) return "case-mr-1.jpg";
+    if (/\bct\b|\bcta\b|calcium/.test(t)) return "case-ct-3.jpg";
+    return "cardiac-ac.jpg";
+  }
+  if (/datscan|ioflupane|striatum/.test(t)) return "nm-petmri-brain.jpg";
+  if (/\bv\/?q\b|ventilation|perfusion/.test(t)) return "nm-vq1.jpg";
+  if (/hida|cholecyst|gallbladder/.test(t)) return "nm-hida.jpg";
+  if (/mag3|dmsa/.test(t)) return "nm-mag3.jpg";
+  if (/fdg|deauville/.test(t)) return (head ? "nm-petmri-brain.jpg" : "nm-fdg-mip.jpg");
+  if (/thyroid|graves|i-123|i-131|pertechnetate/.test(t)) return "thyroid-scan-i123.jpg";
+  if (/bone scan|\bmdp\b|osteomyelitis|superscan/.test(t)) return "bone-scan-wb.jpg";
+  if (cat==="therapy") {
+    if (/dotatate|prrt/.test(t)) return "nm-dotatate.jpg";
+    if (/y-90|radioembol/.test(t)) return "nm-hida.jpg";
+    if (/ra-223/.test(t)) return "bone-scan-wb.jpg";
+    return "thyroid-scan-i123.jpg";
+  }
+  if (head) return "nm-petmri-brain.jpg";
+  if (neck) return "thyroid-scan-i123.jpg";
+  if (chest) return "nm-fdg-mip.jpg";
+  if (pel) return "nm-psma.jpg";
+  if (knee) return "case-mr-2.jpg";
+  if (sid==="thigh"||sid==="ankle"||sid==="toes") return "bone-scan-wb.jpg";
+  return "case-ct-1.jpg";
 }
 function plateSrc(name){
   return resolveAsset("assets/dr/" + name) || (window.DRIMG && window.DRIMG[name]) || "";
@@ -3096,7 +3089,7 @@ function rrVerifyPlates(rows){
   return {ok, n:(rows||[]).length, missing: missing.slice(0,12)};
 }
 function rrGenerate(seed){
-  if (RR_CACHE.seed===seed&&RR_CACHE.rows&&RR_CACHE.v===7) return RR_CACHE.rows;
+  if (RR_CACHE.seed===seed&&RR_CACHE.rows&&RR_CACHE.v===9) return RR_CACHE.rows;
   const rng=rrMulberry(seed);const rows=[];let acc=100000;
   RR_CATS.forEach(cat=>{
     const pool=RR_POOLS[cat.id];
@@ -3115,11 +3108,11 @@ function rrGenerate(seed){
       const mrn="MRN"+String(1000000+Math.floor(rng()*8000000));
       const date=year+"-"+String(1+Math.floor(rng()*12)).padStart(2,"0")+"-"+String(1+Math.floor(rng()*28)).padStart(2,"0");
       const search=(accession+" "+finding+" "+st.name+" "+cat.name+" "+mrn).toLowerCase();
-      const plate=plateForRow(finding, st.id, cat.id, i);
+      const plate=plateForRow(finding, st.id, cat.id, 0);
       rows.push({idx:rows.length,accession,mrn,age,sex,categoryId:cat.id,finding,stationId:st.id,stationName:st.name,slice,suv,status,priority,acgme:cat.acgme,date,search,plate});
     }
   });
-  RR_CACHE={seed,rows,v:7}; rrFixStations(rows); return rows;
+  RR_CACHE={seed,rows,v:9}; rrFixStations(rows); return rows;
 }
 function rrRunAssertions(rows){
   const out=[]; const hits=Array(101).fill(null); let contig=true;
@@ -3158,6 +3151,7 @@ function rrRunAssertions(rows){
 
 window.DRIMG = {"bone-scan-wb.jpg":"assets/dr/bone-scan-wb.jpg","cardiac-ac.jpg":"assets/dr/cardiac-ac.jpg","case-ct-1.jpg":"assets/dr/case-ct-1.jpg","case-ct-2.jpg":"assets/dr/case-ct-2.jpg","case-ct-3.jpg":"assets/dr/case-ct-3.jpg","case-mr-1.jpg":"assets/dr/case-mr-1.jpg","case-mr-2.jpg":"assets/dr/case-mr-2.jpg","case-mr-3.jpg":"assets/dr/case-mr-3.jpg","case-pet-1.jpg":"assets/dr/case-pet-1.jpg","case-pet-2.jpg":"assets/dr/case-pet-2.jpg","case-pet-3.jpg":"assets/dr/case-pet-3.jpg","case-us-2.jpg":"assets/dr/case-us-2.jpg","case-us-2.jpg":"assets/dr/case-us-2.jpg","case-xr-1.jpg":"assets/dr/case-xr-1.jpg","case-xr-2.jpg":"assets/dr/case-xr-2.jpg","case-xr-3.jpg":"assets/dr/case-xr-3.jpg","case-xr-4.jpg":"assets/dr/case-xr-4.jpg","ct-scanner.jpg":"assets/dr/ct-scanner.jpg","gamma-camera-patient.jpg":"assets/dr/gamma-camera-patient.jpg","mri-brain-t2.jpg":"assets/dr/mri-brain-t2.jpg","mri-scanner.jpg":"assets/dr/mri-scanner.jpg","nm-amyloid.jpg":"assets/dr/nm-amyloid.jpg","nm-bone-4view.jpg":"assets/dr/nm-bone-4view.jpg","nm-bone-met.jpg":"assets/dr/nm-bone-met.jpg","nm-dotatate.jpg":"assets/dr/nm-dotatate.jpg","nm-fdg-cocktail.jpg":"assets/dr/nm-fdg-cocktail.jpg","nm-fdg-onc.jpg":"assets/dr/nm-fdg-onc.jpg","nm-hida.jpg":"assets/dr/nm-hida.jpg","nm-i123-i131.jpg":"assets/dr/nm-i123-i131.jpg","nm-mag3.jpg":"assets/dr/nm-mag3.jpg","nm-petmri-brain.jpg":"assets/dr/nm-petmri-brain.jpg","nm-psma-met.jpg":"assets/dr/nm-psma-met.jpg","nm-psma-wb.jpg":"assets/dr/nm-psma-wb.jpg","nm-pyp.jpg":"assets/dr/nm-pyp.jpg","nm-vq-spect.jpg":"assets/dr/nm-vq-spect.jpg","nm-vq-wiki.jpg":"assets/dr/nm-vq-wiki.jpg","pet-scanner-room.jpg":"assets/dr/pet-scanner-room.jpg","rai-therapy.jpg":"assets/dr/rai-therapy.jpg","reading-room.jpg":"assets/dr/reading-room.jpg","spect-ct-empty.jpg":"assets/dr/spect-ct-empty.jpg","spect-ct-room.jpg":"assets/dr/spect-ct-room.jpg","syringe-shields.jpg":"assets/dr/syringe-shields.jpg","thyroid-overview.jpg":"assets/dr/thyroid-overview.jpg","thyroid-patterns.jpg":"assets/dr/thyroid-patterns.jpg","thyroid-scan-i123.jpg":"assets/dr/thyroid-scan-i123.jpg","ultrasound.jpg":"assets/dr/ultrasound.jpg","xr-chest.jpg":"assets/dr/xr-chest.jpg","atlas-415.jpg":"assets/dr/atlas-415.jpg","atlas-416.jpg":"assets/dr/atlas-416.jpg","breast-calcs.jpg":"assets/dr/breast-calcs.jpg","breast-mri-malign.jpg":"assets/dr/breast-mri-malign.jpg","breast-mri-occult.jpg":"assets/dr/breast-mri-occult.jpg","breast-occult-392.jpg":"assets/dr/breast-occult-392.jpg","breast-spiculated.jpg":"assets/dr/breast-spiculated.jpg","breast-us-mass.jpg":"assets/dr/breast-us-mass.jpg","cardio-393.jpg":"assets/dr/cardio-393.jpg","cardio-394.jpg":"assets/dr/cardio-394.jpg","cardio-395.jpg":"assets/dr/cardio-395.jpg","ct-396.jpg":"assets/dr/ct-396.jpg","ct-397.jpg":"assets/dr/ct-397.jpg","gi-398.jpg":"assets/dr/gi-398.jpg","gi-399.jpg":"assets/dr/gi-399.jpg","gi-400.jpg":"assets/dr/gi-400.jpg","gu-401.jpg":"assets/dr/gu-401.jpg","gu-402.jpg":"assets/dr/gu-402.jpg","ir-403.jpg":"assets/dr/ir-403.jpg","msk-404.jpg":"assets/dr/msk-404.jpg","msk-405.jpg":"assets/dr/msk-405.jpg","neuro-406.jpg":"assets/dr/neuro-406.jpg","neuro-407.jpg":"assets/dr/neuro-407.jpg","nm-408.jpg":"assets/dr/nm-408.jpg","nm-409.jpg":"assets/dr/nm-409.jpg","nm-fdg-mip.jpg":"assets/dr/nm-fdg-mip.jpg","nm-fdg-wb.jpg":"assets/dr/nm-fdg-wb.jpg","nm-iodine.jpg":"assets/dr/nm-iodine.jpg","nm-psma-fuse.jpg":"assets/dr/nm-psma-fuse.jpg","nm-psma.jpg":"assets/dr/nm-psma.jpg","nm-vq1.jpg":"assets/dr/nm-vq1.jpg","nm-vq2.jpg":"assets/dr/nm-vq2.jpg","peds-410.jpg":"assets/dr/peds-410.jpg","thorax-411.jpg":"assets/dr/thorax-411.jpg","thorax-412.jpg":"assets/dr/thorax-412.jpg","us-413.jpg":"assets/dr/us-413.jpg","us-414.jpg":"assets/dr/us-414.jpg"};
 window.DRIMG = window.DRIMG || {};
+window.DRIMG["case-us-1.jpg"] = "assets/dr/case-us-1.jpg";
 Object.assign(window.DRIMG, {
   "brain-petct.webp": "/resource/axial_brain_vertex_pet_ct.webp",
   "chest-petct.webp": "/resource/coronal_pet_ct_mediastinum.webp",
@@ -7587,7 +7581,7 @@ function paintAtlasFilm() {
         const label = (view === "radreview" || view === "academy") && state.filmEnc
           ? String(state.filmEnc.finding || ex.kind).slice(0, 48)
           : ex.kind.slice(0, 48);
-        return `<button type="button" class="film-card" data-i="${i}" title="${String(ex.why).replace(/"/g,"")}"><img src="${row[0]}" alt=""><span>${label}</span></button>`;
+        return `<button type="button" class="film-card" data-i="${i}" title="${String(ex.why).replace(/"/g,"")}"><img src="${row[0]}" alt="" style="${(view === "radreview" || view === "academy") && state.filmEnc && typeof stationBand === "function" && isWholeBodyPlate(row[0], state.filmEnc.plate) && stationBand(state.filmEnc.stationId) != null ? ("object-fit:cover;object-position:center " + stationBand(state.filmEnc.stationId) + "%") : ""}"><span>${label}</span></button>`;
       }).join("")
     : `<span style="color:#9bb3c2;padding:8px">${(view === "radreview" || view === "academy") ? "Case images load here — click Atlas or Next 50" : "Loading live atlas images…"}</span>`;
   film.querySelectorAll(".film-card").forEach(b => {
@@ -8004,33 +7998,49 @@ function liveRank(item, enc){
   if (!okHit && hits < 1 && item.kind !== "local") return -80;
   return s;
 }
+function stationBand(stationId){
+  return ({ vertex:8, skullbase:16, neck:26, chest:38, uabd:50, mabd:60, pelvis:74, thigh:84, knee:91, ankle:96, toes:99 })[stationId];
+}
+function isWholeBodyPlate(src, plate){
+  const h = (String(src || "") + " " + String(plate || "")).toLowerCase();
+  return /nm-psma|nm-fdg|nm-dotatate|bone-scan|nm-bone|nm-iodine|nm-i123|fdg-mip|fdg-wb|dotatate|psma-wb|psma-met/.test(h);
+}
 function applyPlateCrop(img, enc) {
   if (!img) return;
   const wrap = img.parentElement;
-  img.style.left = "";
-  img.style.top = "";
-  img.style.width = "";
-  img.style.height = "";
-  img.style.maxWidth = "";
-  img.style.position = "";
-  if (wrap) wrap.classList.remove("is-crop");
+  img.style.objectPosition = "";
+  img.style.objectFit = "";
+  if (wrap) wrap.classList.remove("is-crop", "is-band");
   const plate = String((enc && enc.plate) || "");
   const st = String((enc && enc.stationId) || "");
-  const crops = {
-    "case-mr-1.jpg": { vertex: "0 0", skullbase: "0 0", uabd: "100 0", mabd: "100 0", knee: "0 100", chest: "100 100" },
-    "case-mr-2.jpg": { vertex: "0 0", skullbase: "0 0", uabd: "100 0", mabd: "100 0", pelvis: "0 100", knee: "100 100" },
-    "case-mr-3.jpg": { vertex: "0 0", skullbase: "0 0", knee: "100 0", uabd: "0 100", mabd: "0 100", chest: "100 100" }
+  const src = img.getAttribute("src") || img.src || "";
+  const file = (src.split("/").pop() || plate);
+  const quads = {
+    "case-mr-1.jpg": { vertex:"0 0", skullbase:"0 0", knee:"100 0", ankle:"100 0", toes:"100 0", neck:"100 100", chest:"0 100", thigh:"0 100", pelvis:"0 100", uabd:"0 100", mabd:"0 100" },
+    "case-mr-3.jpg": { vertex:"0 0", skullbase:"100 0", neck:"100 0", chest:"0 100", knee:"100 100", thigh:"100 100", ankle:"100 100", toes:"100 100", pelvis:"0 100", uabd:"0 100", mabd:"0 100" }
   };
-  const map = crops[plate];
-  if (!map || !map[st]) return;
-  const [x, y] = map[st].split(" ");
-  if (wrap) wrap.classList.add("is-crop");
-  img.style.position = "relative";
-  img.style.width = "200%";
-  img.style.height = "200%";
+  const quad = quads[file] || quads[plate];
+  if (quad && quad[st]) {
+    const xy = quad[st].split(" ");
+    if (wrap) wrap.classList.add("is-crop");
+    img.style.position = "relative";
+    img.style.width = "200%";
+    img.style.height = "200%";
+    img.style.maxWidth = "none";
+    img.style.left = xy[0] === "100" ? "-100%" : "0";
+    img.style.top = xy[1] === "100" ? "-100%" : "0";
+    return;
+  }
+  const band = stationBand(st);
+  if (band == null || !isWholeBodyPlate(src, plate)) return;
+  if (wrap) wrap.classList.add("is-band");
+  img.style.position = "absolute";
+  img.style.left = "0";
+  img.style.width = "100%";
+  img.style.height = "260%";
   img.style.maxWidth = "none";
-  img.style.left = x === "100" ? "-100%" : "0";
-  img.style.top = y === "100" ? "-100%" : "0";
+  img.style.objectFit = "fill";
+  img.style.top = (50 - band * 2.6) + "%";
 }
 
 function scoreLocalName(name, enc){
@@ -8082,13 +8092,13 @@ function localCaseImages(enc, limit){
   const seen = new Set();
   const push = (name, kind) => {
     if (!name || seen.has(name)) return;
-    if (scoreLocalName(name, enc) < 0) return;
+    if (scoreLocalName(name, enc) < 0 && name !== (enc && enc.plate)) return;
     const src = (window.DRIMG && window.DRIMG[name]) || (typeof plateSrc === "function" ? plateSrc(name) : "");
     if (!src) return;
     seen.add(name);
     out.push({
       src,
-      cap: finding + " · " + plateLabel(name) + " · teaching analogue, not this accession",
+      cap: (enc && enc.stationName ? enc.stationName + " · " : "") + finding + " · " + plateLabel(name),
       href: "",
       kind,
       raw: name + " " + anatomyOf(enc).id + " " + plateLabel(name)
@@ -9146,7 +9156,14 @@ function bindCaseGallery(enc){
   }
   const applyZ = () => {
     const img = $("#caseMain");
-    if (img) img.style.transform = "scale(" + (state.caseZoom || 1) + ")";
+    if (!img) return;
+    const z = state.caseZoom || 1;
+    if (img.parentElement && img.parentElement.classList.contains("is-band")) {
+      img.style.transformOrigin = "center center";
+      img.style.transform = "scale(" + z + ")";
+    } else {
+      img.style.transform = "scale(" + z + ")";
+    }
   };
   const zin = $("#caseZoomIn"), zout = $("#caseZoomOut"), zoomEl = $("#caseZoom");
   const bigger = $("#caseBigger"), grip = $("#caseGrip");
