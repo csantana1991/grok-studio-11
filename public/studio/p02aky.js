@@ -3177,7 +3177,7 @@
     const origDK = diagramKeyFor;
     diagramKeyFor = function (lesson, mod) {
       const raw = lesson && lesson.visual;
-      if (raw && extras[raw]) return raw;
+      if (mod && isMod(mod.id) && raw && extras[raw]) return raw;
       if (mod && isMod(mod.id) && raw) {
         if (extras[raw]) return raw;
         const map = { aky: "psma", b7h3: "psma", cu64: "suv", ac225: "psma", schema: "talk", dlt: "alara", soa: "talk" };

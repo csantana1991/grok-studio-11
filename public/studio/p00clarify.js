@@ -2065,7 +2065,7 @@
     const origDK = diagramKeyFor;
     diagramKeyFor = function (lesson, mod) {
       const raw = lesson && lesson.visual;
-      if (raw && extras[raw]) return raw;
+      if (mod && isP0000(mod.id) && raw && extras[raw]) return raw;
       if (mod && isP0000(mod.id) && raw) {
         if (extras[raw]) return raw;
         const map = { clarify: "suv", psma: "psma", cu64: "decaymath", dualpet: "annihilation", truth2x2: "deauville" };

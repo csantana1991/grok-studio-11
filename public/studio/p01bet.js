@@ -2839,7 +2839,7 @@
     const origDK = diagramKeyFor;
     diagramKeyFor = function (lesson, mod) {
       const raw = lesson && lesson.visual;
-      if (raw && extras[raw]) return raw;
+      if (mod && mod.id === MOD_ID && raw && extras[raw]) return raw;
       if (mod && mod.id === MOD_ID && raw) {
         if (extras[raw]) return raw;
         const map = { bet121: "suv", rhpsma: "psma", lu177: "decaymath", phase2: "therapy", kidney: "mag3", dosimetry: "spect", psa50: "suv", boin: "deauville" };

@@ -4437,7 +4437,7 @@
     const origDK = diagramKeyFor;
     diagramKeyFor = function (lesson, mod) {
       const raw = lesson && lesson.visual;
-      if (raw && extras[raw]) return raw;
+      if (mod && isMod(mod.id) && raw && extras[raw]) return raw;
       if (mod && isMod(mod.id) && raw) {
         if (extras[raw]) return raw;
         const map = { dwj155: "suv", ac225: "therapy", ga68: "annihilation", theranostic: "psma", dose: "decaymath", dosimetry: "spect", bhlrm: "deauville" };

@@ -2378,7 +2378,7 @@
     const origDK = diagramKeyFor;
     diagramKeyFor = function (lesson, mod) {
       const raw = lesson && lesson.visual;
-      if (raw && extras[raw]) return raw;
+      if (mod && mod.id === "p0protocol" && raw && extras[raw]) return raw;
       if (raw && origDK({ title: "", visual: raw, audio: [""] }, mod)) {
         /* keep explicit */
       }
