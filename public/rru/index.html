@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RAD REVIEW ULTIMATE | 33K ENCOUNTERS | Residency Log</title>
-    <script type="module" crossorigin src="./assets/index-Dh87Ijb5.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BprPsokd.css">
+    <script type="module" crossorigin src="./assets/index-D-liy0SY.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CxSYO4kp.css">
     <style>
       @media (max-width: 900px) {
         #root header > div:first-child {
@@ -72,9 +72,10 @@
           min-height: 0 !important;
         }
         #root main > aside:first-of-type {
-          height: 96px !important;
+          height: 268px !important;
           min-height: 0 !important;
-          max-height: 96px !important;
+          max-height: 268px !important;
+          overflow: hidden !important;
         }
         #root main > aside:first-of-type h2,
         #root main > aside:first-of-type h2 + span {
@@ -82,56 +83,91 @@
           line-height: 1.1 !important;
         }
         #root main > aside:first-of-type > div:nth-child(2) { display: none !important; }
-        #root main > aside:first-of-type > div:last-child { min-height: 0 !important; }
+        #root main > aside:first-of-type > div:last-child {
+          min-height: 0 !important;
+          height: auto !important;
+          flex: 1 1 auto !important;
+          overflow-y: auto !important;
+        }
         #root main > div {
           flex: none !important;
-          min-height: 620px !important;
+          min-height: 0 !important;
           display: flex !important;
           flex-direction: column !important;
         }
-        #root main section {
-          flex: 1 1 auto !important;
-          min-height: 420px !important;
+        #root main > div > section {
+          flex: none !important;
+          min-height: 0 !important;
+          height: auto !important;
           display: flex !important;
           flex-direction: column !important;
         }
-        #root main section > div:nth-child(2) {
-          flex: 1 1 auto !important;
-          min-height: 340px !important;
+        #root main > div > section > div:nth-child(2) {
+          flex: none !important;
+          height: 54vh !important;
+          min-height: 300px !important;
         }
-        #root main section > div:nth-child(2) > div {
-          min-height: 320px !important;
+        #root main > div > section > div:nth-child(2) > div {
+          min-height: 0 !important;
+          height: 100% !important;
         }
-        #rru-sidebar { max-height: 240px !important; }
-        #root main section > div:first-child {
+        #root main > div > section .absolute.top-1 {
+          right: 4.4rem !important;
+          max-height: 40px !important;
+          overflow: hidden !important;
+          flex-wrap: wrap !important;
+        }
+        #root main > div > section [style*="7.5rem"] {
+          right: 4.4rem !important;
+        }
+        #root main > div > section [style*="calc(100% - 6px - 7.5rem)"] {
+          width: calc(100% - 8px - 4.4rem) !important;
+        }
+        #root main > div > section > div:nth-child(2) > div > .absolute.top-0.right-0 {
+          width: 4.4rem !important;
+        }
+        #rru-sidebar {
+          max-height: none !important;
+          height: auto !important;
+          overflow: visible !important;
+        }
+        #rru-sidebar > section {
+          min-height: 0 !important;
+          height: auto !important;
+          flex: none !important;
+        }
+        #root main > div > div:last-child {
+          flex: none !important;
+          max-height: none !important;
+          overflow: visible !important;
+        }
+        #root main > div > div:last-child > div:last-child {
+          flex-direction: column !important;
+          overflow: visible !important;
+        }
+        #root main > div > div:last-child > div:last-child > div {
+          flex: none !important;
+          width: 100% !important;
+          min-width: 0 !important;
+          border-left: 0 !important;
+          border-top: 1px solid rgba(255,255,255,.12);
+        }
+        #root main > div > section > div:first-child {
           flex-wrap: nowrap !important;
           overflow-x: auto !important;
           -webkit-overflow-scrolling: touch;
           align-items: center !important;
           max-height: 44px;
         }
-        #root main section > div:first-child button {
+        #root main > div > section > div:first-child button {
           flex: 0 0 auto;
           height: 26px !important;
           padding: 0 6px !important;
           font-size: 10px !important;
         }
-        #root main section > div:first-child > span button {
+        #root main > div > section > div:first-child > span button {
           width: 26px !important;
           flex-basis: 26px !important;
-        }
-        #root main > div > div:last-child {
-          flex: 0 0 auto;
-          max-height: 34vh;
-          overflow: auto;
-        }
-        #root main > div > div:last-child > div:last-child {
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-        #root main > div > div:last-child > div:last-child > div {
-          flex: 0 0 72%;
-          min-width: 72%;
         }
       }
     </style>

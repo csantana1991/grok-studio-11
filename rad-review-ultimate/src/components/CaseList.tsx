@@ -66,6 +66,7 @@ function Row({
       onDoubleClick={() => onLoad(c)}
       title="Double-click to load this encounter into the viewer"
       style={{ height: ROW_H }}
+      data-selected={selected ? '1' : undefined}
       className={
         'flex w-full items-center gap-2 border-b border-rr-line px-3 text-left transition-colors ' +
         (selected ? 'bg-rr-blue/20' : 'hover:bg-[#141419]')
@@ -182,9 +183,14 @@ export default function CaseList({
   // so keying on the query resets the scroll 180ms before the content moves
   // and leaves the user part-way down a fresh result set.
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = 0
-    setScrollTop(0)
-  }, [cases])
+    const el = scrollRef.current
+    if (!el || selectedIdx == null) return
+    const pos = cases.findIndex((c) => c.idx === selectedIdx)
+    if (pos < 0) return
+    const top = pos * ROW_H
+    el.scrollTop = top
+    setScrollTop(top)
+  }, [cases, selectedIdx])
 
   const totalHeight = cases.length * ROW_H
   const startIdx = Math.max(0, Math.floor(scrollTop / ROW_H) - OVERSCAN)
