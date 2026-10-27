@@ -3083,6 +3083,7 @@ function plateForRow(finding, stationId, categoryId, salt){
   if (/\bpsma\b/.test(f) && !usNamed && !ctNamed && !mrNamed && !radNamed) return "nm-psma.jpg";
   if (usNamed) return /gallbladder|cholecyst|hepatic|liver|hida/.test(f) ? "case-us-2.jpg" : "case-us-1.jpg";
   if (mrNamed) {
+    if (/mrcp|choledocho|biliary|cholangio|bile duct|pancreatic duct/.test(f)) return "mrcp-choledocholithiasis.jpg";
     if (knee) return "case-mr-2.jpg";
     if (head) return "mri-brain-t2.jpg";
     if (neck) return "case-mr-3.jpg";

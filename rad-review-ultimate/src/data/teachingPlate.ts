@@ -49,6 +49,8 @@ function pick(finding: string, stationId: string, categoryId: string): string {
   if (/\bpsma\b/.test(f) && !usNamed && !ctNamed && !mrNamed && !radNamed) return file('nm-psma.jpg')
   if (usNamed) return file(/gallbladder|cholecyst|hepatic|liver|hida/.test(f) ? 'case-us-2.jpg' : 'case-us-1.jpg')
   if (mrNamed) {
+    // case-mr-1 is a brain/knee/shoulder/spine board, not a cholangiogram.
+    if (/mrcp|choledocho|biliary|cholangio|bile duct|pancreatic duct/.test(f)) return file('mrcp-choledocholithiasis.jpg')
     if (knee) return file('case-mr-2.jpg')
     if (head) return file('mri-brain-t2.jpg')
     if (neck) return file('case-mr-3.jpg')
@@ -118,7 +120,10 @@ export function plateAgrees(finding: string, categoryId: string, hay: string): b
   if (cat === 'mammo' && !/brain|calvar|vertex|liver|adrenal|femoral|acetab|ovary|menisc|bone scan|\bfdg\b|\bpet\b/.test(f)) kind = 'mammo'
   if (/gamma knife|schwannoma|cranial irradiation/.test(f)) kind = 'mri'
   if (kind === 'us') return /ultrasound|sonograph|case-us|duplex|echograph/.test(h) && !/psma|fdg-mip|bone-scan|pet/.test(h)
-  if (kind === 'mri') return /mri|mrt|case-mr/.test(h) && !/fdg-mip|nm-psma|bone-scan-wb|pet_ct|pet\/ct/.test(h)
+  if (kind === 'mri' && /mrcp|choledocho|biliary|cholangio|bile duct/.test(f)) {
+    return /mrcp|choledocho|biliary|cholangio/.test(h) && !/case-mr-1/.test(h)
+  }
+  if (kind === 'mri') return /mri|mrt|case-mr|mrcp/.test(h) && !/fdg-mip|nm-psma|bone-scan-wb|pet_ct|pet\/ct/.test(h)
   if (kind === 'ct') return /case-ct|tomograph|\bct\b/.test(h) && !/fdg|psma|pet|bone-scan|nm-/.test(h)
   if (kind === 'rad') return /xr-|radiograph|x-ray|xray/.test(h) && !/fdg|psma|pet|nm-/.test(h)
   if (kind === 'pet') {

@@ -4,7 +4,7 @@ import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
 import { formatSlice, getStationForSlice } from '../data/stations'
 import { wholeBodyLayout } from '../data/plateCrop'
 
-export const ROW_H = 84
+export const ROW_H = 128
 const OVERSCAN = 6
 
 interface Props {
@@ -72,7 +72,7 @@ function Row({
       }
     >
       {thumb && (
-        <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded border border-rr-line bg-black">
+        <span className="relative h-24 w-28 shrink-0 overflow-hidden rounded border border-rr-line bg-black">
           <img
             src={thumb}
             alt=""
@@ -98,7 +98,7 @@ function Row({
           className="h-2.5 w-2.5 shrink-0 rounded-sm"
           style={{ background: cat.accent }}
         />
-        <span className="text-[10px] font-bold text-white tabular-nums">
+        <span className="text-[12px] font-bold text-white tabular-nums">
           {c.accession}
         </span>
         <span
@@ -117,9 +117,9 @@ function Row({
         <span className="ml-auto text-[9px] text-rr-dim tabular-nums">{c.date}</span>
       </div>
 
-      <p className="truncate text-[11px] leading-tight text-rr-text">{c.finding}</p>
+      <p className="line-clamp-2 text-[15px] leading-snug text-white">{c.finding}</p>
 
-      <div className="flex items-center gap-2 text-[9px] text-rr-dim">
+      <div className="flex items-center gap-2 text-[11px] text-rr-dim">
         <span style={{ color: cat.accent }}>{cat.pill}</span>
         <span className="text-rr-line">|</span>
         <span className="text-rr-text">{c.stationName}</span>
@@ -194,7 +194,7 @@ export default function CaseList({
   const offsetY = startIdx * ROW_H
 
   return (
-    <aside className="flex max-h-[42vh] w-full shrink-0 flex-col border-r border-rr-line bg-rr-panel xl:max-h-none xl:w-[27rem]">
+    <aside className="flex h-[62vh] min-h-[28rem] w-full shrink-0 flex-col border-r border-rr-line bg-rr-panel xl:h-auto xl:min-h-0 xl:w-[34rem] xl:max-h-none">
       <div className="shrink-0 border-b border-rr-line px-3 py-2">
         <div className="flex items-baseline gap-2">
           <h2 className="text-[11px] font-bold tracking-[0.16em] text-white">
@@ -273,7 +273,7 @@ export default function CaseList({
         ))}
       </div>
 
-      <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={scrollRef} onScroll={onScroll} className="min-h-[18rem] flex-1 overflow-y-auto xl:min-h-0">
         {indexing ? (
           <div className="px-3 py-6 text-[10px] text-rr-dim">Indexing...</div>
         ) : cases.length === 0 ? (
