@@ -10,6 +10,7 @@ import { CATEGORIES, GRAND_TOTAL, ACGME_CODES } from './categories'
 import { FINDING_POOLS } from './findings'
 import { STATIONS, type Station } from './stations'
 import { stationIdForFinding } from './anatomyMap'
+import { captionPopulation, captionSex } from './population'
 
 const STATION_BY_ID: Record<string, Station> = Object.fromEntries(
   STATIONS.map((s) => [s.id, s]),
@@ -106,9 +107,13 @@ export function generateCases(seed = 0x5ad12026): Encounter[] {
       const station = (derivedId ? STATION_BY_ID[derivedId] : undefined) ?? pickStation(roll)
       const span = station.end - station.start
       const slice = station.start + Math.floor(rand() * (span + 1))
+      const statedPop = captionPopulation(finding)
       const age =
-        cat.id === 'PEDS' ? 1 + Math.floor(rand() * 17) : 22 + Math.floor(rand() * 63)
-      const sex: 'M' | 'F' = rand() < 0.5 ? 'M' : 'F'
+        statedPop === 'paediatric' || cat.id === 'PEDS'
+          ? 1 + Math.floor(rand() * 17)
+          : 22 + Math.floor(rand() * 63)
+      const statedSex = captionSex(finding)
+      const sex: 'M' | 'F' = statedSex ?? (rand() < 0.5 ? 'M' : 'F')
 
       const statusRoll = rand()
       const status: Encounter['status'] =

@@ -105,6 +105,17 @@ export const SPECIFIC_RULES: [RegExp, string][] = [
 
   // Spine without a named level: the thoracic segment is the longest.
   [/\b(spine|spinal|vertebra\w*|discitis|cord\b|kypho\w*|scoliosis|ankylosing|bamboo)/i, 'CHEST'],
+
+  // These name a disease and not a level. Pin the station the study is read
+  // at, instead of rolling a random one the caption can never confirm.
+  [/\bosteomyelitis three-phase\b|\bcomplex regional pain\b/i, 'ANKLE'],
+  [
+    /\bbone scan\b|\bsuperscan\b|\bsarcopenia\b|\bbone density\b|\bpainful bone metastasis\b|\bmyeloma\b/i,
+    'PELVIS',
+  ],
+  [/\bspondylolysis\b|\bpars defects?\b|\blumbar\b/i, 'MID_ABDOMEN'],
+  [/\bforeign body\b/i, 'THIGH'],
+  [/\bmetabolic response\b|\btotal body irradiation\b/i, 'CHEST'],
 ]
 
 /** Generic region words, tested only after every specific rule has missed. */

@@ -114,7 +114,7 @@ export function candidatesFor(c: Encounter, index: FigureIndex): Candidate[] {
   )
   if (own.length) {
     const reviewed = reviewCandidates(c, own)
-    if (reviewed.length) return [...reviewed, teachingCandidate(c)]
+    if (reviewed.length) return [teachingCandidate(c), ...reviewed]
   }
   return [teachingCandidate(c)]
 }
