@@ -117,6 +117,18 @@ export function verifyMatch(
     reasons.push('adjacent region')
   }
 
+  const IMAGING =
+    /\b(ct|mri|\bmr\b|pet|spect|fdg|psma|scintig\w*|radiograph\w*|x-?ray|ultrasound|sonogr\w*|mammogr\w*|axial|coronal|sagittal|fused|uptake|nodule|lesion|mass|\bmip\b|suv|scan|angiogra\w*|fluoroscop\w*|doppler|hounsfield|contrast-enhanced|renogram|thyroid)\b/i
+
+  // A caption that names no region, shares no words with the finding, and
+  // does not read like an imaging figure is a photograph or a document.
+  // Observed live: a thyroid case rendered a Navy corpsman portrait because
+  // the filename happened to contain "pet".
+  if (!captionStation && overlap === 0 && !IMAGING.test(caption)) {
+    reasons.push('not an imaging caption')
+    return { verdict: 'mismatch', score: 0, reasons, captionStation }
+  }
+
   if (captionStation === stationId) reasons.push('region agrees')
   if (overlap >= 2) reasons.push(`${overlap} shared terms`)
   else if (overlap === 1) reasons.push('1 shared term')

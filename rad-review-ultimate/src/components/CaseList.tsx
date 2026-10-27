@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Encounter } from '../data/generateCases'
 import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
-import { formatSlice } from '../data/stations'
+import { formatSlice, getStationForSlice } from '../data/stations'
 
 export const ROW_H = 84
 const OVERSCAN = 6
@@ -64,7 +64,16 @@ function Row({
           src={thumb}
           alt=""
           loading="lazy"
-          title="Matched published figure - reference only"
+          onError={(e) => {
+            const img = e.currentTarget
+            const fallback = getStationForSlice(c.slice).image
+            if (img.dataset.fell) {
+              img.style.display = 'none'
+              return
+            }
+            img.dataset.fell = '1'
+            img.src = fallback
+          }}
           className="h-14 w-14 shrink-0 rounded border border-rr-line bg-black object-contain"
         />
       )}
@@ -170,7 +179,7 @@ export default function CaseList({
   const offsetY = startIdx * ROW_H
 
   return (
-    <aside className="flex w-[27rem] shrink-0 flex-col border-r border-rr-line bg-rr-panel">
+    <aside className="flex max-h-[42vh] w-full shrink-0 flex-col border-r border-rr-line bg-rr-panel xl:max-h-none xl:w-[27rem]">
       <div className="shrink-0 border-b border-rr-line px-3 py-2">
         <div className="flex items-baseline gap-2">
           <h2 className="text-[11px] font-bold tracking-[0.16em] text-white">

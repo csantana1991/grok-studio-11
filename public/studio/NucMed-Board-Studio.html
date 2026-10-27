@@ -463,9 +463,9 @@ svg text { font-family: var(--font); }
 
 #rrWindow, #nbaWindow { position:absolute; left:0; right:0; top:0; z-index:1; }
 #rrSpacer, #nbaSpacer { display:block; pointer-events:none; }
-.rr-listwrap { position:relative; overflow:auto; height:min(62vh,640px) !important; min-height:320px; }
-.rr-grid { min-height:560px; }
-.rr-root { min-height:68vh; }
+.rr-listwrap { position:relative; overflow:auto; height:100%; min-height:0; }
+.rr-grid { min-height:0; }
+.rr-root { min-height:0; }
 .widget-fail { padding:24px; border:1px solid var(--line); border-radius:16px; background:#fff; }
 
 .rr-row { display:block; width:100%; text-align:left; background:transparent; border:0; border-bottom:1px solid #1b1d22; color:#d5d8dc; padding:8px 10px; }
@@ -500,14 +500,15 @@ svg text { font-family: var(--font); }
 .rr-scale button { flex:0 0 auto; min-height:28px; padding:4px 8px; font-size:10px; border:1px solid var(--line); background:#fff; color:#111; }
 .rr-scale button.on { background:#1d4ed8; color:#fff; }
 .rr-view { background:#fff; color:#111; border:1px solid var(--line); border-radius:12px; padding:10px; min-width:0; overflow:auto; }
-.rr-picwrap { display:grid; grid-template-columns: minmax(0,1fr) 140px; gap:8px; align-items:stretch; }
+.rr-picwrap { display:flex; flex-direction:column; gap:8px; min-width:0; max-width:100%; }
 .rr-scale, #rrScale, #nbaScale {
   position: static !important;
-  width: auto !important;
+  width: 100% !important;
   height: auto !important;
   display: flex !important;
-  flex-direction: column;
-  gap: 3px;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 4px;
   inset: auto !important;
 }
 .rr-scale button, #rrScale button, #nbaScale button {
@@ -528,7 +529,9 @@ svg text { font-family: var(--font); }
   background: #1d4ed8 !important;
   color: #fff !important;
 }
-.case-zoom { background:#0b1220; min-height:280px; height:min(48vh, 480px); position:relative; overflow:hidden; }
+.case-gal { min-width: 0; max-width: 100%; }
+.case-zoom, .case-strip, .case-tools, .rr-cap, .case-assert { max-width: 100%; }
+.rr-view { overflow: auto; min-width: 0; }
 .case-zoom img { width:100%; height:100%; object-fit:contain; background:#0b1220; }
 .rr-cols p, .rr-qa p { margin:0; font-size:13px; color:#1f2937; }
 .rr-cols h4, .rr-qa h4, .rr-fix h4 { margin:0 0 4px; font-size:11px; letter-spacing:.12em; color:#1d4ed8; }
@@ -910,15 +913,20 @@ html, body { width:100%; max-width:100%; overflow:hidden; }
 }
 .main {
   display: grid;
-  grid-template-rows: auto minmax(0,1fr) 10px auto auto;
+  grid-template-rows: auto minmax(0,1fr) auto auto auto;
   min-width: 0;
   min-height: 0;
 }
+.main > .topbar { grid-row: 1; }
+.main > .work { grid-row: 2; min-height: 0; }
+.main > #winBar { grid-row: 3; }
+.main > #widgetSheet { grid-row: 4; }
+.main > #playerDock { grid-row: 5; }
 body.dock-min .main, body.player-min .main {
-  grid-template-rows: auto minmax(0,1fr) 10px 0 48px;
+  grid-template-rows: auto minmax(0,1fr) auto auto auto;
 }
 body.sheet-open .main {
-  grid-template-rows: auto minmax(0,1fr) minmax(260px, 52vh) auto auto;
+  grid-template-rows: auto minmax(0,1fr) auto minmax(220px, 46vh) auto;
 }
 .work { min-width:0; height:100%; min-height:0; overflow:hidden; display:grid; grid-template-rows:minmax(0,1fr); }
 .stage { min-width:0; padding: 8px 12px 4px; height:100%; max-height:100%; min-height:0; overflow:hidden; display:flex; flex-direction:column; }
@@ -990,7 +998,50 @@ body.nav-min .app, body.nav-max .app, body.player-min .app, body.player-max .app
 }
 body.player-min { --player-h: 56px; }
 body.player-max { --player-h: 70vh; }
-#radRoot.rr-root { min-width: 0 !important; }
+#radRoot.rr-root, #nbaRoot.rr-root {
+  flex: 1 1 auto;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#radRoot .rr-top, #nbaRoot .rr-top,
+#radRoot .rr-stats, #nbaRoot .rr-stats,
+#radRoot > p, #nbaRoot > p { flex: 0 0 auto; }
+#radRoot .rr-grid, #nbaRoot .rr-grid {
+  flex: 1 1 auto;
+  min-height: 0 !important;
+  min-width: 0;
+  overflow: hidden;
+}
+#radRoot .rr-grid > *, #nbaRoot .rr-grid > * { min-height: 0; min-width: 0; }
+#radRoot .rr-listwrap, #nbaRoot .rr-listwrap {
+  height: 100% !important;
+  max-height: 100%;
+  min-height: 0 !important;
+}
+#radRoot .rr-view, #nbaRoot .rr-view {
+  height: 100%;
+  max-height: 100%;
+  overflow: auto;
+}
+.case-zoom { height: clamp(120px, 16vh, 170px) !important; }
+.rr-picwrap { display: flex; flex-direction: column; gap: 6px; }
+.case-gal { display: contents; }
+.case-zoom { order: 1; }
+.rr-picwrap .rr-cap { order: 2; }
+.rr-picwrap .rr-scale { order: 3; }
+.case-strip { order: 4; }
+.case-assert { order: 5; }
+.case-tools { order: 6; }
+.rr-casehead h3 { margin: 2px 0 0; font-size: 18px; line-height: 1.2; }
+.rr-casehead p { margin: 2px 0 0; }
+.rr-casehead b { display: block; font-size: 12px; }
+.case-zoom.is-lg { height: min(64vh, 720px) !important; }
+.case-zoom.is-band, .case-zoom.is-crop { overflow: hidden !important; }
 .rr-grid { min-width: 0; }
 .media-row { min-width: 0; }
 .vid-panel, .script, .panel-wrap { min-width: 0; }
@@ -3009,71 +3060,76 @@ Object.keys(RR_STEM).forEach(k => { RR_POOLS[k] = RR_STEM[k].slice(); });
 function rrWeightedFallback(rng){const sum=RR_STATIONS.reduce((s,st)=>s+st.weight,0);let r=rng()*sum;for(const st of RR_STATIONS){r-=st.weight;if(r<=0)return st.id;}return "chest";}
 let RR_CACHE={seed:null,rows:null,v:3};
 function plateForRow(finding, stationId, categoryId, salt){
-  const t = (String(finding||"")+" "+String(stationId||"")+" "+String(categoryId||"")).toLowerCase();
-  const cat = String(categoryId||"");
-  const sid = String(stationId||"");
-  const head = sid==="vertex"||sid==="skullbase";
-  const chest = sid==="chest";
-  const neck = sid==="neck";
-  const abd = sid==="uabd"||sid==="mabd";
-  const pel = sid==="pelvis";
-  const knee = sid==="knee" || /knee|menisc|patella|popliteal|\bacl\b/.test(t);
-  const us = cat==="us" || (/\bultrasound\b|\bdoppler\b/.test(t) && !/nuclear|pethybrid|qready|therapy/.test(cat));
-  const wantsMr = (cat==="mri" || /\bmri\b/.test(t)) && cat!=="cardiac";
-  const wantsCt = cat==="ct" || (cat==="peds" && /\bct\b/.test(t));
-  const wantsRad = cat==="rad";
-  if (cat==="mammo" && /breast|mammo|gynecomastia|implant/.test(t) && !/fdg|bone scan|liver|brain|femoral|menisc/.test(t))
-    return "breast-calcs.jpg";
-  if (/dotatate|octreotide|\bsstr\b/.test(t) && !us && !wantsCt && !wantsMr && !wantsRad)
-    return "nm-dotatate.jpg";
-  if (/\bpsma\b/.test(t) && !us && !wantsCt && !wantsMr && !wantsRad)
-    return "nm-psma.jpg";
-  if (us) return /gallbladder|cholecyst|hepatic|liver|hida/.test(t) ? "case-us-2.jpg" : "case-us-1.jpg";
-  if (wantsMr) {
+  const f = String(finding || "").toLowerCase();
+  const cat = String(categoryId || "").toLowerCase();
+  const sid = String(stationId || "").toLowerCase().replace("skull_base", "skullbase").replace("upper_abdomen", "uabd").replace("mid_abdomen", "mabd");
+  const head = sid === "vertex" || sid === "skullbase" || /brain|subdural|convexity|skull|calvar|orbit|pituitary/.test(f);
+  const chest = sid === "chest";
+  const neck = sid === "neck";
+  const abd = sid === "uabd" || sid === "mabd";
+  const pel = sid === "pelvis";
+  const knee = sid === "knee" || /knee|menisc|patella|popliteal|\bacl\b/.test(f);
+  const limb = sid === "ankle" || sid === "toes" || sid === "thigh";
+  const petNamed = cat === "pethybrid" || cat === "pethyb" || /\bpet\b|\bfdg\b|deauville/.test(f);
+  const usNamed = cat === "us" || (/\bultrasound\b|\bduplex\b|\bdoppler\b/.test(f) && !petNamed);
+  const mrNamed = cat !== "cardiac" && (cat === "mri" || (/\bmri\b|\bmrcp\b/.test(f) && !petNamed));
+  const ctNamed = !petNamed && (cat === "ct" || (/\bct\b|\bcta\b/.test(f) && cat !== "mri" && cat !== "us" && cat !== "rad"));
+  const radNamed = cat === "rad" || /\bradiograph\b|\bx-?ray\b|\bkub\b|\bportable chest\b/.test(f);
+  const breastStudy = /breast|mammo|gynecomastia|implant|tomosynthesis|calcification|architectural distortion|bi-rads|phyllodes|papilloma/.test(f)
+    && !/brain|calvar|vertex|liver|adrenal|femoral|acetab|ovary|menisc|bone scan|\bfdg\b/.test(f);
+  const skeletal = /bone scan|\bmdp\b|osteomyelitis|superscan|ra-223|bone pain|palliation|stress reaction|stress fracture|insufficiency|arthroplasty|periprosthetic|three-phase|\bfracture\b/.test(f);
+  if (/parathyroid/.test(f) || (/sestamibi/.test(f) && /parathyroid|neck/.test(f) && cat !== "cardiac")) return "thyroid-scan-i123.jpg";
+  if (/dotatate|octreotide|\bsstr\b|\bprrt\b/.test(f) && !usNamed && !ctNamed && !mrNamed && !radNamed) return "nm-dotatate.jpg";
+  if (/\bpsma\b/.test(f) && !usNamed && !ctNamed && !mrNamed && !radNamed) return "nm-psma.jpg";
+  if (usNamed) return /gallbladder|cholecyst|hepatic|liver|hida/.test(f) ? "case-us-2.jpg" : "case-us-1.jpg";
+  if (mrNamed) {
     if (knee) return "case-mr-2.jpg";
-    if (head || /brain|subdural|convexity|skull/.test(t)) return "mri-brain-t2.jpg";
+    if (head) return "mri-brain-t2.jpg";
     if (neck) return "case-mr-3.jpg";
     return "case-mr-1.jpg";
   }
-  if (wantsCt) {
+  if (ctNamed) {
     if (head) return "mri-brain-t2.jpg";
     if (knee) return "case-mr-2.jpg";
-    if (sid==="ankle"||sid==="toes"||sid==="thigh") return "bone-scan-wb.jpg";
+    if (limb) return "bone-scan-wb.jpg";
     if (chest) return "case-ct-3.jpg";
     return "case-ct-1.jpg";
   }
-  if (wantsRad) {
-    if (chest || /chest|lung|rib|pulmonary/.test(t)) return "case-xr-3.jpg";
+  if (radNamed) {
+    if (chest || /chest|lung|rib|pulmonary|pneumothorax/.test(f)) return "case-xr-3.jpg";
+    if (/arthroplasty|periprosthetic|prosthes/.test(f)) return "bone-scan-wb.jpg";
     if (knee) return "case-mr-2.jpg";
     if (head) return "mri-brain-t2.jpg";
     if (abd || pel) return "case-ct-1.jpg";
     return "bone-scan-wb.jpg";
   }
-  if (cat==="cardiac" || /sestamibi|myocard|\bpyp\b|\bmuga\b|flurpiridaz/.test(t)) {
-    if (/fdg/.test(t)) return "nm-fdg-mip.jpg";
-    if (/\bmri\b/.test(t)) return "case-mr-1.jpg";
-    if (/\bct\b|\bcta\b|calcium/.test(t)) return "case-ct-3.jpg";
+  if ((cat === "mammo") && breastStudy) return "breast-calcs.jpg";
+  if (/datscan|ioflupane|striatum/.test(f)) return "nm-petmri-brain.jpg";
+  if (/\bv\/?q\b|ventilation|perfusion/.test(f)) return "nm-vq1.jpg";
+  if (/hida|cholecyst|gallbladder/.test(f)) return "nm-hida.jpg";
+  if (/mag3|dmsa/.test(f)) return "nm-mag3.jpg";
+  if (petNamed) return (head && /brain|vertex|skull|scalp|temporoparietal|perineural|cerebral/.test(f)) ? "nm-petmri-brain.jpg" : "nm-fdg-mip.jpg";
+  if (skeletal && !usNamed && !ctNamed && !mrNamed && !radNamed) return "bone-scan-wb.jpg";
+  if (/whole body/.test(f) && /i-131|iodine/.test(f)) return "nm-iodine.jpg";
+  if (/thyroid|graves|i-123|i-131|pertechnetate/.test(f) && !skeletal) return "thyroid-scan-i123.jpg";
+  if (cat === "cardiac" || /myocard|\bpyp\b|\bmuga\b|flurpiridaz|regadenoson/.test(f) || (/sestamibi/.test(f) && cat === "cardiac")) {
+    if (/fdg/.test(f)) return "nm-fdg-mip.jpg";
+    if (/\bmri\b/.test(f)) return "case-mr-1.jpg";
+    if (/\bct\b|\bcta\b|calcium/.test(f)) return "case-ct-3.jpg";
     return "cardiac-ac.jpg";
   }
-  if (/datscan|ioflupane|striatum/.test(t)) return "nm-petmri-brain.jpg";
-  if (/\bv\/?q\b|ventilation|perfusion/.test(t)) return "nm-vq1.jpg";
-  if (/hida|cholecyst|gallbladder/.test(t)) return "nm-hida.jpg";
-  if (/mag3|dmsa/.test(t)) return "nm-mag3.jpg";
-  if (/fdg|deauville/.test(t)) return (head ? "nm-petmri-brain.jpg" : "nm-fdg-mip.jpg");
-  if (/thyroid|graves|i-123|i-131|pertechnetate/.test(t)) return "thyroid-scan-i123.jpg";
-  if (/bone scan|\bmdp\b|osteomyelitis|superscan/.test(t)) return "bone-scan-wb.jpg";
-  if (cat==="therapy") {
-    if (/dotatate|prrt/.test(t)) return "nm-dotatate.jpg";
-    if (/y-90|radioembol/.test(t)) return "nm-hida.jpg";
-    if (/ra-223/.test(t)) return "bone-scan-wb.jpg";
-    return "thyroid-scan-i123.jpg";
+  if (cat === "therapy") {
+    if (/y-90|radioembol/.test(f)) return "nm-hida.jpg";
+    if (/i-131|thyroid|graves/.test(f) && !skeletal) return "thyroid-scan-i123.jpg";
+    if (/gamma knife|schwannoma|cranial irradiation/.test(f)) return "mri-brain-t2.jpg";
+    return "bone-scan-wb.jpg";
   }
-  if (head) return "nm-petmri-brain.jpg";
-  if (neck) return "thyroid-scan-i123.jpg";
-  if (chest) return "nm-fdg-mip.jpg";
-  if (pel) return "nm-psma.jpg";
+  if (head) return "mri-brain-t2.jpg";
+  if (neck) return "case-ct-1.jpg";
+  if (chest) return (cat === "nuclear" || cat === "nuc" || cat === "qready") ? "nm-fdg-mip.jpg" : "case-xr-3.jpg";
   if (knee) return "case-mr-2.jpg";
-  if (sid==="thigh"||sid==="ankle"||sid==="toes") return "bone-scan-wb.jpg";
+  if (limb && (cat === "nuclear" || cat === "nuc" || cat === "therapy")) return "bone-scan-wb.jpg";
+  if (limb) return "case-mr-2.jpg";
   return "case-ct-1.jpg";
 }
 function plateSrc(name){
@@ -3089,7 +3145,7 @@ function rrVerifyPlates(rows){
   return {ok, n:(rows||[]).length, missing: missing.slice(0,12)};
 }
 function rrGenerate(seed){
-  if (RR_CACHE.seed===seed&&RR_CACHE.rows&&RR_CACHE.v===9) return RR_CACHE.rows;
+  if (RR_CACHE.seed===seed&&RR_CACHE.rows&&RR_CACHE.v===12) return RR_CACHE.rows;
   const rng=rrMulberry(seed);const rows=[];let acc=100000;
   RR_CATS.forEach(cat=>{
     const pool=RR_POOLS[cat.id];
@@ -3112,7 +3168,7 @@ function rrGenerate(seed){
       rows.push({idx:rows.length,accession,mrn,age,sex,categoryId:cat.id,finding,stationId:st.id,stationName:st.name,slice,suv,status,priority,acgme:cat.acgme,date,search,plate});
     }
   });
-  RR_CACHE={seed,rows,v:9}; rrFixStations(rows); return rows;
+  RR_CACHE={seed,rows,v:12}; rrFixStations(rows); return rows;
 }
 function rrRunAssertions(rows){
   const out=[]; const hits=Array(101).fill(null); let contig=true;
@@ -8040,7 +8096,10 @@ function applyPlateCrop(img, enc) {
   img.style.height = "260%";
   img.style.maxWidth = "none";
   img.style.objectFit = "fill";
-  img.style.top = (50 - band * 2.6) + "%";
+  let topPct = 50 - band * 2.6;
+  if (topPct < -160) topPct = -160;
+  if (topPct > 0) topPct = 0;
+  img.style.top = topPct + "%";
 }
 
 function scoreLocalName(name, enc){

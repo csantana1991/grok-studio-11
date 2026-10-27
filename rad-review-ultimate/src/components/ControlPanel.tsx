@@ -108,7 +108,7 @@ export default function ControlPanel({
   const cat = active ? CATEGORY_BY_ID[active.categoryId] : null
 
   return (
-    <aside className="flex w-[22rem] shrink-0 flex-col overflow-y-auto border-l border-rr-line bg-rr-panel">
+    <aside className="flex max-h-[42vh] w-full shrink-0 flex-col overflow-y-auto border-l border-rr-line bg-rr-panel xl:max-h-none xl:w-[22rem]">
       {/* CONTROL -- blue panel */}
       <section className="border-b border-rr-line bg-rr-blue/15">
         <h3 className="border-b border-rr-blue-lit/30 px-3 py-1.5 text-[9px] font-bold tracking-[0.18em] text-white uppercase">

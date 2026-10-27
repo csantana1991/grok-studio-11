@@ -139,6 +139,15 @@ describe('diagnosis must match, not just the body region', () => {
     expect(v.reasons.join(' ')).toContain('not this diagnosis')
   })
 
+  it('REJECTS a portrait whose filename only looked like PET', () => {
+    const v = verifyMatch(
+      'Navy corpsman PhM3 C Jerry Gottlieb, (7106918) 1254 59th St., Brooklyn',
+      '39F thyroid CA thyroglobulin elevated iodine-negative FDG',
+      'NECK',
+    )
+    expect(v.verdict).toBe('mismatch')
+  })
+
   it('confirms a steeple-sign radiograph for croup', () => {
     const v = verifyMatch(
       'Frontal radiograph of the airway showing the steeple sign of croup with subglottic narrowing',

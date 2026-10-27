@@ -69,6 +69,19 @@ describe('non-radiological figure detection', () => {
         'White-faced Storm Petrel (Pelagodroma marina), East of Eaglehawk Neck, Tasmania',
       ),
     ).toBe(true)
+    expect(
+      isNonRadiologic(
+        'Aratinga rubritorquis head and neck pet — Red-throated Conure or Red-throated Parakeet',
+      ),
+    ).toBe(true)
+    expect(
+      isNonRadiologic('Fig. 1 Study chart. BCR = biochemical recurrence'),
+    ).toBe(true)
+    expect(
+      isNonRadiologic(
+        'Navy corpsman PhM3 C Jerry Gottlieb treating a dog for bullet wound in neck. Dog was a pet found on Peleliu',
+      ),
+    ).toBe(true)
   })
 
   it('does not reject a spectral Doppler waveform, which is a real image', () => {

@@ -124,7 +124,9 @@ export default function Viewer({
     }
   })
   const gripRef = useRef<HTMLDivElement>(null)
-  const showCase = Boolean(caseImage) && mode === 'case'
+  const [caseFailed, setCaseFailed] = useState(false)
+  useEffect(() => setCaseFailed(false), [caseImage?.url])
+  const showCase = Boolean(caseImage) && mode === 'case' && !caseFailed
 
   useEffect(() => {
     try {
@@ -376,8 +378,21 @@ export default function Viewer({
               src={caseImage.url}
               alt={caseImage.caption || finding || ""}
               draggable={false}
-              className="rr-fade pointer-events-none absolute inset-0 h-full w-full object-contain"
-              style={{ opacity: showCase ? 1 : 0 }}
+              onError={() => setCaseFailed(true)}
+              className="rr-fade pointer-events-none absolute object-contain"
+              style={
+                showCase
+                  ? {
+                      opacity: 1,
+                      left: 6,
+                      top: 40,
+                      right: 'auto',
+                      bottom: 'auto',
+                      width: `calc(100% - 6px - ${SCALE_W})`,
+                      height: 'calc(100% - 68px)',
+                    }
+                  : { opacity: 0, inset: 0 }
+              }
             />
           )}
 
@@ -451,28 +466,32 @@ export default function Viewer({
             </div>
           )}
 
-          {/* 10% graticule */}
-          <div className="rr-grid pointer-events-none absolute inset-0" />
+          {!showCase && <div className="rr-grid pointer-events-none absolute inset-0" />}
 
-          {/* Red crosshair at the active slice */}
+          {!showCase && (
           <div
             className="pointer-events-none absolute right-0 left-0 h-px bg-rr-red"
             style={{ top: `${crosshairPct}%`, boxShadow: '0 0 6px rgba(239,68,68,0.8)' }}
           />
-          <div className="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px bg-rr-red/35" />
+          )}
+          {!showCase && <div className="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px bg-rr-red/35" />}
+          {!showCase && (
           <div
             className="pointer-events-none absolute left-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-rr-red"
             style={{ top: `${crosshairPct}%` }}
           />
+          )}
+          {!showCase && (
           <div
             className="pointer-events-none absolute left-1 rounded bg-rr-red px-1 py-px text-[9px] font-bold text-white tabular-nums"
             style={{ top: `calc(${crosshairPct}% + 4px)` }}
           >
             {formatSlice(slice)}
           </div>
+          )}
 
           {/* Lesion marks for the active station */}
-          {!imageMissing &&
+          {!showCase && !imageMissing &&
             station.lesions.map((l) => (
               <div
                 key={l.label}
@@ -508,7 +527,7 @@ export default function Viewer({
           {/* Matched-encounter imagery: caption + citation. Licence condition. */}
           {showCase && caseImage && (
             <>
-              <div className="absolute top-2 left-2 flex flex-col gap-1">
+              <div className="absolute top-1 right-[7.5rem] left-1 z-20 flex max-h-8 flex-nowrap items-center gap-1 overflow-hidden">
                 <div
                   className={
                     'pointer-events-none rounded border bg-black/80 px-2 py-0.5 text-[9px] font-bold tracking-wider ' +
@@ -630,7 +649,7 @@ export default function Viewer({
                 </div>
               </div>
               <div
-                className="pointer-events-none absolute bottom-0 left-0 bg-black/70 px-2 py-0.5 text-[8px] leading-tight text-rr-dim"
+                className="pointer-events-none absolute bottom-0 left-0 h-6 overflow-hidden bg-black/75 px-2 py-0.5 text-[8px] leading-6 whitespace-nowrap text-rr-dim"
                 style={{ right: SCALE_W }}
               >
                 <span className="text-rr-text">{caseImage.caption.slice(0, 190)}</span>
@@ -657,7 +676,7 @@ export default function Viewer({
 
           {/* Station scale down the right edge */}
           <div
-            className="absolute top-0 right-0 bottom-0 border-l border-rr-line bg-rr-bg/75"
+            className="absolute top-0 right-0 bottom-0 flex flex-col justify-between overflow-hidden border-l border-rr-line bg-rr-bg/90"
             style={{ width: SCALE_W }}
           >
             {SCALE_TICKS.map((t) => {
@@ -671,16 +690,15 @@ export default function Viewer({
                     onSlice(t.slice)
                   }}
                   className={
-                    'absolute right-0 flex w-full items-center gap-1 px-1 text-left text-[8.5px] tracking-wider transition-colors ' +
-                    (on ? 'text-white' : 'text-rr-dim hover:text-rr-text')
+                    'relative flex min-h-0 w-full flex-1 items-center gap-1 overflow-hidden px-1 text-left text-[8px] leading-none tracking-wider transition-colors ' +
+                    (on ? 'bg-white/10 text-white' : 'text-rr-dim hover:text-rr-text')
                   }
-                  style={{ top: `${(t.slice / MAX_SLICE) * 100}%` }}
                 >
                   <span
                     className="h-px w-2 shrink-0"
                     style={{ background: on ? '#ef4444' : '#3a3a46' }}
                   />
-                  <span className="tabular-nums">{formatSlice(t.slice)}</span>
+                  <span className="shrink-0 tabular-nums">{formatSlice(t.slice)}</span>
                   <span className="truncate">{t.name}</span>
                 </button>
               )

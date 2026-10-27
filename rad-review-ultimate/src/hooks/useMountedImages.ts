@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getAllImages, putImage, deleteImage, clearImages } from '../data/imageStore'
-import { SOURCE_FILENAMES } from '../data/sourceImages'
+import { SOURCE_IMAGES, SOURCE_FILENAMES } from '../data/sourceImages'
 
 export interface MountApi {
   /** filename -> object URL for every mounted image. */
@@ -40,7 +40,7 @@ export function useMountedImages(): MountApi {
 
   useEffect(() => {
     let cancelled = false
-    getAllImages().then((stored) => {
+    getAllImages().then(async (stored) => {
       if (cancelled) return
       const next: Record<string, string> = {}
       for (const [name, blob] of Object.entries(stored)) {
@@ -50,11 +50,24 @@ export function useMountedImages(): MountApi {
       }
       setUrls(next)
       setReady(true)
+      for (const src of SOURCE_IMAGES) {
+        if (cancelled || next[src.filename]) continue
+        try {
+          const res = await fetch(src.path)
+          if (!res.ok) continue
+          const blob = await res.blob()
+          if (cancelled || !blob.size) continue
+          await putImage(src.filename, blob)
+          publish(src.filename, blob)
+        } catch {
+          /* the station image on disk still shows */
+        }
+      }
     })
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [publish])
 
   // Revoke everything on unmount of the app.
   useEffect(() => {

@@ -36,7 +36,7 @@ import {
   thumbFor as selectThumb,
   nucleusCandidate,
 } from './data/selectFigure'
-import { teachingMatch, teachingPlateFor } from './data/teachingPlate'
+import { teachingMatch, teachingPlateFor, plateAgrees } from './data/teachingPlate'
 
 /**
  * Unmatched findings processed per "match all" run. Bounded to stay polite to
@@ -175,7 +175,11 @@ export default function App() {
   )
 
   const thumbFor = useCallback(
-    (c: Encounter) => selectThumb(c, figureIndex) ?? teachingPlateFor(c).url,
+    (c: Encounter) => {
+      const lit = selectThumb(c, figureIndex)
+      if (lit && plateAgrees(c.finding, c.categoryId, lit)) return lit
+      return teachingPlateFor(c).url
+    },
     [figureIndex],
   )
 
@@ -318,7 +322,21 @@ export default function App() {
   /** Figures the reader can cycle through, best first. */
   const matchPoolSize = orderedMatches.length
 
-  const caseImage = currentMatch?.match ?? (selected ? teachingMatch(selected) : undefined)
+  const caseImage = (() => {
+    if (!selected) return undefined
+    const teaching = teachingMatch(selected)
+    if (
+      currentMatch &&
+      plateAgrees(
+        selected.finding,
+        selected.categoryId,
+        currentMatch.match.url + ' ' + currentMatch.match.caption,
+      )
+    ) {
+      return currentMatch.match
+    }
+    return teaching
+  })()
 
   const audio = useAudiobook()
   const playAllRef = useRef(false)
@@ -406,7 +424,7 @@ export default function App() {
     // compress. Below it the whole console scrolls horizontally rather than
     // crushing the viewer and the teaching bar into unreadable slivers.
     <div className="h-full w-full overflow-auto bg-rr-bg">
-    <div className="flex h-full min-h-0 min-w-[1500px] flex-col bg-rr-bg">
+    <div className="flex h-full min-h-0 w-full flex-col bg-rr-bg">
       <Header
         active={filter}
         onSelect={setFilter}
@@ -422,7 +440,7 @@ export default function App() {
         onOpenReview={() => setReviewOpen(true)}
       />
 
-      <main className="flex min-h-0 flex-1">
+      <main className="flex min-h-0 flex-1 flex-col xl:flex-row">
         <CaseList
           cases={filtered}
           selectedIdx={selected?.idx ?? null}

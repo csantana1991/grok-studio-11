@@ -51,6 +51,9 @@ export default function StackViewer({
   )
   const coverage = useMemo(() => stackCoverage(stack), [stack])
   const slice = stack[Math.min(pos, stack.length - 1)]
+  const [dead, setDead] = useState<Record<string, boolean>>({})
+  const remote = slice?.url && !dead[slice.url] ? slice.url : null
+  const shown = remote || slice?.station.image || null
 
   // Open at the encounter's own level rather than at the vertex.
   useEffect(() => {
@@ -195,12 +198,15 @@ export default function StackViewer({
           ref={frameRef}
           className="relative min-w-0 flex-1 cursor-ns-resize bg-black select-none"
         >
-          {slice.url ? (
+          {shown ? (
             <img
-              key={slice.url}
-              src={slice.url}
+              key={shown}
+              src={shown}
               alt=""
               draggable={false}
+              onError={() => {
+                if (slice?.url) setDead((d) => (d[slice.url!] ? d : { ...d, [slice.url!]: true }))
+              }}
               className="absolute inset-0 h-full w-full object-contain"
             />
           ) : (
