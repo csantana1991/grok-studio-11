@@ -1,109 +1,157 @@
 /**
- * Finding-matched teaching analogue.
+ * One single-frame teaching image per finding.
  *
- * Literature figures (PMC) still win when they exist and verify. When they
- * do not, the viewer must not fall back to a wrong-station atlas plate
- * (the failure that put a pelvis PET/CT on an ankle case). These plates
- * were visually inspected; filenames that do not match their pixels are
- * not used for the named finding.
+ * Multi-panel boards (four MRIs in one file, three PETs side by side) are
+ * never shown. Each distinct finding is given the next unused frame in its
+ * own pool, so neighbouring cases do not share a picture until that pool
+ * runs out. The same finding always opens on the same frame.
  */
 
 import type { Encounter } from './generateCases'
 import type { LiveMatch } from './liveMatch'
-import { distalStation, plateOmitsDistalLimb } from './plateCrop'
+import { FINDING_POOLS } from './findings'
 
 const DR = '/studio/assets/dr/'
 
-function normStation(stationId: string): string {
-  return stationId.toLowerCase().replace('skull_base', 'skullbase').replace('upper_abdomen', 'uabd').replace('mid_abdomen', 'mabd')
+/** Files that are several different pictures in one frame. Never show these. */
+const COLLAGE =
+  /case-mr-1\.jpg|nm-fdg-mip\.jpg|case-ct-2\.jpg|case-pet-[123]\.jpg|nm-fdg-wb\.jpg|nm-psma-wb\.jpg|nm-psma\.jpg|bone-scan-wb\.jpg|nm-bone-4view\.jpg|thyroid-scan-i123\.jpg|breast-calcs\.jpg|breast-spiculated\.jpg|case-ct-3\.jpg|nm-vq1\.jpg|nm-vq2\.jpg|nm-pyp\.jpg|nm-iodine\.jpg|nm-dotatate\.jpg|cardiac-ac\.jpg|case-xr-1\.jpg/
+
+const POOLS: Record<string, string[]> = {
+  mriBrain: ['one/mr-1.jpg', 'case-mr-3.jpg'],
+  mriKnee: ['one/mr-2.jpg', 'case-mr-2.jpg'],
+  mriShoulder: ['one/mr-3.jpg'],
+  mriSpine: ['one/mr-4.jpg'],
+  mrcp: ['mrcp-choledocholithiasis.jpg'],
+  pet: [
+    'one/pet-mip-1.jpg',
+    'one/pet-mip-2.jpg',
+    'one/pet-mip-3.jpg',
+    'one/pet-ax-1.jpg',
+    'one/pet-ax-2.jpg',
+    'one/pet-ax-3.jpg',
+    'one/pet-fuse-1.jpg',
+    'one/pet-fuse-2.jpg',
+    'one/pet-quad-1.jpg',
+    'one/pet-quad-2.jpg',
+    'one/pet-quad-3.jpg',
+    'one/pet-quad-4.jpg',
+    'one/fdg-pair-1.jpg',
+    'one/fdg-pair-2.jpg',
+  ],
+  petBrain: ['nm-petmri-brain.jpg', 'one/mr-1.jpg'],
+  psma: ['one/psma-pair-1.jpg', 'one/psma-pair-2.jpg', 'one/psma-1.jpg', 'one/psma-2.jpg'],
+  dotatate: ['one/dota-1.jpg'],
+  bone: [
+    'one/bone-1.jpg',
+    'one/bone-2.jpg',
+    'one/bone-3.jpg',
+    'one/bone-4.jpg',
+    'one/bone4-1.jpg',
+    'one/bone4-2.jpg',
+    'one/bone4-3.jpg',
+    'one/bone4-4.jpg',
+  ],
+  thyroid: ['one/thyroid-1.jpg', 'one/thyroid-2.jpg', 'one/thyroid-3.jpg', 'one/thyroid-4.jpg', 'one/iodine-1.jpg', 'one/iodine-2.jpg'],
+  mammo: [
+    'one/mammo-1.jpg',
+    'one/mammo-2.jpg',
+    'one/mammo-3.jpg',
+    'one/mammo-4.jpg',
+    'one/breast-1.jpg',
+    'one/breast-2.jpg',
+    'one/breast-3.jpg',
+    'one/breast-4.jpg',
+  ],
+  ctChest: ['one/ct-chest-1.jpg', 'one/ct-chest-2.jpg', 'one/ct-chest-3.jpg', 'one/ct-body-1.jpg'],
+  ctBody: ['case-ct-1.jpg', 'one/ct-body-2.jpg', 'one/ct-body-3.jpg'],
+  ctHead: ['one/mr-1.jpg', 'case-mr-3.jpg'],
+  us: ['case-us-1.jpg', 'case-us-2.jpg'],
+  cardiac: ['one/pyp-1.jpg', 'one/pyp-2.jpg', 'one/pyp-3.jpg', 'one/pyp-4.jpg', 'one/pyp-5.jpg', 'one/pyp-6.jpg'],
+  xrChest: ['xr-chest.jpg', 'gi-398.jpg', 'gi-399.jpg'],
+  xrLimb: ['one/xr-1.jpg', 'one/xr-2.jpg', 'one/bone-1.jpg', 'one/bone-2.jpg'],
+  hida: ['nm-hida.jpg'],
+  renal: ['nm-mag3.jpg'],
+  vq: ['one/vq-1.jpg', 'one/vq-2.jpg', 'one/vq-3.jpg', 'one/vq-4.jpg', 'one/vq-5.jpg', 'one/vq-6.jpg'],
 }
 
-/** One plate. The named study wins over the station, so a CT is never a PET. */
-function pick(finding: string, stationId: string, categoryId: string): string {
+export function plateKind(finding: string, categoryId: string): string {
   const f = finding.toLowerCase()
   const cat = categoryId.toLowerCase()
-  const sid = normStation(stationId)
-  const head = sid === 'vertex' || sid === 'skullbase' || /brain|subdural|convexity|skull|calvar|orbit|pituitary/.test(f)
-  const chest = sid === 'chest'
-  const neck = sid === 'neck'
-  const abd = sid === 'uabd' || sid === 'mabd'
-  const pel = sid === 'pelvis'
-  const knee = sid === 'knee' || /knee|menisc|patella|popliteal|\bacl\b/.test(f)
-  const limb = sid === 'ankle' || sid === 'toes' || sid === 'thigh'
-  const petNamed = cat === 'pethyb' || cat === 'pethybrid' || /\bpet\b|\bfdg\b|deauville/.test(f)
-  const usNamed = cat === 'us' || (/\bultrasound\b|\bduplex\b|\bdoppler\b/.test(f) && !petNamed)
-  const mrNamed = cat !== 'cardiac' && (cat === 'mri' || (/\bmri\b|\bmrcp\b/.test(f) && !petNamed))
-  const ctNamed = !petNamed && (cat === 'ct' || (/\bct\b|\bcta\b/.test(f) && cat !== 'mri' && cat !== 'us' && cat !== 'rad'))
-  const radNamed = cat === 'rad' || /\bradiograph\b|\bx-?ray\b|\bkub\b|\bportable chest\b/.test(f)
-  const breastStudy = /breast|mammo|gynecomastia|implant|tomosynthesis|calcification|architectural distortion|bi-rads|phyllodes|papilloma/.test(f)
-    && !/brain|calvar|vertex|liver|adrenal|femoral|acetab|ovary|menisc|bone scan|\bfdg\b/.test(f)
-  const skeletal = /bone scan|\bmdp\b|osteomyelitis|superscan|ra-223|bone pain|palliation|stress reaction|stress fracture|insufficiency|arthroplasty|periprosthetic|three-phase|\bfracture\b/.test(f)
-  const file = (name: string) => {
-    const url = DR + name
-    // A torso MIP cannot teach the knee, ankle, or toes — those pixels are not in the frame.
-    if (distalStation(stationId) && plateOmitsDistalLimb(url)) return DR + 'bone-scan-wb.jpg'
-    return url
-  }
-  if (/parathyroid/.test(f) || (/sestamibi/.test(f) && /parathyroid|neck/.test(f) && cat !== 'cardiac')) return file('thyroid-scan-i123.jpg')
-  if (/dotatate|octreotide|\bsstr\b|\bprrt\b/.test(f) && !usNamed && !ctNamed && !mrNamed && !radNamed) return file('nm-dotatate.jpg')
-  if (/\bpsma\b/.test(f) && !usNamed && !ctNamed && !mrNamed && !radNamed) return file('nm-psma.jpg')
-  if (usNamed) return file(/gallbladder|cholecyst|hepatic|liver|hida/.test(f) ? 'case-us-2.jpg' : 'case-us-1.jpg')
-  if (mrNamed) {
-    // case-mr-1 is a brain/knee/shoulder/spine board, not a cholangiogram.
-    if (/mrcp|choledocho|biliary|cholangio|bile duct|pancreatic duct/.test(f)) return file('mrcp-choledocholithiasis.jpg')
-    if (knee) return file('case-mr-2.jpg')
-    if (head) return file('mri-brain-t2.jpg')
-    if (neck) return file('case-mr-3.jpg')
-    return file('case-mr-1.jpg')
-  }
-  if (ctNamed) {
-    if (head) return file('mri-brain-t2.jpg')
-    if (knee) return file('case-mr-2.jpg')
-    if (limb) return file('bone-scan-wb.jpg')
-    if (chest) return file('case-ct-3.jpg')
-    return file('case-ct-1.jpg')
-  }
-  if (radNamed) {
-    if (chest || /chest|lung|rib|pulmonary|pneumothorax/.test(f)) return file('case-xr-3.jpg')
-    if (/arthroplasty|periprosthetic|prosthes/.test(f)) return file('bone-scan-wb.jpg')
-    if (knee) return file('case-mr-2.jpg')
-    if (head) return file('mri-brain-t2.jpg')
-    if (abd || pel) return file('case-ct-1.jpg')
-    return file('bone-scan-wb.jpg')
-  }
-  if (cat === 'mammo' && breastStudy) return file('breast-calcs.jpg')
-  if (/datscan|ioflupane|striatum/.test(f)) return file('nm-petmri-brain.jpg')
-  if (/\bv\/?q\b|ventilation|perfusion/.test(f)) return file('nm-vq1.jpg')
-  if (/hida|cholecyst|gallbladder/.test(f)) return file('nm-hida.jpg')
-  if (/mag3|dmsa/.test(f)) return file('nm-mag3.jpg')
-  if (petNamed) return file(head && /brain|vertex|skull|scalp|temporoparietal|perineural|cerebral/.test(f) ? 'nm-petmri-brain.jpg' : 'nm-fdg-mip.jpg')
-  if (skeletal && !usNamed && !ctNamed && !mrNamed && !radNamed) return file('bone-scan-wb.jpg')
-  if (/whole body/.test(f) && /i-131|iodine/.test(f)) return file('nm-iodine.jpg')
-  if (/thyroid|graves|i-123|i-131|pertechnetate/.test(f) && !skeletal) return file('thyroid-scan-i123.jpg')
-  if (cat === 'cardiac' || /myocard|\bpyp\b|\bmuga\b|flurpiridaz|regadenoson/.test(f)) {
-    if (/fdg/.test(f)) return file('nm-fdg-mip.jpg')
-    if (/\bmri\b/.test(f)) return file('case-mr-1.jpg')
-    if (/\bct\b|\bcta\b|calcium/.test(f)) return file('case-ct-3.jpg')
-    return file('cardiac-ac.jpg')
-  }
+  if (/mrcp|choledocho|biliary|cholangio|bile duct/.test(f)) return 'mrcp'
+  if (cat === 'mammo' || (/bi-rads|tomosynthesis|mammogram|gynaecomastia|implant/.test(f) && !/\bpet\b|\bfdg\b/.test(f))) return 'mammo'
+  if (cat === 'us' || /\bultrasound\b|\bduplex\b|\bdoppler\b/.test(f)) return 'us'
+  if (cat === 'cardiac' || /cardiac mri|coronary cta|myocard|\bmuga\b|\bpyp\b|flurpiridaz|thallium viability|stress pet myocardial|\btavi\b|pericardial/.test(f)) return 'cardiac'
+  if (/thyroid scan|thyroid uptake|graves disease|i-123|i-131|autonomous nodule|pertechnetate|parathyroid/.test(f)) return 'thyroid'
+  if (/\bpsma\b/.test(f)) return 'psma'
+  if (/dotatate|octreotide|krenning/.test(f)) return 'dotatate'
+  if (/hida|hepatobiliary iminodiacetic/.test(f)) return 'hida'
+  if (/mag3|dmsa|renogram|captopril/.test(f)) return 'renal'
+  if (/\bv\/?q\b|ventilation study/.test(f)) return 'vq'
   if (cat === 'therapy') {
-    if (/y-90|radioembol/.test(f)) return file('nm-hida.jpg')
-    if (/i-131|thyroid|graves/.test(f) && !skeletal) return file('thyroid-scan-i123.jpg')
-    if (/gamma knife|schwannoma|cranial irradiation/.test(f)) return file('mri-brain-t2.jpg')
-    return file('bone-scan-wb.jpg')
+    if (/y-90|radioembol/.test(f)) return 'hida'
+    if (/ra-223|osseous|bone metast|femor/.test(f)) return 'bone'
+    if (/brain|hippocamp/.test(f)) return 'mriBrain'
+    if (/lung|chest/.test(f)) return 'ctChest'
+    return 'ctBody'
   }
-  if (head) return file('mri-brain-t2.jpg')
-  if (neck) return file('case-ct-1.jpg')
-  if (chest) return file(cat === 'nuc' || cat === 'nuclear' || cat === 'qready' ? 'nm-fdg-mip.jpg' : 'case-xr-3.jpg')
-  if (knee) return file('case-mr-2.jpg')
-  if (limb && (cat === 'nuc' || cat === 'nuclear' || cat === 'therapy')) return file('bone-scan-wb.jpg')
-  if (limb) return file('case-mr-2.jpg')
-  return file('case-ct-1.jpg')
+  if (/bone scan|three-phase|\bmdp\b|ra-223/.test(f)) return 'bone'
+  const mri = cat === 'mri' || /\bmri\b|\bmra\b/.test(f)
+  const ct = !mri && (cat === 'ct' || /\bct\b|\bcta\b/.test(f))
+  const rad = cat === 'rad' || /radiograph/.test(f)
+  if (mri) {
+    if (/knee|\bacl\b|menisc|patella/.test(f)) return 'mriKnee'
+    if (/shoulder|slap|rotator|supraspinatus/.test(f)) return 'mriShoulder'
+    if (/spine|lumbar|cervical|discitis|epidural|cord signal/.test(f)) return 'mriSpine'
+    if (/breast/.test(f)) return 'mammo'
+    if (/cardiac|myocarditis|cardiomyopathy/.test(f)) return 'cardiac'
+    if (/liver|hepat|adrenal|pancrea|abdomen/.test(f)) return 'mrcp'
+    if (/ankle|foot|forefoot|thigh|hip|wrist|elbow|sacroiliac/.test(f)) return 'bone'
+    if (/prostate|pelvis|uterine|rectal|endometrio|fistula/.test(f)) return 'ctBody'
+    return 'mriBrain'
+  }
+  if (ct) {
+    if (/head|brain|subarachnoid|subdural|facial|temporal|sinus|ischaem|\bmca\b|stroke|odontoid/.test(f)) return 'ctHead'
+    if (/chest|lung|pulmonary|\bpe\b|aort|pneumothorax|thymoma|bronch|emphysema|nodule|lymphang|miliary|covid|mediastin/.test(f)) return 'ctChest'
+    if (/femur|extremity|tibial/.test(f)) return 'bone'
+    return 'ctBody'
+  }
+  if (rad) {
+    if (/chest|pneumo|pleural|pneumonia|effusion|hilar|pacemaker|\brib\b|tube|carina|kerley|silhouette|sarcoid|miliary|asbestos|nasogastric|subcutaneous|lobar|contusion/.test(f)) return 'xrChest'
+    return 'xrLimb'
+  }
+  if (cat === 'pethyb' || cat === 'pethybrid' || /\bpet\b|\bfdg\b|deauville|\bsuv\b/.test(f)) {
+    if (/brain|skull|scalp|pituitary/.test(f)) return 'petBrain'
+    return 'pet'
+  }
+  if (cat === 'nuc' || cat === 'nuclear') return 'bone'
+  return 'ctBody'
 }
 
-/** A literature figure may lead only when it is the same kind of study. */
+const BY_FINDING = new Map<string, string>()
+{
+  const cursor: Record<string, number> = {}
+  for (const [cat, findings] of Object.entries(FINDING_POOLS)) {
+    for (const finding of findings) {
+      const kind = plateKind(finding, cat)
+      const pool = POOLS[kind] ?? POOLS.ctBody
+      const i = cursor[kind] ?? 0
+      cursor[kind] = i + 1
+      BY_FINDING.set(finding, pool[i % pool.length])
+    }
+  }
+}
+
+function pick(finding: string, stationId: string, categoryId: string): string {
+  void stationId
+  const name = BY_FINDING.get(finding) ?? (POOLS[plateKind(finding, categoryId)] ?? POOLS.ctBody)[0]
+  return DR + name
+}
+
+/** A literature figure may lead only when it is one picture of the same kind of study. */
 export function plateAgrees(finding: string, categoryId: string, hay: string): boolean {
   const h = hay.toLowerCase()
+  if (COLLAGE.test(h)) return false
   const f = finding.toLowerCase()
   const cat = categoryId.toLowerCase()
   const pet = cat === 'pethyb' || cat === 'pethybrid' || /\bpet\b|\bfdg\b|deauville|\bpsma\b|dotatate/.test(f)
@@ -121,22 +169,22 @@ export function plateAgrees(finding: string, categoryId: string, hay: string): b
   if (/gamma knife|schwannoma|cranial irradiation/.test(f)) kind = 'mri'
   if (kind === 'us') return /ultrasound|sonograph|case-us|duplex|echograph/.test(h) && !/psma|fdg-mip|bone-scan|pet/.test(h)
   if (kind === 'mri' && /mrcp|choledocho|biliary|cholangio|bile duct/.test(f)) {
-    return /mrcp|choledocho|biliary|cholangio/.test(h) && !/case-mr-1/.test(h)
+    return /mrcp|choledocho|biliary|cholangio/.test(h)
   }
-  if (kind === 'mri') return /mri|mrt|case-mr|mrcp/.test(h) && !/fdg-mip|nm-psma|bone-scan-wb|pet_ct|pet\/ct/.test(h)
-  if (kind === 'ct') return /case-ct|tomograph|\bct\b/.test(h) && !/fdg|psma|pet|bone-scan|nm-/.test(h)
-  if (kind === 'rad') return /xr-|radiograph|x-ray|xray/.test(h) && !/fdg|psma|pet|nm-/.test(h)
+  if (kind === 'mri') return /mri|mrt|case-mr|mrcp|one\/mr-/.test(h) && !/fdg-mip|nm-psma|bone-scan-wb|pet_ct|pet\/ct/.test(h)
+  if (kind === 'ct') return /case-ct|ct-body|ct-chest|tomograph|\bct\b/.test(h) && !/fdg|psma|pet|bone-scan|nm-/.test(h)
+  if (kind === 'rad') return /xr-|radiograph|x-ray|xray|gi-39/.test(h) && !/fdg|psma|pet|nm-/.test(h)
   if (kind === 'pet') {
     const distal = /ankle|calcane|talus|heel|\bfoot\b|toe|metatars|knee|menisc|thigh|femur|tibia/.test(f)
     if (distal && /nm-fdg-mip|nm-psma|nm-dotatate|nm-iodine/.test(h) && !/ankle|foot|knee|femur|tibia|calcane|heel/.test(h)) {
       return false
     }
-    return /pet|fdg|psma|dotatate|bone-scan/.test(h)
+    return /pet|fdg|psma|dotatate|one\/pet-|one\/fdg-/.test(h)
   }
-  if (kind === 'mammo') return /breast|mammo/.test(h)
-  if (kind === 'cardiac') return /cardiac|sestamibi|myocard|spect/.test(h)
-  if (kind === 'nm') return /nm-|bone-scan|thyroid|scint|hida|mag3|vq|spect|i-123|i123|dotatate|psma/.test(h)
-  return true
+  if (kind === 'mammo') return /breast|mammo|one\/mammo/.test(h)
+  if (kind === 'cardiac') return /cardiac|sestamibi|myocard|spect|nm-pyp/.test(h)
+  if (kind === 'nm') return /nm-|bone-scan|thyroid|scint|hida|mag3|vq|spect|i-123|i123|dotatate|psma|one\/bone|one\/thyroid/.test(h)
+  return !COLLAGE.test(h)
 }
 
 export function teachingPlateFor(c: Pick<Encounter, 'finding' | 'stationId' | 'categoryId'> & { idx?: number }): {
@@ -147,7 +195,7 @@ export function teachingPlateFor(c: Pick<Encounter, 'finding' | 'stationId' | 'c
   const file = url.split('/').pop() || url
   return {
     url,
-    caption: `${c.finding} · teaching analogue (${file}) · not this accession's pixels`,
+    caption: `${c.finding} · one teaching image (${file})`,
   }
 }
 
