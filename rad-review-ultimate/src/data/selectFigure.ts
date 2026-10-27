@@ -18,6 +18,19 @@ import { rankMatches, type Verification } from './verifyMatch'
 import { autoReview, type AutoReview } from './autoReview'
 import { rankCandidates } from './qa/engine'
 import { captionFitsFinding } from './findingCaption'
+import { teachingMatch } from './teachingPlate'
+
+function teachingCandidate(c: Encounter): Candidate {
+  return {
+    match: teachingMatch(c),
+    verification: {
+      verdict: 'confirmed',
+      score: 1,
+      reasons: ['assigned teaching plate for this finding'],
+      captionStation: c.stationId,
+    },
+  }
+}
 
 export interface Candidate {
   match: LiveMatch
@@ -91,20 +104,19 @@ export function buildFigureIndex(store: Record<string, LiveMatch[]>): FigureInde
 
 /**
  * Verified candidate figures for an encounter, in display order.
- * Its own finding's figures win; otherwise it borrows verified figures for the
- * same station from the shared library, so the frame is never empty while
- * matching imagery exists elsewhere.
+ * Its own finding's figures win. If none fit, the assigned teaching plate is
+ * the figure, which is also what the viewer shows.
  */
 export function candidatesFor(c: Encounter, index: FigureIndex): Candidate[] {
   const pop = encounterPopulation(c.age, c.categoryId)
   const own = (index.byFinding.get(c.finding)?.[pop] ?? []).filter((x) =>
     captionFitsFinding(c.finding, x.match.caption),
   )
-  if (own.length) return reviewCandidates(c, own)
-
-  // Do not borrow a same-station figure for a named diagnosis (croup must not
-  // open a parathyroid SPECT just because both sit at NECK).
-  return []
+  if (own.length) {
+    const reviewed = reviewCandidates(c, own)
+    if (reviewed.length) return [...reviewed, teachingCandidate(c)]
+  }
+  return [teachingCandidate(c)]
 }
 
 /**

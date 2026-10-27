@@ -83,11 +83,13 @@ describe('the displayed figure is the best-supported one', () => {
     }
   })
 
-  it('offers nothing rather than a wrong-region figure', () => {
+  it('uses the assigned teaching plate instead of a wrong-region figure', () => {
     const wrongOnly = buildFigureIndex({
       [FINDING]: [fig({ url: 'https://x/brain.jpg', caption: 'Axial MRI of the brain' })],
     })
-    expect(candidatesFor(enc, wrongOnly)).toHaveLength(0)
-    expect(figureFor(enc, wrongOnly)).toBeUndefined()
+    const list = candidatesFor(enc, wrongOnly)
+    expect(list).toHaveLength(1)
+    expect(list[0].match.journal).toBe('NucMed Board Studio plate library')
+    expect(figureFor(enc, wrongOnly)?.match.url).toContain('/findings/')
   })
 })
