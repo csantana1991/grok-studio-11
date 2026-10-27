@@ -1028,9 +1028,11 @@ body.player-max { --player-h: 70vh; }
   max-height: 100%;
   overflow: auto;
 }
-.case-zoom { height: clamp(120px, 16vh, 170px) !important; }
+.case-zoom { height: min(38vh, 380px) !important; min-height: 220px; }
 .rr-picwrap { display: flex; flex-direction: column; gap: 6px; }
 .case-gal { display: contents; }
+.stage:has(.home-grid) { overflow: auto; padding-bottom: 28px; }
+.home-grid { align-content: start; }
 .case-zoom { order: 1; }
 .rr-picwrap .rr-cap { order: 2; }
 .rr-picwrap .rr-scale { order: 3; }
@@ -1726,7 +1728,7 @@ function paintProtocolSheetBar() {
   if (document.getElementById("protocolSheetBar")) return;
   const bar = document.createElement("div");
   bar.id = "protocolSheetBar";
-  bar.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;margin-top:12px";
+  bar.style.cssText = "display:flex;flex-wrap:nowrap;gap:8px;margin-top:12px;overflow-x:auto;max-width:100%;padding-bottom:6px";
   Object.values(PROTOCOL_SHEETS).forEach(s => {
     const a = document.createElement("a");
     a.className = "primary";
@@ -6509,10 +6511,10 @@ function renderHome() {
           <div class="kpi"><b>34%</b><span>exam = oncology</span></div>
           <div class="kpi"><b>${completedCount()}</b><span>completed here</span></div>
         </div>
-        <p class="disclaimer">Educational review aid only. Not affiliated with any residency, hospital, ABNM, ABR, NMTCB, NRC, or SNMMI. Not a guarantee of passing or of a residency slot. Volume numbers in the residency blueprint are study targets, not an official census. Confirm clinical numbers against current labels, NRC text, and society guidelines.</p>
         <div class="pager"><button class="primary" id="startBtn">Start with the blueprint →</button>
         <button class="primary" id="resBtn" style="margin-left:8px">Start the residency year</button>
         <span class="primary" id="homeDl" style="display:inline-block;margin-left:8px">Open a case from the list. The lectures play here.</span></div>
+        <p class="disclaimer">Educational review aid only. Not affiliated with any residency, hospital, ABNM, ABR, NMTCB, NRC, or SNMMI. Not a guarantee of passing or of a residency slot. Volume numbers in the residency blueprint are study targets, not an official census. Confirm clinical numbers against current labels, NRC text, and society guidelines.</p>
       </div>
       <div class="panel">
         <h3>Exam blueprint</h3>

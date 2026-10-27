@@ -115,14 +115,16 @@ export default function App() {
   // a category filter is on.
   const seeded = useRef(false)
   useEffect(() => {
-    if (seeded.current || selected) return
+    if (seeded.current) return
     seeded.current = true
     const seed =
       cases.find((c) => c.categoryId === 'PETHYB' && c.stationId === 'ANKLE') ??
       cases.find((c) => c.categoryId === 'PETHYB') ??
       cases[0]
+    if (!seed) return
     setSelected(seed)
-  }, [cases, selected])
+    setSlice(seed.slice)
+  }, [cases])
 
   const byQuery = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase()
@@ -143,10 +145,14 @@ export default function App() {
   )
 
   // A category or a search must show a case from that list, not the one left on screen.
+  // Skip until the opening case has been chosen, or this effect races the seed
+  // and leaves the head-to-toe bar on a different station than the case.
   useEffect(() => {
-    if (!filtered.length) return
-    if (selected && filtered.some((c) => c.idx === selected.idx)) return
-    setSelected(filtered[0])
+    if (!seeded.current || !selected || !filtered.length) return
+    if (filtered.some((c) => c.idx === selected.idx)) return
+    const next = filtered[0]
+    setSelected(next)
+    setSlice(next.slice)
   }, [filtered, selected])
 
   const station = getStationForSlice(slice)
