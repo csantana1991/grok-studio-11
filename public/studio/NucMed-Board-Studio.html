@@ -1454,8 +1454,9 @@ body.editor-plus.dock-min #playerDock { height: 52px !important; }
   bottom: auto !important;
   top: auto !important;
   z-index: 1;
-  max-height: 2.8em !important;
-  overflow: hidden !important;
+  max-height: none !important;
+  overflow: visible !important;
+  height: auto !important;
   margin: 8px 0 0 !important;
   box-shadow: none !important;
   background: #f4f7fb !important;
@@ -1751,6 +1752,24 @@ body.atlas-open .atlas-drawer {
     min-height: 0 !important;
     height: 100% !important;
     flex: 1 1 auto;
+  }
+  .vid-stage {
+    height: min(48vh, 400px) !important;
+    min-height: 280px !important;
+  }
+  .live-hero {
+    top: 40px !important;
+    height: min(48vh, 400px) !important;
+  }
+  #lessonStill { object-fit: contain !important; }
+  .lesson-figs img { height: min(42vh, 340px) !important; }
+  .vid-panel .visual.diagram-thyroid {
+    max-height: 124px !important;
+    overflow: hidden !important;
+  }
+  .vid-panel .visual.diagram-thyroid svg {
+    height: 116px !important;
+    max-height: 116px !important;
   }
 }
 .chrome-toggle { display: none; }
@@ -6504,7 +6523,7 @@ function renderLesson() {
   if (state.lesson >= mod.lessons.length) state.lesson = 0;
   const lesson = mod.lessons[state.lesson];
   const media = [];
-  media.push(`<div class="visual">${visualSVG(diagramKeyFor(lesson, mod))}</div>`);
+  media.push(`<div class="visual diagram-${diagramKeyFor(lesson, mod)}">${visualSVG(diagramKeyFor(lesson, mod))}</div>`);
   if (lesson.image) {
     media.push(`<div class="visual"><img src="${resolveAsset(lesson.image)}" alt="" onerror="this.parentNode.style.display='none'"><div class="cap">${lesson.cap || ""}</div></div>`);
   }
