@@ -10,6 +10,7 @@
 
 import type { Encounter } from './generateCases'
 import type { LiveMatch } from './liveMatch'
+import { distalStation, plateOmitsDistalLimb } from './plateCrop'
 
 const DR = '/studio/assets/dr/'
 
@@ -37,7 +38,12 @@ function pick(finding: string, stationId: string, categoryId: string): string {
   const breastStudy = /breast|mammo|gynecomastia|implant|tomosynthesis|calcification|architectural distortion|bi-rads|phyllodes|papilloma/.test(f)
     && !/brain|calvar|vertex|liver|adrenal|femoral|acetab|ovary|menisc|bone scan|\bfdg\b/.test(f)
   const skeletal = /bone scan|\bmdp\b|osteomyelitis|superscan|ra-223|bone pain|palliation|stress reaction|stress fracture|insufficiency|arthroplasty|periprosthetic|three-phase|\bfracture\b/.test(f)
-  const file = (name: string) => DR + name
+  const file = (name: string) => {
+    const url = DR + name
+    // A torso MIP cannot teach the knee, ankle, or toes — those pixels are not in the frame.
+    if (distalStation(stationId) && plateOmitsDistalLimb(url)) return DR + 'bone-scan-wb.jpg'
+    return url
+  }
   if (/parathyroid/.test(f) || (/sestamibi/.test(f) && /parathyroid|neck/.test(f) && cat !== 'cardiac')) return file('thyroid-scan-i123.jpg')
   if (/dotatate|octreotide|\bsstr\b|\bprrt\b/.test(f) && !usNamed && !ctNamed && !mrNamed && !radNamed) return file('nm-dotatate.jpg')
   if (/\bpsma\b/.test(f) && !usNamed && !ctNamed && !mrNamed && !radNamed) return file('nm-psma.jpg')
@@ -115,7 +121,13 @@ export function plateAgrees(finding: string, categoryId: string, hay: string): b
   if (kind === 'mri') return /mri|mrt|case-mr/.test(h) && !/fdg-mip|nm-psma|bone-scan-wb|pet_ct|pet\/ct/.test(h)
   if (kind === 'ct') return /case-ct|tomograph|\bct\b/.test(h) && !/fdg|psma|pet|bone-scan|nm-/.test(h)
   if (kind === 'rad') return /xr-|radiograph|x-ray|xray/.test(h) && !/fdg|psma|pet|nm-/.test(h)
-  if (kind === 'pet') return /pet|fdg|psma|dotatate/.test(h)
+  if (kind === 'pet') {
+    const distal = /ankle|calcane|talus|heel|\bfoot\b|toe|metatars|knee|menisc|thigh|femur|tibia/.test(f)
+    if (distal && /nm-fdg-mip|nm-psma|nm-dotatate|nm-iodine/.test(h) && !/ankle|foot|knee|femur|tibia|calcane|heel/.test(h)) {
+      return false
+    }
+    return /pet|fdg|psma|dotatate|bone-scan/.test(h)
+  }
   if (kind === 'mammo') return /breast|mammo/.test(h)
   if (kind === 'cardiac') return /cardiac|sestamibi|myocard|spect/.test(h)
   if (kind === 'nm') return /nm-|bone-scan|thyroid|scint|hida|mag3|vq|spect|i-123|i123|dotatate|psma/.test(h)

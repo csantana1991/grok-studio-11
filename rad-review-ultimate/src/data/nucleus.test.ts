@@ -95,6 +95,11 @@ describe('study matching', () => {
     expect(m[0].images[0].url).toBe('/peds-cxr.webp')
   })
 
+  it('does not put a cardiac SPECT on a mammogram', () => {
+    const m = matchStudies(lib, 'Fat necrosis with oil cyst', 'CHEST', 'MAMMO', 6, 55)
+    expect(m.map((s) => s.images[0].url)).not.toContain('/cardiac.webp')
+  })
+
   it('sends an adult cardiac case to the cardiac study', () => {
     const m = matchStudies(lib, 'Stress perfusion inducible ischaemia', 'CHEST', 'NUC', 6, 62)
     expect(m[0].images[0].url).toBe('/cardiac.webp')

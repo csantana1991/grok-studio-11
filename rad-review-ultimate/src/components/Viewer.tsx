@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   IMAGES,
   MAX_SLICE,
@@ -10,6 +10,7 @@ import {
 } from '../data/stations'
 import { basename } from '../data/sourceImages'
 import { CREDIT_BY_FILE, shortCredit } from '../data/credits'
+import { wholeBodyLayout } from '../data/plateCrop'
 import SourcePicker from './SourcePicker'
 
 interface Props {
@@ -72,6 +73,22 @@ const UNIQUE_IMAGES = Array.from(new Set(Object.values(IMAGES) as string[]))
 
 /** Width of the station scale gutter, kept clear of overlaying content. */
 const SCALE_W = '7.5rem'
+
+/** Open a whole-body composite on this station. Regional studies stay uncropped. */
+function caseFrameStyle(url: string, stationId: string): CSSProperties {
+  const lay = wholeBodyLayout(url, stationId)
+  if (!lay) {
+    return { objectFit: 'contain', inset: 0, width: '100%', height: '100%' }
+  }
+  return {
+    objectFit: 'fill',
+    bottom: 'auto',
+    right: 'auto',
+    maxWidth: 'none',
+    maxHeight: 'none',
+    ...lay,
+  }
+}
 
 export default function Viewer({
   slice,
@@ -372,28 +389,31 @@ export default function Viewer({
 
           {/* The selected encounter's own matched published imagery */}
           {caseImage && (
-            <img
-              key={caseImage.url}
-              data-rru-case="1"
-              src={caseImage.url}
-              alt={caseImage.caption || finding || ""}
-              draggable={false}
-              onError={() => setCaseFailed(true)}
-              className="rr-fade pointer-events-none absolute object-contain"
+            <div
+              className="rr-fade pointer-events-none absolute overflow-hidden bg-black"
               style={
                 showCase
                   ? {
                       opacity: 1,
                       left: 6,
                       top: 40,
-                      right: 'auto',
-                      bottom: 'auto',
                       width: `calc(100% - 6px - ${SCALE_W})`,
                       height: 'calc(100% - 68px)',
                     }
                   : { opacity: 0, inset: 0 }
               }
-            />
+            >
+              <img
+                key={caseImage.url}
+                data-rru-case="1"
+                src={caseImage.url}
+                alt={caseImage.caption || finding || ''}
+                draggable={false}
+                onError={() => setCaseFailed(true)}
+                className="absolute"
+                style={caseFrameStyle(caseImage.url, station.id)}
+              />
+            </div>
           )}
 
           {!showCase && imageMissing && (

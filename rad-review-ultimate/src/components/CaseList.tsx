@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import type { Encounter } from '../data/generateCases'
 import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
 import { formatSlice, getStationForSlice } from '../data/stations'
+import { wholeBodyLayout } from '../data/plateCrop'
 
 export const ROW_H = 84
 const OVERSCAN = 6
@@ -25,6 +25,18 @@ interface Props {
   onToggleAtlas: () => void
   /** Rendered directly under the search box, at one case row's width. */
   atlasPanel?: ReactNode
+}
+
+function thumbStyle(src: string, stationId: string): CSSProperties {
+  const lay = wholeBodyLayout(src, stationId)
+  if (!lay) return { objectFit: 'contain', inset: 0, width: '100%', height: '100%' }
+  return {
+    objectFit: 'fill',
+    bottom: 'auto',
+    right: 'auto',
+    maxWidth: 'none',
+    ...lay,
+  }
 }
 
 const STATUS_STYLE: Record<Encounter['status'], string> = {
@@ -60,22 +72,25 @@ function Row({
       }
     >
       {thumb && (
-        <img
-          src={thumb}
-          alt=""
-          loading="lazy"
-          onError={(e) => {
-            const img = e.currentTarget
-            const fallback = getStationForSlice(c.slice).image
-            if (img.dataset.fell) {
-              img.style.display = 'none'
-              return
-            }
-            img.dataset.fell = '1'
-            img.src = fallback
-          }}
-          className="h-14 w-14 shrink-0 rounded border border-rr-line bg-black object-contain"
-        />
+        <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded border border-rr-line bg-black">
+          <img
+            src={thumb}
+            alt=""
+            loading="lazy"
+            onError={(e) => {
+              const img = e.currentTarget
+              const fallback = getStationForSlice(c.slice).image
+              if (img.dataset.fell) {
+                img.style.display = 'none'
+                return
+              }
+              img.dataset.fell = '1'
+              img.src = fallback
+            }}
+            className="absolute inset-0 h-full w-full"
+            style={thumbStyle(thumb, c.stationId)}
+          />
+        </span>
       )}
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
       <div className="flex items-center gap-1.5">

@@ -252,6 +252,24 @@ export function buildLibrary(raw: unknown[]): NucleusLibrary {
   return { studies, byStation, loaded: true }
 }
 
+/** A cardiac SPECT is not a teaching image for a mammogram, even at the same station. */
+const COMPATIBLE_CATEGORY: Record<string, string[]> = {
+  PEDS: ['RAD', 'CT', 'MRI', 'US', 'NUC', 'PETHYB'],
+  QREADY: ['RAD', 'CT', 'MRI', 'US', 'NUC', 'PETHYB', 'MAMMO', 'CARDIAC'],
+  CARDIAC: ['NUC', 'PETHYB', 'CT', 'MRI'],
+  NUC: ['CARDIAC', 'PETHYB', 'THERAPY'],
+  THERAPY: ['NUC', 'PETHYB'],
+  PETHYB: ['NUC', 'CT'],
+}
+
+function categoriesCompatible(encounter: string, study: string): boolean {
+  if (encounter === study) return true
+  return (
+    (COMPATIBLE_CATEGORY[encounter] ?? []).includes(study) ||
+    (COMPATIBLE_CATEGORY[study] ?? []).includes(encounter)
+  )
+}
+
 /**
  * Score a study against an encounter. Station agreement is required -- a study
  * of the wrong body region is never a match, for the same reason a brain figure
@@ -267,6 +285,13 @@ export function scoreStudy(
   age?: number,
 ): number {
   if (study.stationId !== stationId) return -1
+  if (
+    study.categoryId &&
+    categoryId &&
+    !categoriesCompatible(categoryId, study.categoryId)
+  ) {
+    return -1
+  }
   let score = 2
 
   // Exact modality agreement is the strongest signal.

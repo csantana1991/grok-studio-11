@@ -104,12 +104,11 @@ export default function Header({
             <span className="text-rr-text">Residency Log</span>
           </h1>
           <p className="truncate text-[9px] tracking-[0.18em] text-rr-dim uppercase">
-            Full Edition &middot; Head-to-Toe PET/CT Workstation &middot; Client-side index
-            &middot; Zero external fetch
+            Full Edition &middot; Head-to-Toe PET/CT Workstation &middot; Station-matched images
           </p>
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5">
           <a
             href={STUDIO_URL}
             title="Exit to NucMed Board Studio"
@@ -170,7 +169,7 @@ export default function Header({
         </div>
       </div>
 
-      <div className="flex items-stretch gap-2 border-t border-rr-line px-3 py-2">
+      <div className="flex items-stretch gap-2 overflow-x-auto border-t border-rr-line px-3 py-2">
         <button
           type="button"
           onClick={() => onSelect('ALL')}
@@ -220,7 +219,7 @@ export default function Header({
               {GROUP_2_TOTAL.toLocaleString()}
             </span>
           </div>
-          <div className="grid grid-cols-7 gap-1.5">
+          <div className="grid min-w-[28rem] grid-cols-7 gap-1.5">
             {g2.map((c) => (
               <Tile
                 key={c.id}
