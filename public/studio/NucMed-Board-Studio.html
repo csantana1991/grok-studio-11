@@ -1648,7 +1648,82 @@ body.atlas-open .atlas-drawer {
     min-height: 180px !important;
   }
   .topbar, .topbar-scroll { overflow: visible; height: auto; }
+  .chrome-toggle {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 36px;
+    margin: 0;
+    padding: 0 12px 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--text);
+    font-weight: 750;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .chrome-toggle span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .chrome-toggle i { font-style: normal; flex: 0 0 auto; color: #5b7190; }
+  .topbar-scroll {
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    padding: 6px 8px !important;
+    gap: 6px !important;
+  }
+  #topbarTools {
+    flex: 1 1 100%;
+    order: 4;
+    max-height: 0;
+    margin: 0;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-10px);
+    pointer-events: none;
+    transition: max-height .26s ease, opacity .18s ease, transform .26s ease;
+  }
+  body.chrome-open #topbarTools {
+    max-height: 210px;
+    opacity: 1;
+    overflow: auto;
+    transform: none;
+    pointer-events: auto;
+    padding-top: 4px !important;
+  }
+  body.chrome-open .app-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  body.view-rru #playerDock,
+  body.view-rru #winBar,
+  body.view-rru #dockHandle { display: none !important; }
+  body.view-rru .stage { padding: 0 !important; overflow: hidden !important; }
+  body.view-rru .rru-host {
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    height: 100%;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+  body.view-rru .rru-host > .panel-bar { display: none !important; }
+  body.view-rru #rruFrame {
+    min-height: 0 !important;
+    height: 100% !important;
+    flex: 1 1 auto;
+  }
 }
+.chrome-toggle { display: none; }
 </style></head>
 <body>
 <div id="bootSplash" style="position:fixed;inset:0;z-index:99999;background:#fff;color:#12315c;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,sans-serif;padding:24px;text-align:center">
@@ -1668,8 +1743,11 @@ body.atlas-open .atlas-drawer {
   <header class='topbar'>
     <div class="topbar-scroll" id="topbarScroll">
     <button type='button' id='menuBtn' class='menu-btn'>☰</button>
+    <button type="button" id="chromeToggle" class="chrome-toggle" aria-expanded="false" aria-controls="topbarTools">
+      <span id="chromeLabel">Board Studio</span><i aria-hidden="true">▾</i>
+    </button>
     <div class='crumb' id='crumb'>Studio / Home</div>
-    <div class='tools'>
+    <div class='tools' id="topbarTools">
     <div class="app-tabs" id="appTabs">
       <button type="button" data-view="home" class="on">Board Studio</button>
       <button type="button" data-view="radreview">RAD REVIEW</button>
@@ -10633,6 +10711,12 @@ function render() {
     const on = b.dataset.view === state.view || (state.view === "module" && b.dataset.view === "home");
     b.classList.toggle("on", on);
   });
+  document.body.classList.toggle("view-rru", state.view === "rrultimate");
+  const chromeLabel = document.getElementById("chromeLabel");
+  if (chromeLabel) {
+    const onTab = document.querySelector("#appTabs button.on");
+    chromeLabel.textContent = onTab ? onTab.textContent.trim() : "Views";
+  }
   const crumb = $("#crumb");
   if (state.view === "home") {
     crumb.innerHTML = "Studio / <b>Home</b>";
@@ -10698,7 +10782,28 @@ function render() {
 }
 
 function closeNav() { document.body.classList.remove("nav-open"); }
+function setChromeOpen(open) {
+  document.body.classList.toggle("chrome-open", !!open);
+  const btn = document.getElementById("chromeToggle");
+  if (!btn) return;
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+  const mark = btn.querySelector("i");
+  if (mark) mark.textContent = open ? "▴" : "▾";
+}
 $("#menuBtn").onclick = () => document.body.classList.toggle("nav-open");
+(function bindChromeToggle(){
+  const btn = document.getElementById("chromeToggle");
+  if (!btn) return;
+  btn.onclick = () => setChromeOpen(!document.body.classList.contains("chrome-open"));
+  const tabs = document.getElementById("appTabs");
+  if (tabs) tabs.addEventListener("click", (ev) => {
+    if (ev.target.closest("button")) setChromeOpen(false);
+  });
+  const stage = document.getElementById("stage");
+  if (stage) stage.addEventListener("pointerdown", () => {
+    if (document.body.classList.contains("chrome-open")) setChromeOpen(false);
+  });
+})();
 $("#backdrop").onclick = closeNav;
 (function bindClickImagePlay(){
   if (window.__imgPlayBound) return;

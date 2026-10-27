@@ -8,17 +8,103 @@
     <link rel="stylesheet" crossorigin href="./assets/index-BprPsokd.css">
     <style>
       @media (max-width: 900px) {
-        #root header > div:first-child { flex-wrap: wrap !important; align-items: flex-start !important; }
-        #root header > div:first-child > div:last-child {
-          margin-left: 0 !important;
-          width: 100% !important;
-          max-width: 100% !important;
-          justify-content: flex-start !important;
-          flex-shrink: 1 !important;
+        #root header > div:first-child {
+          flex-wrap: nowrap !important;
+          align-items: center !important;
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch;
         }
-        #root header > div:nth-child(2) { flex-wrap: wrap !important; overflow: visible !important; }
-        #root header > div:nth-child(2) > div { flex: 1 1 100% !important; min-width: 0 !important; }
-        #root header .grid { min-width: 0 !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+        #root header > div:first-child > div:last-child {
+          margin-left: 8px !important;
+          width: auto !important;
+          max-width: none !important;
+          flex: 0 0 auto !important;
+          justify-content: flex-start !important;
+        }
+        #root header > div:nth-child(2) {
+          flex-wrap: nowrap !important;
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch;
+        }
+        #root header > div:nth-child(2) > div {
+          flex: 0 0 auto !important;
+          min-width: max-content !important;
+        }
+        #root header .grid {
+          display: flex !important;
+          flex-wrap: nowrap !important;
+          width: max-content !important;
+          min-width: max-content !important;
+          gap: 6px !important;
+        }
+        #root header .grid > button { width: 84px !important; flex: 0 0 auto !important; }
+        #root > div { height: 100% !important; overflow: auto !important; }
+        #root > div > div {
+          height: auto !important;
+          min-height: 100% !important;
+          overflow: visible !important;
+        }
+        #root header { position: sticky; top: 0; z-index: 6; }
+        #root header > div:nth-child(2) {
+          max-height: 62px;
+          padding-top: 4px !important;
+          padding-bottom: 4px !important;
+        }
+        #root main {
+          flex: none !important;
+          overflow: visible !important;
+          min-height: 0 !important;
+        }
+        #root main > aside:first-of-type {
+          height: 132px !important;
+          min-height: 0 !important;
+          max-height: 132px !important;
+        }
+        #root main > aside:first-of-type > div:nth-child(2) { display: none !important; }
+        #root main > aside:first-of-type > div:last-child { min-height: 0 !important; }
+        #root main > div {
+          flex: none !important;
+          min-height: 460px !important;
+          display: flex !important;
+          flex-direction: column !important;
+        }
+        #root main section {
+          flex: 1 1 auto !important;
+          min-height: 280px !important;
+          display: flex !important;
+          flex-direction: column !important;
+        }
+        #root main section > div:nth-child(2) {
+          flex: 1 1 auto !important;
+          min-height: 190px !important;
+        }
+        #root main section > div:nth-child(2) > div {
+          min-height: 180px !important;
+        }
+        #rru-sidebar { max-height: 240px !important; }
+        #root main section > div:first-child {
+          flex-wrap: nowrap !important;
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch;
+          align-items: center !important;
+          max-height: 44px;
+        }
+        #root main section > div:first-child button {
+          flex: 0 0 auto;
+        }
+        #root main > div > div:last-child {
+          flex: 0 0 auto;
+          max-height: 34vh;
+          overflow: auto;
+        }
+        #root main > div > div:last-child > div:last-child {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        #root main > div > div:last-child > div:last-child > div {
+          flex: 0 0 72%;
+          min-width: 72%;
+        }
       }
     </style>
   </head>
