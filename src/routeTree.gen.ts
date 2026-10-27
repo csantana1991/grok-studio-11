@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRruAnalyzeRouteImport } from './routes/api/rru-analyze'
+import { Route as ApiPmcImgRouteImport } from './routes/api/pmc/img'
+import { Route as ApiPmcMatchRouteImport } from './routes/api/pmc/match'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +24,49 @@ const ApiRruAnalyzeRoute = ApiRruAnalyzeRouteImport.update({
   path: '/api/rru-analyze',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPmcImgRoute = ApiPmcImgRouteImport.update({
+  id: '/api/pmc/img',
+  path: '/api/pmc/img',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPmcMatchRoute = ApiPmcMatchRouteImport.update({
+  id: '/api/pmc/match',
+  path: '/api/pmc/match',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/rru-analyze': typeof ApiRruAnalyzeRoute
+  '/api/pmc/img': typeof ApiPmcImgRoute
+  '/api/pmc/match': typeof ApiPmcMatchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/rru-analyze': typeof ApiRruAnalyzeRoute
+  '/api/pmc/img': typeof ApiPmcImgRoute
+  '/api/pmc/match': typeof ApiPmcMatchRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/rru-analyze': typeof ApiRruAnalyzeRoute
+  '/api/pmc/img': typeof ApiPmcImgRoute
+  '/api/pmc/match': typeof ApiPmcMatchRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/rru-analyze'
+  fullPaths: '/' | '/api/rru-analyze' | '/api/pmc/img' | '/api/pmc/match'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/rru-analyze'
-  id: '__root__' | '/' | '/api/rru-analyze'
+  to: '/' | '/api/rru-analyze' | '/api/pmc/img' | '/api/pmc/match'
+  id: '__root__' | '/' | '/api/rru-analyze' | '/api/pmc/img' | '/api/pmc/match'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiRruAnalyzeRoute: typeof ApiRruAnalyzeRoute
+  ApiPmcImgRoute: typeof ApiPmcImgRoute
+  ApiPmcMatchRoute: typeof ApiPmcMatchRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +85,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRruAnalyzeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pmc/img': {
+      id: '/api/pmc/img'
+      path: '/api/pmc/img'
+      fullPath: '/api/pmc/img'
+      preLoaderRoute: typeof ApiPmcImgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/pmc/match': {
+      id: '/api/pmc/match'
+      path: '/api/pmc/match'
+      fullPath: '/api/pmc/match'
+      preLoaderRoute: typeof ApiPmcMatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiRruAnalyzeRoute: ApiRruAnalyzeRoute,
+  ApiPmcImgRoute: ApiPmcImgRoute,
+  ApiPmcMatchRoute: ApiPmcMatchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

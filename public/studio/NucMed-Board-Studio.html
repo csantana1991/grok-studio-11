@@ -719,11 +719,13 @@ body.live-open .work { margin-right:0; }
 .panel-bar { display:flex; justify-content:space-between; align-items:center; padding:4px 8px; background:#0b1c2c; color:#fff; font-size:13px; font-weight:700; position:sticky; top:0; z-index:40; min-height:48px; pointer-events:auto; }
 .panel-bar b { pointer-events:none; }
 .panel-bar span { display:flex; gap:6px; flex:0 0 auto; }
-.panel-bar button, .vid-chrome button {
+.panel-bar button, .vid-chrome button, .panel-bar a.clip-save {
   background:#fff; color:#111; border:0; border-radius:12px;
   width:44px; height:44px; min-width:44px; margin-left:0; font-weight:800; font-size:20px; line-height:1;
   box-shadow: 0 4px 14px rgba(0,0,0,.28); cursor:pointer; pointer-events:auto;
 }
+.panel-bar a.clip-save { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.panel-bar a.clip-save[hidden] { display: none !important; }
 .panel-wrap.is-min .rz, .live-pop.is-min .rz, .quiz-card.is-min .rz { display:none !important; }
 .sidebar.is-min .progress-wrap, .sidebar.is-min .nav, .sidebar.is-min .brand p, .sidebar.is-min .brand h1 { display:none !important; }
 .player.is-min .player-script, .player.is-min .wiki-dock, .player.is-min .player-handle, .player.is-min .info { display:none !important; }
@@ -1508,6 +1510,7 @@ body.atlas-open .atlas-drawer {
 .atlas-drawer .atlas-grid { align-content: start; }
 .atlas-drawer .atlas-card { background: #07141f; color: #e8f2f7; }
 #lessonMp4, #lessonVid { display: none !important; }
+body.clip-on #lessonMp4 { display: block !important; z-index: 7 !important; opacity: 1 !important; }
 .vid-panel { position: relative; }
 .vid-stage { height: 220px !important; min-height: 180px !important; background: #07141f; }
 #lessonStill { display: block; }
@@ -1773,6 +1776,32 @@ body.atlas-open .atlas-drawer {
   }
 }
 .chrome-toggle { display: none; }
+.stage > .pager { position: relative; z-index: 30; }
+body.lesson-audio .stage > .pager {
+  position: fixed !important;
+  z-index: 40;
+  left: 12px;
+  right: 12px;
+  bottom: 118px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 8px 10px;
+  box-shadow: 0 8px 28px rgba(16, 32, 51, .18);
+}
+@media (min-width: 981px) {
+  body.lesson-audio .stage > .pager {
+    left: auto;
+    width: min(560px, 46vw);
+  }
+}
+body:not(.lesson-audio) #playerDock {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+}
 </style></head>
 <body>
 <div id="bootSplash" style="position:fixed;inset:0;z-index:99999;background:#fff;color:#12315c;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,sans-serif;padding:24px;text-align:center">
@@ -4014,14 +4043,17 @@ function moduleProgress(id) {
   return state.progress[id] || { lesson: 0, quiz: 0, done: false };
 }
 
+function boardModules() {
+  return COURSE.modules.filter(m => m && m.id !== "pre00" && !isProtocolModule(m));
+}
 function completedCount() {
-  return COURSE.modules.filter(m => moduleProgress(m.id).done).length;
+  return boardModules().filter(m => moduleProgress(m.id).done).length;
 }
 
 function updateBar() {
-  const n = COURSE.modules.length;
+  const n = boardModules().length;
   const c = completedCount();
-  $("#barFill").style.width = `${(c / n) * 100}%`;
+  $("#barFill").style.width = `${n ? (c / n) * 100 : 0}%`;
   $("#barLabel").textContent = `${c} / ${n} modules`;
   const kpi = document.querySelector(".home-grid .kpi b");
   if (kpi) kpi.textContent = String(n);
@@ -4507,7 +4539,7 @@ async function liveSentenceImages(text) {
   });
   local.forEach(it => LiveHero.add(it));
   const capEl = document.getElementById("liveHeroCap");
-  if (capEl) capEl.textContent = "Searching live Wiki / PubMed stills for this page…";
+  if (capEl && !(LiveHero.items && LiveHero.items.length)) capEl.textContent = "Looking for another still…";
   const ingest = (arr, kind) => {
     (arr || []).forEach(it => {
       if (!it) return;
@@ -4536,6 +4568,7 @@ async function liveSentenceImages(text) {
   ]);
   if (typeof fetchPmcFigures === "function") run(fetchPmcFigures(q, 1), "pmc");
   if (typeof fetchOpenverse === "function") run(fetchOpenverse(q), "sentence-live");
+  try { LiveHero.paint(); } catch (e) {}
   try { paintAtlasFilm(); } catch (e) {}
 }
 async function depictParagraph(text) {
@@ -5767,9 +5800,10 @@ const Theater = {
   showVideo(on) {
     const v = document.getElementById("lessonMp4");
     const still = document.getElementById("lessonStill");
+    document.body.classList.toggle("clip-on", !!on);
     if (v) {
       v.style.opacity = on ? "1" : "0";
-      v.style.zIndex = on ? "4" : "1";
+      v.style.zIndex = on ? "7" : "1";
     }
     if (still) {
       still.style.display = on ? "none" : (still.getAttribute("src") ? "block" : "none");
@@ -5777,11 +5811,45 @@ const Theater = {
     }
     if (this.cv) this.cv.style.opacity = on ? "0" : "1";
     this._clipOn = !!on;
+    const btn = document.getElementById("clipPlay");
+    if (btn) btn.textContent = on ? "❚❚" : "▶";
+  },
+  clipSrc(scene) {
+    const key = scene || this.scene || "lecture";
+    return (this.clips && (this.clips[key] || this.clips.lecture || this.clips.talk)) || "";
   },
   playClip(scene) {
     this.scene = scene || "lecture";
-    // Stock clips are generic illustrations. The lesson picture stays the real scan.
-    this.showVideo(false);
+    const src = this.clipSrc(this.scene);
+    const save = document.getElementById("clipSave");
+    if (save && src) {
+      save.href = src;
+      save.setAttribute("download", "");
+      save.hidden = false;
+    }
+    const v = document.getElementById("lessonMp4");
+    if (v && src && v.dataset.src !== src) {
+      v.dataset.src = src;
+      v.src = src;
+    }
+    if (!this._clipOn) this.showVideo(false);
+  },
+  toggleClip() {
+    const v = document.getElementById("lessonMp4");
+    const src = this.clipSrc();
+    if (!v || !src) return;
+    if (this._clipOn) {
+      try { v.pause(); } catch (e) {}
+      this.showVideo(false);
+      return;
+    }
+    if (v.dataset.src !== src) {
+      v.dataset.src = src;
+      v.src = src;
+    }
+    this.showVideo(true);
+    const play = v.play();
+    if (play && play.catch) play.catch(() => this.showVideo(false));
   },
   oval(c, x, y, rx, ry, fill) {
     c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); c.fillStyle = fill; c.fill();
@@ -6542,7 +6610,7 @@ function renderLesson() {
     <div class="chips">${(lesson.chips || []).map(c => `<span class="chip">${c}</span>`).join("")}${(lesson.links || []).map(l => `<a class="chip" href="${l.href}" target="_blank" rel="noopener noreferrer">${l.label}</a>`).join("")}</div>
     <div class="media-row">
       <section class="vid-panel panel-wrap" data-panel-body="vid">
-        <div class="panel-bar" data-panel="vid"><b>Lesson video</b><span><button type="button" data-act="min">–</button><button type="button" data-act="max">□</button></span></div>
+        <div class="panel-bar" data-panel="vid"><b>Lesson video</b><span><button type="button" id="clipPlay" aria-label="Play the lesson clip" title="Play the lesson clip">▶</button><a class="clip-save" id="clipSave" hidden aria-label="Download the lesson clip" title="Download the lesson clip">↓</a><button type="button" data-act="min">–</button><button type="button" data-act="max">□</button></span></div>
         <div class="vid-stage"><video id="lessonMp4" autoplay muted loop playsinline></video><canvas id="lessonVid" width="720" height="400"></canvas>
           <img id="lessonStill" alt="" referrerpolicy="no-referrer">
           <div class="vid-chrome panel-bar" data-panel="vid">
@@ -6635,6 +6703,8 @@ function renderLesson() {
   Theater.start(document.getElementById("lessonVid"));
   Theater.setContext(mod, lesson);
   Theater.setLine((lesson.audio && lesson.audio[0]) || lesson.title);
+  const clipBtn = document.getElementById("clipPlay");
+  if (clipBtn) clipBtn.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); Theater.toggleClip(); };
   const seed = (nmLessonPlates(lesson, mod) || []).filter(it => {
     if (typeof filmFitsLesson !== "function") return true;
     return filmFitsLesson(it.src, it.cap, lesson, mod);
@@ -6738,19 +6808,20 @@ function finishModuleQuiz() {
 }
 
 function allQuestions() {
-  return COURSE.modules.flatMap(m => m.quiz.map(q => ({ ...q, src: m.title })));
+  return COURSE.modules
+    .filter(m => m && m.id !== "pre00" && !isProtocolModule(m))
+    .flatMap(m => (m.quiz || []).filter(q => q && !/who can enroll|inclusion criteria|exclusion criteria/i.test(q.q || "")).map(q => ({ ...q, src: m.title })));
 }
 
 function renderHome() {
   $("#stage").innerHTML = `
     <div class="home-grid">
       <div class="hero-card">
-        <div class="badge">Audiobook + image + video course</div>
-        <p class="iqa-pill" data-iqa-progress>0 / 33,000</p>
+        <div class="badge">Audiobook + image course</div>
         <h2>Nuclear medicine boards, a DR Core layer, and a residency map.</h2>
         <p>Modules 00–13 stay the ABNM audiobook. Modules 14–30 are the Diagnostic Radiology Core. The residency section walks a nuclear medicine year: the list, the hot lab, therapy, and the cases you have to staff. It does not appoint you.</p>
         <div class="kpis">
-          <div class="kpi"><b>${COURSE.modules.length}</b><span>modules</span></div>
+          <div class="kpi"><b>${boardModules().length}</b><span>modules</span></div>
           <div class="kpi"><b>34%</b><span>exam = oncology</span></div>
           <div class="kpi"><b>${completedCount()}</b><span>completed here</span></div>
         </div>
@@ -6770,11 +6841,11 @@ function renderHome() {
         ${visualSVG("blueprint")}
       </div>
     </div>`;
-  $("#startBtn").onclick = () => openModule("pre00");
+  $("#startBtn").onclick = () => openModule("welcome");
   const resBtn = $("#resBtn");
   if (resBtn) resBtn.onclick = () => openModule("res-year");
   $("#playerInfo").innerHTML = `<b>NucMed Board Studio</b><span>Select a module and press play</span>`;
-  $("#playBtn").onclick = () => { if (state.view === "home") openModule("pre00"); };
+  $("#playBtn").onclick = () => { if (state.view === "home") openModule("welcome"); };
 }
 
 function renderVolume() {
@@ -6935,11 +7006,11 @@ function renderBank() {
   Object.keys(BANK).forEach(seedLocal);
   const tabs = Object.entries(BANK).map(([id, m]) => {
     const n = (bankCache[id] && bankCache[id].items.length) || 0;
-    return `<button class="bank-tab ${state.bankMod === id ? "on" : ""}" data-mod="${id}">${m.label} <i>${n}/${m.goal}</i></button>`;
+    return `<button class="bank-tab ${state.bankMod === id ? "on" : ""}" data-mod="${id}">${m.label} <i>${n}</i></button>`;
   }).join("");
   $("#stage").innerHTML = `
-    <div class="lesson-head"><h2>1,000-image case bank</h2><span class="badge">Needs internet</span></div>
-    <p style="color:var(--muted)">Bundled teaching scans always load, including PET. Extra Commons images only if your browser allows live requests.</p>
+    <div class="lesson-head"><h2>Teaching case bank</h2><span class="badge">Bundled scans</span></div>
+    <p style="color:var(--muted)">The scans packed with the course are listed here. More can load from Wikimedia when this browser allows it. The old “1,000” target was a fetch goal, not a count of files in the app.</p>
     <div class="bank-tabs">${tabs}</div>
     <div class="atlas-grid" id="bankGrid"></div>
     <div style="margin:16px 0 28px"><button type="button" id="bankMore">Load next 50</button> <span id="bankStat" style="color:var(--muted)"></span></div>`;
@@ -6972,7 +7043,7 @@ function paintBankGrid() {
   $$(".bank-tab").forEach(b => {
     const n = (bankCache[b.dataset.mod] && bankCache[b.dataset.mod].items.length) || 0;
     const i = b.querySelector("i");
-    if (i) i.textContent = `${n}/${BANK[b.dataset.mod].goal}`;
+    if (i) i.textContent = String(n);
   });
 }
 
@@ -8470,9 +8541,10 @@ async function fetchPmcFigures(query, page){
       const hrefs = Array.from(xml.matchAll(/<graphic[^>]*xlink:href="([^"]+)"/g)).map(m => m[1]);
       const title = p.title || pmcid;
       hrefs.slice(0, 10).forEach(h => {
-        const blob = String(h).split("/").pop();
+        const blob = String(h).split("/").pop().split("?")[0];
+        if (!/^[\w.-]+$/.test(blob)) return;
         out.push({
-          src: "https://europepmc.org/articles/" + pmcid + "/bin/" + blob,
+          src: "/api/pmc/img?pmcid=" + encodeURIComponent(pmcid) + "&file=" + encodeURIComponent(blob),
           cap: findingCap(title, pmcid),
           href: "https://europepmc.org/articles/" + pmcid,
           kind: "pmc",
@@ -8908,7 +8980,9 @@ const IQA = (function(){
   function label(){
     const s = scanState();
     const tot = (s.total || 33000).toLocaleString();
-    return s.ok.toLocaleString() + " / " + tot + " approved · " + s.n.toLocaleString() + " / " + tot + " scanned" + (s.done ? " · done" : (s.running ? " …" : ""));
+    if (!s.n) return "Not scanned yet";
+    if (s.done && !lookQ().length) return "Automatic check finished · nothing flagged for you";
+    return s.ok.toLocaleString() + " / " + tot + " kept · " + s.n.toLocaleString() + " / " + tot + " scanned" + (s.done ? "" : (s.running ? " …" : ""));
   }
   function paintBadges(){
     const full = label();
@@ -8982,7 +9056,6 @@ const IQA = (function(){
     negativeTests();
     const s = scanState();
     if (s.running && !s.done) { s.running = false; saveScan(s); }
-    startScan();
   }
   function encForAtlas(key){
     const qs = (typeof ATLAS_Q !== "undefined" && ATLAS_Q[key]) || [key];
@@ -9349,7 +9422,7 @@ function renderImageQA(){
           </div>
           <p class="iqa-more">${look.length} waiting · this is 1 of ${look.length}</p>
         </div>
-      </div>` : `<div class="iqa-hero"><div><h3>Nothing waiting</h3><p>There is no picture for you to judge right now. The agent keeps checking in the background. Come back when this number is not zero.</p></div></div>`}
+      </div>` : `<div class="iqa-hero"><div><h3>Nothing is waiting</h3><p>No picture was flagged. A picture only shows up here when the body part or the modality looks wrong. Nothing has been marked approved by a person. Open the scan numbers below and press Check all 33,000 if you want the agent to walk the cases.</p></div></div>`}
     <details class="iqa-more">
       <summary>Scan numbers</summary>
       <div class="iqa-grid">
@@ -10761,6 +10834,7 @@ function render() {
     b.classList.toggle("on", on);
   });
   document.body.classList.toggle("view-rru", state.view === "rrultimate");
+  document.body.classList.toggle("lesson-audio", state.view === "module");
   const chromeLabel = document.getElementById("chromeLabel");
   if (chromeLabel) {
     const onTab = document.querySelector("#appTabs button.on");
@@ -11047,4 +11121,7 @@ window.NMBState = state;
 <script src="p1239.js"></script>
 <script src="pmaps.js"></script>
 <script src="p24.js"></script>
+<script>
+try { if (typeof renderNav === "function") renderNav(); if (typeof updateBar === "function") updateBar(); } catch (e) {}
+</script>
 </body></html>
