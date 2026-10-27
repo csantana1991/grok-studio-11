@@ -120,7 +120,7 @@ body.atlas-open .atlas-drawer {
   background: linear-gradient(180deg, #122735, #0e1e29);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
 }
-.home-grid { display: grid; grid-template-columns: 1.4fr .8fr; gap: 18px; }
+.home-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr); gap: 18px; }
 .hero-card { padding: 28px; }
 .hero-card h2 { font-family: var(--display); font-size: 34px; margin: 0 0 8px; }
 .hero-card p { color: #c5d8e3; line-height: 1.55; }
@@ -190,7 +190,7 @@ td code, .mono { font-family: var(--mono); color: var(--gold); }
 .video-wrap { position: relative; padding-top: 56.25%; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); margin: 8px 0 14px; }
 .video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
-.pager { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; flex: 0 0 auto; position: relative; z-index: 12; background: var(--bg, #fff); padding: 8px 0; }
+.pager { display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 8px; margin-top: 8px; flex: 0 0 auto; position: relative; z-index: 12; background: var(--bg, #fff); padding: 8px 0; }
 .pager button {
   pointer-events: auto;
   position: relative;
@@ -450,7 +450,7 @@ svg text { font-family: var(--font); }
 .rad-face small { display: block; color: var(--gold); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
 .rad-face b { display: block; font-size: 22px; font-weight: 600; line-height: 1.4; color: #e8f2f7; }
 
-#radRoot.rr-root { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:#e8e8ea; min-width: 900px; }
+#radRoot.rr-root { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:#e8e8ea; min-width: 0; }
 .rr-sub { color:#9aa0a6; font-size:12px; margin:4px 0 0; }
 .rr-stats { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
 .rr-tile { background:#111214; border:1px solid #2a2d33; color:#cfd3d8; border-radius:8px; padding:8px 10px; text-align:left; }
@@ -959,7 +959,7 @@ body.sheet-open .main {
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   padding: 10px 14px;
   scrollbar-width: thin;
   min-width: 0;
@@ -969,8 +969,8 @@ body.sheet-open .main {
 .topbar-scroll::-webkit-scrollbar { height: 6px; }
 .topbar-scroll::-webkit-scrollbar-thumb { background: #b7c7d8; border-radius: 99px; }
 .crumb { flex: 0 0 auto; white-space: nowrap; }
-.tools { display:flex; gap:8px; align-items:center; flex: 0 0 auto; min-width: max-content; flex-wrap: nowrap; }
-.app-tabs { display:flex; gap:6px; flex: 0 0 auto; flex-wrap: nowrap; overflow: visible; max-width: none; margin: 0; padding: 0; }
+.tools { display:flex; gap:8px; align-items:center; flex: 1 1 auto; min-width: 0; flex-wrap: wrap; }
+.app-tabs { display:flex; gap:6px; flex: 1 1 auto; flex-wrap: wrap; overflow: visible; max-width: 100%; margin: 0; padding: 0; }
 .tools button, .pill, .app-tabs button {
   background: #fff;
   color: var(--text);
@@ -1028,7 +1028,7 @@ body.player-max { --player-h: 70vh; }
   max-height: 100%;
   overflow: auto;
 }
-.case-zoom { height: min(38vh, 380px) !important; min-height: 220px; }
+.case-zoom { height: auto !important; min-height: 120px !important; max-height: min(20vh, 190px) !important; flex: 1 1 auto; }
 .rr-picwrap { display: flex; flex-direction: column; gap: 6px; }
 .case-gal { display: contents; }
 .stage:has(.home-grid) { overflow: auto; padding-bottom: 28px; }
@@ -1434,14 +1434,17 @@ body.editor-plus.dock-min #playerDock { height: 52px !important; }
   overflow: hidden;
 }
 .home-grid, .hero-card, #protocolSheetBar { min-width: 0; max-width: 100%; }
-#protocolSheetBar { width: 100%; }
+.hero-card { overflow: hidden; }
+#protocolSheetBar { width: 100%; display: flex; flex-wrap: wrap; overflow: hidden; }
 #protocolSheetBar a.primary {
-  flex: 1 1 180px;
-  max-width: 100%;
+  flex: 1 1 140px !important;
+  max-width: calc(50% - 8px) !important;
+  min-width: 0 !important;
   white-space: normal;
   line-height: 1.25;
   text-align: center;
   padding: 10px 12px;
+  box-sizing: border-box;
 }
 .vid-chrome { display: none !important; }
 .word-label {
@@ -1534,6 +1537,117 @@ body.atlas-open .atlas-drawer {
     border-radius: 16px;
     box-shadow: 0 18px 50px rgba(0,0,0,.5);
   }
+}
+
+/* Layout repair: case pane, atlas tabs, home actions */
+#radRoot.rr-root, #nbaRoot.rr-root { min-width: 0 !important; max-width: 100%; }
+.atlas-head { flex-wrap: wrap; min-width: 0; max-width: 100%; }
+.atlas-tabs, .atlas-head .atlas-tabs {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  order: 8;
+  flex-wrap: wrap !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  max-height: 148px;
+}
+#radRoot.rr-root, #nbaRoot.rr-root,
+#radRoot .rr-grid, #nbaRoot .rr-grid {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+#radRoot .rr-grid, #nbaRoot .rr-grid { align-items: start; flex: none !important; }
+#radRoot .rr-listwrap, #nbaRoot .rr-listwrap {
+  height: min(62vh, 560px) !important;
+  max-height: min(62vh, 560px) !important;
+  min-height: 180px !important;
+}
+#radRoot .rr-view, #nbaRoot .rr-view, .rr-view {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.hero-card { overflow: visible; }
+.hero-card .pager { flex-wrap: wrap; align-items: stretch; }
+.hero-card .pager button,
+.hero-card .pager a.primary,
+.hero-card .pager .primary {
+  white-space: normal;
+  height: auto;
+  min-height: 44px;
+  max-width: 100%;
+  line-height: 1.3;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+#homeDl {
+  display: block !important;
+  width: 100%;
+  margin: 4px 0 0 !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font-weight: 500;
+  text-align: left;
+  padding: 4px 0 !important;
+}
+.case-zoom {
+  height: min(34vh, 300px) !important;
+  max-height: min(34vh, 300px) !important;
+  min-height: 160px !important;
+}
+.case-zoom.is-lg {
+  height: min(64vh, 720px) !important;
+  max-height: none !important;
+}
+.nav-item .meta s, .nav-item .meta span {
+  display: block;
+  white-space: normal;
+  overflow: visible;
+}
+@media (max-width: 980px) {
+  #radRoot.rr-root, #nbaRoot.rr-root,
+  #radRoot .rr-grid, #nbaRoot .rr-grid {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  #radRoot .rr-grid, #nbaRoot .rr-grid {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  #radRoot .rr-listwrap, #nbaRoot .rr-listwrap, .rr-listwrap {
+    height: 200px !important;
+    max-height: 200px !important;
+    min-height: 140px !important;
+    flex: 0 0 auto !important;
+  }
+  #radRoot .rr-view, #nbaRoot .rr-view, .rr-view {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: 0 0 auto !important;
+  }
+  .hero-card .pager { flex-direction: column; }
+  .hero-card .pager button,
+  .hero-card .pager a.primary,
+  .hero-card .pager .primary {
+    width: 100%;
+    margin-left: 0 !important;
+    flex: 1 1 auto !important;
+  }
+  .case-zoom {
+    height: min(42vh, 280px) !important;
+    max-height: min(42vh, 280px) !important;
+    min-height: 180px !important;
+  }
+  .topbar, .topbar-scroll { overflow: visible; height: auto; }
 }
 </style></head>
 <body>
@@ -1728,7 +1842,7 @@ function paintProtocolSheetBar() {
   if (document.getElementById("protocolSheetBar")) return;
   const bar = document.createElement("div");
   bar.id = "protocolSheetBar";
-  bar.style.cssText = "display:flex;flex-wrap:nowrap;gap:8px;margin-top:12px;overflow-x:auto;max-width:100%;padding-bottom:6px";
+  bar.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;max-width:100%;overflow:hidden";
   Object.values(PROTOCOL_SHEETS).forEach(s => {
     const a = document.createElement("a");
     a.className = "primary";
@@ -3782,6 +3896,8 @@ function updateBar() {
   const c = completedCount();
   $("#barFill").style.width = `${(c / n) * 100}%`;
   $("#barLabel").textContent = `${c} / ${n} modules`;
+  const kpi = document.querySelector(".home-grid .kpi b");
+  if (kpi) kpi.textContent = String(n);
 }
 
 function shortNum(n) {
@@ -8668,17 +8784,25 @@ const IQA = (function(){
     return s.ok.toLocaleString() + " / " + tot + " approved · " + s.n.toLocaleString() + " / " + tot + " scanned" + (s.done ? " · done" : (s.running ? " …" : ""));
   }
   function paintBadges(){
-    const txt = label();
-    document.querySelectorAll("[data-iqa-progress]").forEach(el => { el.textContent = txt; });
+    const full = label();
+    const s = scanState();
+    const short = s.ok.toLocaleString() + " / " + (s.total || 33000).toLocaleString();
+    document.querySelectorAll("[data-iqa-progress]").forEach(el => {
+      const compact = el.classList.contains("iqa-pill") && !el.closest(".iqa-root");
+      el.textContent = compact ? short : full;
+      if (compact) el.title = full;
+    });
     const dock = document.getElementById("playerInfo");
-    if (dock && dock.dataset.iqa !== "off") {
+    if (dock && dock.dataset.iqa !== "off" && state && state.view === "iqa") {
       const span = dock.querySelector("[data-iqa-progress]") || (function(){
-        const s = document.createElement("span");
-        s.setAttribute("data-iqa-progress", "1");
-        dock.appendChild(s);
-        return s;
+        const node = document.createElement("span");
+        node.setAttribute("data-iqa-progress", "1");
+        node.style.marginLeft = "8px";
+        dock.appendChild(node);
+        return node;
       })();
-      span.textContent = txt;
+      span.textContent = " · " + short;
+      span.title = full;
     }
   }
   function startScan(){

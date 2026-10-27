@@ -6,6 +6,21 @@
     <title>RAD REVIEW ULTIMATE | 33K ENCOUNTERS | Residency Log</title>
     <script type="module" crossorigin src="./assets/index-Dh87Ijb5.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-BprPsokd.css">
+    <style>
+      @media (max-width: 900px) {
+        #root header > div:first-child { flex-wrap: wrap !important; align-items: flex-start !important; }
+        #root header > div:first-child > div:last-child {
+          margin-left: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          justify-content: flex-start !important;
+          flex-shrink: 1 !important;
+        }
+        #root header > div:nth-child(2) { flex-wrap: wrap !important; overflow: visible !important; }
+        #root header > div:nth-child(2) > div { flex: 1 1 100% !important; min-width: 0 !important; }
+        #root header .grid { min-width: 0 !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
