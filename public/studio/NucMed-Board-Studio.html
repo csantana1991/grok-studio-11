@@ -1650,6 +1650,7 @@ body.atlas-open .atlas-drawer {
     </div>
   </div>
 </div>
+<script src="stem-plates.js"></script>
 <script>
 const COURSE = {
   title: "NucMed Board Studio",
@@ -3060,6 +3061,8 @@ Object.keys(RR_STEM).forEach(k => { RR_POOLS[k] = RR_STEM[k].slice(); });
 function rrWeightedFallback(rng){const sum=RR_STATIONS.reduce((s,st)=>s+st.weight,0);let r=rng()*sum;for(const st of RR_STATIONS){r-=st.weight;if(r<=0)return st.id;}return "chest";}
 let RR_CACHE={seed:null,rows:null,v:3};
 function plateForRow(finding, stationId, categoryId, salt){
+  const own = window.STEM_PLATE && window.STEM_PLATE[finding];
+  if (own) return own;
   const f = String(finding || "").toLowerCase();
   const cat = String(categoryId || "").toLowerCase();
   const sid = String(stationId || "").toLowerCase().replace("skull_base", "skullbase").replace("upper_abdomen", "uabd").replace("mid_abdomen", "mabd");
@@ -3146,7 +3149,7 @@ function rrVerifyPlates(rows){
   return {ok, n:(rows||[]).length, missing: missing.slice(0,12)};
 }
 function rrGenerate(seed){
-  if (RR_CACHE.seed===seed&&RR_CACHE.rows&&RR_CACHE.v===12) return RR_CACHE.rows;
+  if (RR_CACHE.seed===seed&&RR_CACHE.rows&&RR_CACHE.v===13) return RR_CACHE.rows;
   const rng=rrMulberry(seed);const rows=[];let acc=100000;
   RR_CATS.forEach(cat=>{
     const pool=RR_POOLS[cat.id];
@@ -3169,7 +3172,7 @@ function rrGenerate(seed){
       rows.push({idx:rows.length,accession,mrn,age,sex,categoryId:cat.id,finding,stationId:st.id,stationName:st.name,slice,suv,status,priority,acgme:cat.acgme,date,search,plate});
     }
   });
-  RR_CACHE={seed,rows,v:12}; rrFixStations(rows); return rows;
+  RR_CACHE={seed,rows,v:13}; rrFixStations(rows); return rows;
 }
 function rrRunAssertions(rows){
   const out=[]; const hits=Array(101).fill(null); let contig=true;
@@ -6565,8 +6568,8 @@ const BANK = {
   ]},
   ct: { label: "CT", goal: 1000, queries: ["computed tomography", "CT scan"], local: [
     ["assets/thumbs/case-ct-1.jpg", "CT abdomen multiplanar"],
-    ["assets/thumbs/case-ct-2.jpg", "Labeled CT KUB"],
-    ["assets/thumbs/case-ct-3.jpg", "Upper abdomen CT"],
+    ["assets/dr/one/ct-body-2.jpg", "CT abdomen"],
+    ["assets/dr/one/ct-chest-1.jpg", "CT chest"],
     ["assets/thumbs/ct-scanner.jpg", "CT scanner"]
   ]},
   us: { label: "Ultrasound", goal: 1000, queries: ["ultrasonography", "abdominal ultrasound"], local: [
@@ -6575,18 +6578,17 @@ const BANK = {
     ["assets/thumbs/ultrasound.jpg", "Bedside abdominal US"]
   ]},
   mr: { label: "MRI", goal: 1000, queries: ["MRI brain", "magnetic resonance"], local: [
-    ["assets/thumbs/case-mr-1.jpg", "Brain / knee / shoulder / spine MRI"],
-    ["assets/thumbs/case-mr-2.jpg", "Sagittal knee MRI"],
-    ["assets/thumbs/case-mr-3.jpg", "MRI montage"],
+    ["assets/dr/one/mr-2.jpg", "Sagittal knee MRI"],
+    ["assets/dr/mri-brain-t2.jpg", "Axial brain MRI"],
+    ["assets/dr/one/mr-4.jpg", "Spine MRI"],
     ["assets/thumbs/mri-scanner.jpg", "MRI gantry"]
   ]},
   pet: { label: "PET / nuclear", goal: 1000, queries: ["scintigraphy", "PET-CT", "positron emission", "SPECT"], local: [
-    ["assets/thumbs/case-pet-1.jpg", "FDG PET/CT"],
-    ["assets/thumbs/case-pet-2.jpg", "PSMA PET/CT"],
-    ["assets/thumbs/case-pet-3.jpg", "FDG vs NaF bone PET"],
-    ["assets/thumbs/bone-scan-wb.jpg", "Whole-body bone scan"],
-    ["assets/thumbs/thyroid-patterns.jpg", "Thyroid scintigraphy patterns"],
-    ["assets/thumbs/thyroid-scan-i123.jpg", "I-123 thyroid scan"],
+    ["assets/dr/one/pet-mip-1.jpg", "FDG PET maximum intensity projection"],
+    ["assets/dr/one/psma-1.jpg", "PSMA PET"],
+    ["assets/dr/one/pet-ax-1.jpg", "Axial FDG PET"],
+    ["assets/dr/one/bone-1.jpg", "Bone scan"],
+    ["assets/dr/one/thyroid-1.jpg", "Thyroid scan"],
     ["assets/thumbs/thyroid-overview.jpg", "Thyroid mapping"],
     ["assets/thumbs/cardiac-ac.jpg", "Cardiac SPECT AC vs non-AC"],
     ["assets/thumbs/gamma-camera-patient.jpg", "Gamma camera"],
@@ -6653,7 +6655,7 @@ function isClinicalImage(title, mime) {
   if (CLINICAL_NO.test(t)) return false;
   if (typeof isPlacePhoto === "function" && isPlacePhoto(t)) return false;
   if (/\b(diagram|illustration|drawing|artwork|poster)\b/i.test(t) && !/radiograph|scintigraph|PET|MRI|CT/i.test(t)) return false;
-  if (typeof isNmLiveStill === "function") return isNmLiveStill("", t, t);
+  if (state.bankMod === "pet") return isNmLiveStill("", t, t);
   return CLINICAL_OK.test(t);
 }
 
@@ -6685,7 +6687,7 @@ async function fetchCommons(query, offset) {
 
 function renderBank() {
   if (!state.bankMod) state.bankMod = "pet";
-  seedLocal(state.bankMod);
+  Object.keys(BANK).forEach(seedLocal);
   const tabs = Object.entries(BANK).map(([id, m]) => {
     const n = (bankCache[id] && bankCache[id].items.length) || 0;
     return `<button class="bank-tab ${state.bankMod === id ? "on" : ""}" data-mod="${id}">${m.label} <i>${n}/${m.goal}</i></button>`;
