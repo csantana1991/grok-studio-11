@@ -10625,10 +10625,10 @@ async function raSearchTcia(query){
   }
   const SMALL = { "Pancreas-CT":1, "TCGA-THCA":1 };
   for (const col of collections) {
-    if (!SMALL[col]) { portalCard(col, col + " · " + query); continue; }
+    if (!/^TCGA-/.test(col) && !SMALL[col]) { portalCard(col, col + " · " + query); continue; }
     try {
       const url = "https://services.cancerimagingarchive.net/nbia-api/services/v1/getSeries?Collection=" + encodeURIComponent(col);
-      const res = await fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined });
+      const res = await fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(12000) : undefined });
       if (!res.ok) { portalCard(col); continue; }
       const txt = await res.text();
       if (!txt || txt.length < 8) { portalCard(col); continue; }
@@ -10655,7 +10655,7 @@ async function raSearchTcia(query){
         });
         studies.push({
           id: "tcia-full-"+uid, title, collection: col, format: "DICOM", modalities: mods,
-          imageCount: imgN, seriesCount: rs.length, fullStudyUrl: portal,
+          imageCount: imgN, seriesCount: rs.length, fullStudyUrl: portal, seriesUid: rep.SeriesInstanceUID,
           downloadUrl: "https://services.cancerimagingarchive.net/nbia-api/services/v1/getImage?SeriesInstanceUID=" + encodeURIComponent(rep.SeriesInstanceUID||"")
         });
       });
@@ -10902,12 +10902,12 @@ async function raRun(){
     const kind = b.dataset.open, i = +b.dataset.i;
     let item = null;
     if (kind==="fig") { const f = figs[i]; item = { title:f.title, subtitle:f.pmcid, url:f.articleUrl, preview:f.imageUrl, kind:"source" }; }
-    if (kind==="prev") { const s = prev[i]; item = { title:s.title, subtitle:s.collection+" · TCIA", url:s.fullStudyUrl, preview:s.previewUrl, kind:"study", list:prev, index:i, imageCount:s.imageCount }; }
-    if (kind==="full") { const s = full[i]; item = { title:s.title, subtitle:s.collection, url:s.fullStudyUrl, kind:"study" }; }
+    if (kind==="prev") { const s = prev[i]; item = { title:s.title, subtitle:s.collection+" · TCIA", url:s.fullStudyUrl, preview:s.previewUrl, kind:"study", list:prev, index:i, imageCount:s.imageCount, seriesUid:s.seriesUid, collection:s.collection }; }
+    if (kind==="full") { const s = full[i]; item = { title:s.title, subtitle:s.collection, url:s.fullStudyUrl, kind:"study", seriesUid:s.seriesUid, collection:s.collection, imageCount:s.imageCount }; }
     RAD_ATLAS.workspace = item;
     raPaintWorkspace();
   });
-  if (prev[0]) { RAD_ATLAS.workspace = { title: prev[0].title, subtitle: prev[0].collection+" · TCIA", url: prev[0].fullStudyUrl, preview: prev[0].previewUrl, kind:"study", list:prev, index:0, imageCount:prev[0].imageCount }; raPaintWorkspace(); }
+  if (prev[0]) { RAD_ATLAS.workspace = { title: prev[0].title, subtitle: prev[0].collection+" · TCIA", url: prev[0].fullStudyUrl, preview: prev[0].previewUrl, kind:"study", list:prev, index:0, imageCount:prev[0].imageCount, seriesUid:prev[0].seriesUid, collection:prev[0].collection }; raPaintWorkspace(); }
   else if (figs[0]) { RAD_ATLAS.workspace = { title: figs[0].title, subtitle: figs[0].pmcid, url: figs[0].articleUrl, preview: figs[0].imageUrl, kind:"source" }; raPaintWorkspace(); }
   bindWidgetPlay({ finding: "RadAtlas results for "+data.query+". "+figs.length+" article figures, "+prev.length+" study previews.", stationName:"ATLAS", categoryId:"nuclear" }, "radatlas");
   try { IQA.paintBadges(); } catch(e) {}
@@ -10947,6 +10947,42 @@ const SpeechHold = {
   }
 };
 
+function dicomFind(u8, bytes){
+  outer: for (let i = 0; i + bytes.length < u8.length; i++) {
+    for (let j = 0; j < bytes.length; j++) if (u8[i + j] !== bytes[j]) continue outer;
+    return i;
+  }
+  return -1;
+}
+function decodeTciaSlice(buf){
+  const u8 = new Uint8Array(buf);
+  const dv = new DataView(buf);
+  const rowsAt = dicomFind(u8, [0x28,0x00,0x10,0x00,0x55,0x53,0x02,0x00]);
+  const colsAt = dicomFind(u8, [0x28,0x00,0x11,0x00,0x55,0x53,0x02,0x00]);
+  const pixAt = dicomFind(u8, [0xe0,0x7f,0x10,0x00,0x4f,0x57,0x00,0x00]);
+  if (rowsAt < 0 || colsAt < 0 || pixAt < 0) return null;
+  const rows = dv.getUint16(rowsAt + 8, true);
+  const cols = dv.getUint16(colsAt + 8, true);
+  const pixLen = dv.getUint32(pixAt + 8, true);
+  if (!rows || !cols || pixLen < rows * cols * 2) return null;
+  let intercept = 0, slope = 1;
+  const intAt = dicomFind(u8, [0x28,0x00,0x52,0x10]);
+  const slAt = dicomFind(u8, [0x28,0x00,0x53,0x10]);
+  if (intAt > 0 && u8[intAt+4] === 0x44 && u8[intAt+5] === 0x53) {
+    const n = dv.getUint16(intAt + 6, true);
+    intercept = parseFloat(new TextDecoder().decode(u8.subarray(intAt + 8, intAt + 8 + n))) || 0;
+  }
+  if (slAt > 0 && u8[slAt+4] === 0x44 && u8[slAt+5] === 0x53) {
+    const n = dv.getUint16(slAt + 6, true);
+    const s = parseFloat(new TextDecoder().decode(u8.subarray(slAt + 8, slAt + 8 + n)));
+    if (isFinite(s) && s) slope = s;
+  }
+  const start = pixAt + 12;
+  const pix = new Int16Array(rows * cols);
+  for (let p = 0, i = start; p < pix.length && i + 1 < u8.length; p++, i += 2) pix[p] = dv.getInt16(i, true);
+  return { rows, cols, pix, slope, intercept };
+}
+
 const SeriesCine = {
   n: 134, i: 0, title: "NSCLC chest CT teaching series",
   notes: {}, win: "lung", split: true,
@@ -10981,8 +11017,104 @@ const SeriesCine = {
     ];
     return { station: b[2], anatomy: b[3], look: b[4], text: lines.join(" ") };
   },
+  paintSlice(cv, frame, i) {
+    const w = cv.width = cv.clientWidth || 640;
+    const h = cv.height = cv.clientHeight || 420;
+    const c = cv.getContext("2d");
+    const wins = { lung: [-600, 1500], med: [40, 400], bone: [400, 1800] };
+    const ww = (wins[this.win] || wins.med);
+    const lo = ww[0] - ww[1] / 2;
+    const scale = 255 / ww[1];
+    const off = document.createElement("canvas");
+    off.width = frame.cols;
+    off.height = frame.rows;
+    const ictx = off.getContext("2d");
+    const img = ictx.createImageData(frame.cols, frame.rows);
+    const pix = frame.pix;
+    for (let p = 0; p < pix.length; p++) {
+      const hu = pix[p] * frame.slope + frame.intercept;
+      let g = (hu - lo) * scale;
+      if (g < 0) g = 0;
+      if (g > 255) g = 255;
+      const o = p * 4;
+      img.data[o] = img.data[o + 1] = img.data[o + 2] = g;
+      img.data[o + 3] = 255;
+    }
+    ictx.putImageData(img, 0, 0);
+    c.fillStyle = "#000";
+    c.fillRect(0, 0, w, h);
+    const scaleFit = Math.min(w / frame.cols, (h - 28) / frame.rows);
+    const dw = frame.cols * scaleFit;
+    const dh = frame.rows * scaleFit;
+    c.drawImage(off, (w - dw) / 2, 18 + ((h - 28) - dh) / 2, dw, dh);
+    c.fillStyle = "#fff";
+    c.font = "600 14px system-ui";
+    c.fillText("SLICE " + String(i + 1).padStart(3, "0") + " / " + this.n + "  " + this.band(i)[2] + "  ·  TCIA", 12, 16);
+  },
+  async ensureFrame(i) {
+    if (!this.seriesUid || !this.sops || !this.sops[i]) return;
+    if (this.frames[i]) return;
+    if (this.loadingFrame === i) return;
+    this.loadingFrame = i;
+    const token = this.token;
+    try {
+      const url = "https://services.cancerimagingarchive.net/nbia-api/services/v1/getSingleImage?SeriesInstanceUID="
+        + encodeURIComponent(this.seriesUid) + "&SOPInstanceUID=" + encodeURIComponent(this.sops[i]);
+      const buf = await (await fetch(url)).arrayBuffer();
+      if (token !== this.token) return;
+      const dec = decodeTciaSlice(buf);
+      if (dec) this.frames[i] = dec;
+      if (this.i === i) this.draw(document.getElementById("cineCv"), i);
+      if (this.sops[i + 1] && !this.frames[i + 1]) {
+        const nxt = i + 1;
+        const url2 = "https://services.cancerimagingarchive.net/nbia-api/services/v1/getSingleImage?SeriesInstanceUID="
+          + encodeURIComponent(this.seriesUid) + "&SOPInstanceUID=" + encodeURIComponent(this.sops[nxt]);
+        fetch(url2).then(r => r.arrayBuffer()).then(b => {
+          if (token !== this.token || this.frames[nxt]) return;
+          const d2 = decodeTciaSlice(b);
+          if (d2) this.frames[nxt] = d2;
+        }).catch(() => {});
+      }
+    } catch (e) {}
+    if (this.loadingFrame === i) this.loadingFrame = -1;
+  },
+  async loadSeries(uid) {
+    this.seriesUid = uid;
+    this.token = (this.token || 0) + 1;
+    const token = this.token;
+    this.sops = [];
+    this.frames = {};
+    const lab = document.getElementById("cineLab");
+    if (lab) lab.textContent = "Loading TCIA slices…";
+    try {
+      const res = await fetch("https://services.cancerimagingarchive.net/nbia-api/services/v1/getSOPInstanceUIDs?SeriesInstanceUID=" + encodeURIComponent(uid));
+      const rows = await res.json();
+      if (token !== this.token || !Array.isArray(rows) || !rows.length) return;
+      this.sops = rows.map(r => r.SOPInstanceUID).filter(Boolean);
+      this.n = this.sops.length;
+      this.i = Math.min(this.i, this.n - 1);
+      const rng = document.getElementById("cineRange");
+      if (rng) { rng.max = String(this.n - 1); rng.value = String(this.i); }
+      const frame = document.querySelector(".ra-frame");
+      if (frame) frame.style.display = "none";
+      this.show(this.i, false);
+    } catch (e) {
+      if (lab) lab.textContent = "TCIA slices did not load";
+    }
+  },
+  async resolveCollection(col) {
+    try {
+      const res = await fetch("https://services.cancerimagingarchive.net/nbia-api/services/v1/getSeries?Collection=" + encodeURIComponent(col));
+      const rows = await res.json();
+      if (!Array.isArray(rows)) return;
+      const ct = rows.find(r => /CT|MR/.test(String(r.Modality || "")) && Number(r.ImageCount) > 8);
+      if (ct && ct.SeriesInstanceUID) this.loadSeries(ct.SeriesInstanceUID);
+    } catch (e) {}
+  },
   draw(cv, i) {
     if (!cv) return;
+    const frame = this.frames && this.frames[i];
+    if (frame && frame.pix) { this.paintSlice(cv, frame, i); return; }
     const w = cv.width = cv.clientWidth || 640;
     const h = cv.height = cv.clientHeight || 360;
     const c = cv.getContext("2d");
@@ -11030,7 +11162,7 @@ const SeriesCine = {
     c.fillStyle = "#fff"; c.font = "600 14px system-ui";
     c.fillText("SLICE " + String(i+1).padStart(3,"0") + " / " + this.n + "  " + this.band(i)[2] + "  ·  " + (this.win||"lung").toUpperCase() + " window", 12, 16);
     c.fillStyle = "#9aa"; c.font = "12px system-ui";
-    c.fillText("Split: normal | superimposed  ·  teaching schematic, not source DICOM", 12, h - 6);
+    c.fillText(this.seriesUid ? "Loading this TCIA slice…" : "Split: normal | superimposed  ·  teaching schematic, not source DICOM", 12, h - 6);
   },
   show(i, speak) {
     this.i = Math.max(0, Math.min(this.n - 1, i));
@@ -11045,11 +11177,15 @@ const SeriesCine = {
     if (rng) rng.value = String(this.i);
     const note = document.getElementById("sliceNote");
     if (note && document.activeElement !== note) note.value = this.notes[this.i] || "";
+    if (this.seriesUid) this.ensureFrame(this.i);
     if (speak) SpeechHold.push(s.text, true);
   },
   mount(el, item) {
     if (!el) return;
     this.title = (item && (item.title || item.subtitle)) || this.title;
+    this.seriesUid = (item && item.seriesUid) || "";
+    this.sops = [];
+    this.frames = {};
     const n = Number(item && item.imageCount) || 134;
     this.n = Math.max(24, Math.min(400, n));
     try { this.notes = JSON.parse(localStorage.getItem("cine-notes-v1") || "{}") || {}; } catch (_) { this.notes = {}; }
@@ -11113,6 +11249,8 @@ const SeriesCine = {
       speakQueue(parts);
     };
     go(this.i, false);
+    if (this.seriesUid) this.loadSeries(this.seriesUid);
+    else if (item && item.collection && /^TCGA-/.test(item.collection)) this.resolveCollection(item.collection);
   }
 };
 
@@ -11135,13 +11273,13 @@ function raPaintWorkspace(){
   if (prevB && item.list) prevB.onclick = () => {
     const n = (item.index - 1 + item.list.length) % item.list.length;
     const s = item.list[n];
-    RAD_ATLAS.workspace = { title:s.title, subtitle:s.collection+" · TCIA", url:s.fullStudyUrl, preview:s.previewUrl, kind:"study", list:item.list, index:n, imageCount:s.imageCount };
+    RAD_ATLAS.workspace = { title:s.title, subtitle:s.collection+" · TCIA", url:s.fullStudyUrl, preview:s.previewUrl, kind:"study", list:item.list, index:n, imageCount:s.imageCount, seriesUid:s.seriesUid, collection:s.collection };
     raPaintWorkspace();
   };
   if (nextB && item.list) nextB.onclick = () => {
     const n = (item.index + 1) % item.list.length;
     const s = item.list[n];
-    RAD_ATLAS.workspace = { title:s.title, subtitle:s.collection+" · TCIA", url:s.fullStudyUrl, preview:s.previewUrl, kind:"study", list:item.list, index:n, imageCount:s.imageCount };
+    RAD_ATLAS.workspace = { title:s.title, subtitle:s.collection+" · TCIA", url:s.fullStudyUrl, preview:s.previewUrl, kind:"study", list:item.list, index:n, imageCount:s.imageCount, seriesUid:s.seriesUid, collection:s.collection };
     raPaintWorkspace();
   };
 }
