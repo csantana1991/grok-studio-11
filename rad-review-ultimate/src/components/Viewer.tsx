@@ -11,6 +11,7 @@ import {
 import { basename } from '../data/sourceImages'
 import { CREDIT_BY_FILE, shortCredit } from '../data/credits'
 import PlateImg from './PlateImg'
+import { searchTerms } from '../data/imageSources'
 import SourcePicker from './SourcePicker'
 
 interface Props {
@@ -618,7 +619,7 @@ export default function Viewer({
                   </div>
                 )}
 
-                <div className="pointer-events-auto relative flex w-fit items-center gap-1">
+                <div className="pointer-events-auto relative flex w-fit max-w-full flex-wrap items-center gap-1">
                   {onNextMatch && (
                     <button
                       type="button"
@@ -642,6 +643,24 @@ export default function Viewer({
                   >
                     +
                   </button>
+                  {(
+                    [
+                      ['PubMed', `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(searchTerms(finding))}`],
+                      ['Radiopaedia', `https://radiopaedia.org/search?lang=us&q=${encodeURIComponent(searchTerms(finding))}&scope=cases`],
+                      ['OE login', `https://www.openevidence.com/ask?query=${encodeURIComponent(searchTerms(finding))}`],
+                    ] as const
+                  ).map(([label, href]) => (
+                    <a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      onClick={(e) => e.stopPropagation()}
+                      className="rounded border border-rr-line bg-black/80 px-1.5 py-0.5 text-[8px] font-bold tracking-wide text-white hover:border-rr-blue-lit"
+                    >
+                      {label}
+                    </a>
+                  ))}
                   <SourcePicker
                     open={sourcesOpen}
                     onClose={() => setSourcesOpen(false)}

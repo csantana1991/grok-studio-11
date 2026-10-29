@@ -113,10 +113,41 @@ export default function SourcePicker({
       </button>
 
       <p className="px-1 pb-1 text-[8px] tracking-[0.14em] text-rr-dim uppercase">
+        Free sources for this case
+      </p>
+      <div className="mb-2 flex flex-col gap-1">
+        {['pubmed', 'radiopaedia', 'openevidence'].map((id) => {
+          const s = IMAGE_SOURCES.find((source) => source.id === id)
+          if (!s) return null
+          const login = id === 'openevidence'
+          return (
+            <a
+              key={s.id}
+              href={s.url(terms, categoryId)}
+              target="_blank"
+              rel="noreferrer noopener"
+              onClick={onClose}
+              className="flex items-start gap-2 rounded border border-rr-blue-lit/40 bg-rr-blue/10 px-2 py-1.5 transition-colors hover:border-rr-blue-lit"
+            >
+              <span className="mt-px rounded bg-rr-blue-lit px-1 py-px text-[8px] font-bold text-black">
+                {login ? 'LOGIN' : 'OPEN'}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[10px] font-bold text-white">{s.name} ↗</span>
+                <span className="block text-[8px] leading-snug text-rr-dim">{s.note}</span>
+              </span>
+            </a>
+          )
+        })}
+      </div>
+
+      <p className="px-1 pb-1 text-[8px] tracking-[0.14em] text-rr-dim uppercase">
         Open elsewhere &middot; searches this case
       </p>
       <div className="flex flex-col gap-1">
-        {IMAGE_SOURCES.filter((s) => s.kind === 'link').map((s) => (
+        {IMAGE_SOURCES.filter(
+          (s) => s.kind === 'link' && !['pubmed', 'radiopaedia', 'openevidence'].includes(s.id),
+        ).map((s) => (
           <a
             key={s.id}
             href={s.url(terms, categoryId)}

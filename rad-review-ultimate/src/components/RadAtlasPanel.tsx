@@ -47,7 +47,7 @@ interface Props {
  * mistaken for "correct for this patient".
  */
 export default function RadAtlasPanel({ open, query, onClose, encounter, onUse }: Props) {
-  const [sources, setSources] = useState<SourceId[]>(['pmc', 'tcia'])
+  const [sources, setSources] = useState<SourceId[]>(['pmc', 'tcia', 'radiopaedia'])
   const [data, setData] = useState<RadiologySearchResponse>(ATLAS_EMPTY)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

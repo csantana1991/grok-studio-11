@@ -14,6 +14,7 @@ import {
   searchAuthenticatedAdapter,
   searchOpenNeuro,
   searchPmc,
+  searchRadiopaedia,
   searchTcia,
 } from './providers'
 import type {
@@ -115,6 +116,10 @@ export async function searchRadiology(
   }
   for (const source of ['idc', 'radiopaedia'] as const) {
     if (!selected.has(source)) continue
+    if (source === 'radiopaedia') {
+      providers.push({ source, run: () => searchRadiopaedia(query) })
+      continue
+    }
     const config = adapterConfig(source)
     providers.push({
       source,

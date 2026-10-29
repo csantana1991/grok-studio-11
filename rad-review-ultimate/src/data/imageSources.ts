@@ -100,12 +100,25 @@ export const IMAGE_SOURCES: ImageSource[] = [
       `https://openi.nlm.nih.gov/gridquery?q=${q(t)}${m && OPENI_MODALITY[m] ? `&it=${OPENI_MODALITY[m]}` : ''}`,
   },
   {
+    id: 'pubmed',
+    name: 'PubMed',
+    note: 'Free National Library of Medicine search for this case, including open-access figures',
+    kind: 'link',
+    url: (t) => `https://pubmed.ncbi.nlm.nih.gov/?term=${q(t)}`,
+  },
+  {
     id: 'radiopaedia',
     name: 'Radiopaedia',
-    note: 'Best for learning one diagnosis: real cases with scrollable series',
+    note: 'Free case stacks. Opens their search. Images stay on Radiopaedia (CC BY-NC-SA).',
     kind: 'link',
-    reason: 'API needs your access token; cases are CC BY-NC-SA, not redistributable',
     url: (t) => `https://radiopaedia.org/search?lang=us&q=${q(t)}&scope=cases`,
+  },
+  {
+    id: 'openevidence',
+    name: 'OpenEvidence',
+    note: 'Login on OpenEvidence, then it answers this case. The password stays on their site.',
+    kind: 'link',
+    url: (t) => `https://www.openevidence.com/ask?query=${q(t)}`,
   },
   {
     id: 'tcia',

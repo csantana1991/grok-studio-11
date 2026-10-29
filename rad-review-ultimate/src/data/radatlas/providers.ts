@@ -467,6 +467,34 @@ function parseAdapterStudy(raw: unknown): Omit<FullStudy, 'source'> | null {
   }
 }
 
+export async function searchRadiopaedia(query: string): Promise<ProviderResult> {
+  const q = query.trim().slice(0, 180)
+  const url = `https://radiopaedia.org/search?lang=us&q=${encodeURIComponent(q)}&scope=cases`
+  return {
+    groups: {
+      fullStudies: [
+        {
+          id: `radiopaedia:${q.toLowerCase()}`,
+          kind: 'full_study',
+          title: q || 'Radiopaedia cases',
+          description:
+            'Free Radiopaedia case search for this line. The images stay on Radiopaedia.',
+          collection: 'Radiopaedia',
+          format: 'DICOM',
+          modalities: ['OTHER'],
+          fullStudyUrl: url,
+          source: {
+            id: 'radiopaedia',
+            name: 'Radiopaedia',
+            url,
+            license: 'CC BY-NC-SA',
+          },
+        },
+      ],
+    },
+  }
+}
+
 export async function searchAuthenticatedAdapter(
   config: AuthenticatedAdapterConfig,
   query: string,
