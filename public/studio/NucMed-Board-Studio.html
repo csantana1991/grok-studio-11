@@ -861,6 +861,13 @@ body.player-max .player { height:72vh !important; max-height:72vh; }
 .ra-sugs { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; align-items:center; }
 .ra-sugs button, .ra-on { background:#fff; color:#34545a; border:0; border-radius:999px; padding:5px 10px; font-size:12px; }
 .ra-grid { flex:1; min-height:0; }
+.ra-pubmed { flex:0 0 230px; display:flex; flex-direction:column; min-height:200px; border-top:3px solid #0f6e6e; background:#fff; }
+.ra-pubmed .ra-search { margin:8px 10px 0; }
+.ra-pubmed b { align-self:center; letter-spacing:.08em; }
+.ra-pmc-grid { display:flex; gap:8px; overflow-x:auto; padding:8px 10px 12px; min-height:140px; }
+.ra-pmc-grid figure { width:168px; flex:0 0 auto; margin:0; }
+.ra-pmc-grid img { width:168px; height:112px; object-fit:contain; background:#0b1c2c; border-radius:6px; }
+.ra-pmc-grid figcaption { font-size:11px; color:#163535; max-height:36px; overflow:hidden; }
 #raList { overflow:auto; padding:10px; background:#f4faf8; }
 #raView { overflow:auto; background:#fff; display:flex; flex-direction:column; }
 .ra-cards { display:grid; grid-template-columns:1fr; gap:8px; }
@@ -10796,6 +10803,21 @@ function raPaintMatches(){
 }
 
 
+async function raPubmedSearch(q){
+  const grid = document.getElementById("raPmcGrid");
+  if (!grid) return;
+  const query = String(q || "").trim();
+  if (query.length < 2) { grid.innerHTML = "<p>Type a PubMed query.</p>"; return; }
+  grid.innerHTML = "<p>Searching PubMed Central…</p>";
+  let items = [];
+  try { items = await fetchPmcFigures(query, 1); } catch (e) { items = []; }
+  if (!items.length) {
+    grid.innerHTML = `<p>No PubMed Central figures for “${raEsc(query)}”.</p>`;
+    return;
+  }
+  grid.innerHTML = items.slice(0, 12).map(it => `<figure><a href="${raEsc(it.href || "#")}" target="_blank" rel="noreferrer"><img alt="" src="${raEsc(it.src)}" referrerpolicy="no-referrer"></a><figcaption>${raEsc(it.cap || it.raw || "")}</figcaption></figure>`).join("");
+}
+
 function renderRadAtlas(){
   const q = RAD_ATLAS.query;
   $("#stage").innerHTML = `
@@ -10824,6 +10846,14 @@ function renderRadAtlas(){
         <div class="rr-listwrap panel-wrap" id="raList" data-panel-body="rrlist"></div>
         <div class="rr-view panel-wrap" id="raView" data-panel-body="rrview"><p class="ra-empty">RadAtlas does <b>not</b> auto-load lung cancer or the last test search. Type a query and Search. Double-click a lesson word to search that word. Show here opens the paper in this pane.</p></div>
       </div>
+      <div class="ra-pubmed" id="raPubmed">
+        <form id="raPmcForm" class="ra-search">
+          <b>PUBMED</b>
+          <input id="raPmcQ" value="${raEsc(q)}" autocomplete="off" placeholder="Search PubMed Central figures for this case" />
+          <button type="submit" class="primary">Search PubMed</button>
+        </form>
+        <div class="ra-pmc-grid" id="raPmcGrid"><p>PubMed figures for this search appear here.</p></div>
+      </div>
     </div>`;
   $("#playerInfo").innerHTML = `<b>RadAtlas</b><span>Open imaging search widget</span>`;
   bindPanelChrome(document.getElementById("stage"));
@@ -10851,6 +10881,13 @@ function renderRadAtlas(){
   if (qEl) { qEl.oninput = () => raPaintMatches(); qEl.onfocus = () => { raCaseIndex(); raPaintMatches(); }; }
   $("#raON").onchange = () => { RAD_ATLAS.openNeuro = $("#raON").checked; };
   try { raCaseIndex(); raPaintMatches(); } catch (e) {}
+  const pmcForm = document.getElementById("raPmcForm");
+  if (pmcForm) pmcForm.onsubmit = (e) => {
+    e.preventDefault();
+    const box = document.getElementById("raPmcQ");
+    raPubmedSearch(box ? box.value : RAD_ATLAS.query);
+  };
+  if (q && q.length >= 2) raPubmedSearch(q);
   bindWidgetPlay({ finding: "RadAtlas open imaging search. Enter a query to search PMC and TCIA.", stationName: "ATLAS", categoryId: "nuclear" }, "radatlas");
 }
 
@@ -10909,6 +10946,7 @@ async function raRun(){
   });
   if (prev[0]) { RAD_ATLAS.workspace = { title: prev[0].title, subtitle: prev[0].collection+" · TCIA", url: prev[0].fullStudyUrl, preview: prev[0].previewUrl, kind:"study", list:prev, index:0, imageCount:prev[0].imageCount, seriesUid:prev[0].seriesUid, collection:prev[0].collection }; raPaintWorkspace(); }
   else if (figs[0]) { RAD_ATLAS.workspace = { title: figs[0].title, subtitle: figs[0].pmcid, url: figs[0].articleUrl, preview: figs[0].imageUrl, kind:"source" }; raPaintWorkspace(); }
+  if (RAD_ATLAS.query && RAD_ATLAS.query.length >= 2) raPubmedSearch(RAD_ATLAS.query);
   bindWidgetPlay({ finding: "RadAtlas results for "+data.query+". "+figs.length+" article figures, "+prev.length+" study previews.", stationName:"ATLAS", categoryId:"nuclear" }, "radatlas");
   try { IQA.paintBadges(); } catch(e) {}
 }
