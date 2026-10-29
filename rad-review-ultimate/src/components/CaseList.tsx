@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Encounter } from '../data/generateCases'
 import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
 import { formatSlice, getStationForSlice } from '../data/stations'
@@ -201,18 +201,22 @@ export default function CaseList({
   const window = cases.slice(startIdx, endIdx)
   const offsetY = startIdx * ROW_H
 
-  const plates = useMemo(() => {
-    const out: { src: string; encounter: Encounter }[] = []
-    if (!cases.length) return out
-    const step = Math.max(1, Math.floor(cases.length / 36))
-    for (let i = 0; i < cases.length && out.length < 36; i += step) {
-      const c = cases[i]
-      const src = thumbFor(c)
-      if (!src) continue
-      out.push({ src, encounter: c })
-    }
-    return out
-  }, [cases, thumbFor])
+  const filmRef = useRef<HTMLDivElement>(null)
+  const [filmLeft, setFilmLeft] = useState(0)
+  const [filmW, setFilmW] = useState(480)
+  const THUMB = 68
+
+  useEffect(() => {
+    const el = filmRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setFilmW(el.clientWidth))
+    ro.observe(el)
+    setFilmW(el.clientWidth)
+    return () => ro.disconnect()
+  }, [filmH, cases.length])
+
+  const filmStart = Math.max(0, Math.floor(filmLeft / THUMB) - 6)
+  const filmEnd = Math.min(cases.length, filmStart + Math.ceil(filmW / THUMB) + 12)
 
   return (
     <aside className="flex h-full min-h-0 w-full flex-col border-r border-rr-line bg-rr-panel">
@@ -294,25 +298,44 @@ export default function CaseList({
         ))}
       </div>
 
-      {filmH > 0 && plates.length > 0 && (
-        <div className="shrink-0 border-b border-rr-line px-2 pt-1" style={{ height: filmH }}>
-          <div className="rr-scroll flex h-[calc(100%-10px)] gap-1 overflow-x-scroll">
-            {plates.map((p) => (
-              <button
-                key={p.encounter.idx}
-                type="button"
-                title={imageLabel(p.encounter)}
-                onClick={() => onSelect(p.encounter)}
-                className="relative h-full w-16 shrink-0 overflow-hidden rounded border border-rr-line bg-black"
+      {filmH > 0 && cases.length > 0 && (
+        <div className="shrink-0 border-b border-rr-line px-2 pt-1" style={{ height: filmH + 16 }}>
+          <div className="px-1 text-[11px] font-bold text-white tabular-nums">
+            {cases.length.toLocaleString()} images · scroll
+          </div>
+          <div
+            ref={filmRef}
+            onScroll={(e) => setFilmLeft(e.currentTarget.scrollLeft)}
+            className="rr-scroll h-[calc(100%-18px)] overflow-x-scroll"
+          >
+            <div style={{ width: cases.length * THUMB, height: '100%', position: 'relative' }}>
+              <div
+                className="absolute top-0 flex h-full gap-1"
+                style={{ left: filmStart * THUMB }}
               >
-                <PlateImg
-                  src={p.src}
-                  stationId={p.encounter.stationId}
-                  alt={imageLabel(p.encounter)}
-                  className="absolute inset-0 h-full w-full"
-                />
-              </button>
-            ))}
+                {cases.slice(filmStart, filmEnd).map((c) => {
+                  const src = thumbFor(c)
+                  return (
+                    <button
+                      key={c.idx}
+                      type="button"
+                      title={imageLabel(c)}
+                      onClick={() => onSelect(c)}
+                      className="relative h-full w-16 shrink-0 overflow-hidden rounded border border-rr-line bg-black"
+                    >
+                      {src ? (
+                        <PlateImg
+                          src={src}
+                          stationId={c.stationId}
+                          alt={imageLabel(c)}
+                          className="absolute inset-0 h-full w-full"
+                        />
+                      ) : null}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}
