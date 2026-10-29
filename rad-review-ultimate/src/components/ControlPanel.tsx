@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import type { Encounter } from '../data/generateCases'
+import type { CaseDossier } from '../data/caseDossier'
 import {
   CATEGORY_BY_ID,
   GROUP_1,
@@ -19,6 +20,7 @@ import {
 
 interface Props {
   active: Encounter | null
+  dossier?: CaseDossier | null
   slice: number
   station: Station
   onSlice: (s: number) => void
@@ -101,6 +103,7 @@ function useFixChecks() {
 
 export default function ControlPanel({
   active,
+  dossier,
   slice,
   station,
   onSlice,
@@ -121,11 +124,15 @@ export default function ControlPanel({
           Control
         </h3>
         <div className="px-3 py-2">
-          <Field label="Modality" value={cat ? cat.label : '--'} tone={cat?.accent} />
-          <Field label="Station" value={station.name} />
-          <Field label="Slice" value={`${formatSlice(slice)} / ${MAX_SLICE}`} />
-          <Field label="Plane" value={station.plane} />
-          <Field label="Range" value={`${formatSlice(station.start)}-${formatSlice(station.end)}`} />
+          <Field label="Modality" value={dossier ? `${dossier.modalityLabel} · demo` : cat ? cat.label : '--'} tone={cat?.accent} />
+          <Field label="Case image" value={dossier?.imageRole === 'none' ? 'None' : dossier?.imageRole === 'teaching-plate' ? '1 teaching plate' : dossier?.imageRole === 'published-reference' ? '1 reference' : '--'} />
+          <Field label="Atlas" value={`${formatSlice(slice)} / ${MAX_SLICE}`} />
+          <Field label="Atlas station" value={station.name} />
+          <Field label="Atlas plane" value={station.plane} />
+          {dossier?.tracer && <Field label="Tracer" value={dossier.tracer} />}
+          <p className="mt-2 text-[10px] leading-snug text-[#ffe14a]">
+            The slider is the head-to-toe atlas, 0–100. It is not a DICOM slice count for this row.
+          </p>
 
           <input
             type="range"
@@ -133,7 +140,7 @@ export default function ControlPanel({
             max={MAX_SLICE}
             value={slice}
             onChange={(e) => onSlice(Number(e.target.value))}
-            aria-label="Slice position"
+            aria-label="Atlas position"
             className="mt-3 w-full accent-rr-red"
           />
           <div className="flex justify-between text-[8px] tracking-wider text-rr-blue-lit/70">
@@ -146,6 +153,21 @@ export default function ControlPanel({
       {/* JUMP TO LESION */}
       <Block title="Jump to lesion" tone="#f59e0b">
         <div className="flex flex-col gap-1">
+          {dossier?.suv && dossier.lesionLabel ? (
+            <button
+              type="button"
+              onClick={() => onSlice(active?.slice ?? slice)}
+              className="flex items-center gap-2 rounded border border-rr-amber/35 bg-rr-amber/10 px-2 py-1.5 text-left"
+            >
+              <span className="h-2 w-2 shrink-0 rounded-full bg-rr-amber" />
+              <span className="min-w-0 flex-1 truncate text-[10px] text-rr-text">{dossier.lesionLabel}</span>
+              <span className="text-[10px] font-bold text-rr-amber tabular-nums">SUV {dossier.suv} demo</span>
+            </button>
+          ) : (
+            <p className="text-[10px] leading-snug text-rr-dim">
+              No lesion measurement on this study. Atlas marks below belong to the head-to-toe reference, not this case.
+            </p>
+          )}
           {station.lesions.map((l) => (
             <button
               key={l.label}
@@ -158,7 +180,7 @@ export default function ControlPanel({
                 {l.label}
               </span>
               <span className="text-[10px] font-bold text-rr-amber tabular-nums">
-                SUV {l.suv}
+                atlas
               </span>
             </button>
           ))}
@@ -168,7 +190,7 @@ export default function ControlPanel({
               onClick={() => onSlice(active.slice)}
               className="mt-1 rounded border border-rr-blue-lit/50 bg-rr-blue/20 px-2 py-1.5 text-[10px] font-bold tracking-wider text-white transition-colors hover:border-rr-blue-lit"
             >
-              JUMP TO CASE SLICE {formatSlice(active.slice)} &middot; {active.stationName}
+              JUMP TO ATLAS {formatSlice(active.slice)} &middot; {active.stationName}
             </button>
           )}
         </div>
@@ -181,43 +203,51 @@ export default function ControlPanel({
             <p className="text-[10px] leading-snug font-bold text-white">
               {active.finding}
             </p>
+            <p className="mt-1 text-[10px] text-[#ffe14a]">Demo stem. {dossier?.statusNote}</p>
             <div className="mt-2 flex flex-wrap gap-1 text-[9px]">
               <span className="rounded border border-rr-line px-1 py-px text-rr-dim tabular-nums">
                 {active.accession}
               </span>
               <span className="rounded border border-rr-line px-1 py-px text-rr-dim tabular-nums">
-                MRN {active.mrn}
+                Demo ID {active.mrn}
               </span>
               <span className="rounded border border-rr-line px-1 py-px text-rr-dim tabular-nums">
                 {active.age}
                 {active.sex}
               </span>
-              {active.suv && (
+              {dossier?.suv && (
                 <span className="rounded border border-rr-amber/40 px-1 py-px text-rr-amber tabular-nums">
-                  SUV {active.suv}
+                  SUV {dossier.suv} demo
                 </span>
               )}
             </div>
             <dl className="mt-2 space-y-1.5 text-[10px] leading-snug">
               <div>
                 <dt className="text-[9px] tracking-[0.14em] text-rr-dim uppercase">
-                  Q1 &middot; What is at this level?
+                  Q1 · What study is this?
                 </dt>
-                <dd className="text-rr-text">{station.anatomy}</dd>
+                <dd className="text-rr-text">
+                  {dossier ? `${dossier.modalityLabel}. ${dossier.tracer || 'No tracer on this study.'}` : active.finding}
+                </dd>
               </div>
               <div>
                 <dt className="text-[9px] tracking-[0.14em] text-rr-dim uppercase">
-                  Q2 &middot; What is the image saying?
+                  Q2 · What does the stem say?
                 </dt>
-                <dd className="text-rr-text">{station.interpretation}</dd>
+                <dd className="text-rr-text">{active.finding}</dd>
               </div>
               <div>
                 <dt className="text-[9px] tracking-[0.14em] text-rr-dim uppercase">
-                  Q3 &middot; Pearl
+                  Q3 · Measurement
                 </dt>
-                <dd className="text-rr-text">{station.teaching}</dd>
+                <dd className="text-rr-text">
+                  {dossier?.suv ? `Stem SUV ${dossier.suv}. Demo number from the written stem, not a measured scan.` : 'No SUV on this study.'}
+                </dd>
               </div>
             </dl>
+            <p className="mt-2 text-[10px] leading-snug text-rr-dim">
+              Atlas at {station.name}, not this case’s readout: {station.anatomy}
+            </p>
           </div>
         ) : (
           <p className="text-[10px] text-rr-dim">
@@ -231,7 +261,11 @@ export default function ControlPanel({
       {literature}
 
       {/* ACGME TRACKER */}
-      <Block title="ACGME case log tracker" tone="#22c55e">
+      <Block title="Demo category counts" tone="#22c55e">
+        <p className="mb-2 text-[10px] leading-snug text-[#ffe14a]">
+          Generated teaching rows. Not an official ACGME case log and not verified clinical encounters.
+          {dossier ? ` ${dossier.acgmeNote}` : ''}
+        </p>
         <div className="space-y-1">
           {GROUP_1.map((c) => (
             <div key={c.id} className="flex items-baseline justify-between text-[10px]">

@@ -61,6 +61,7 @@ export default function LiteratureMatch({
         <h3 className="text-[9px] font-bold tracking-[0.18em] text-rr-blue-lit uppercase">
           Live literature match
         </h3>
+        <span className="text-[8px] text-[#ffe14a]">Published references, not this demo case</span>
         <span className="rounded border border-rr-line bg-rr-raised px-1 py-px text-[8px] text-rr-dim tabular-nums">
           {matchedCount}/{uniqueFindings} findings
         </span>

@@ -7,7 +7,8 @@ interface Props {
   stationId: string
   stationName: string
   modality: string
-  accession: string
+  /** False when the frame does not belong to this case. Analysis stays off. */
+  imageMatches?: boolean
 }
 
 type Agreement = 'match' | 'partial' | 'mismatch'
@@ -78,34 +79,46 @@ export default function AiImageAnalysis({
   stationId,
   stationName,
   modality,
-  accession,
+  imageMatches = false,
 }: Props) {
-  const [busy, setBusy] = useState(false)
+  const [phase, setPhase] = useState<'idle' | 'working' | 'complete' | 'error'>('idle')
   const [error, setError] = useState('')
   const [result, setResult] = useState<Analysis | null>(null)
   const requestId = useRef(0)
+  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     requestId.current += 1
+    abortRef.current?.abort()
     setError('')
-    setBusy(false)
-    if (!imageUrl) {
+    setPhase('idle')
+    if (!imageUrl || !imageMatches) {
       setResult(null)
       return
     }
     try {
       const raw = sessionStorage.getItem(cacheKey(imageUrl, finding, stationId))
-      setResult(raw ? (JSON.parse(raw) as Analysis) : null)
+      const parsed = raw ? (JSON.parse(raw) as Analysis) : null
+      setResult(parsed)
+      setPhase(parsed ? 'complete' : 'idle')
     } catch {
       setResult(null)
     }
-  }, [imageUrl, finding, stationId])
+  }, [imageUrl, finding, stationId, imageMatches])
+
+  function cancel() {
+    requestId.current += 1
+    abortRef.current?.abort()
+    setPhase(result ? 'complete' : 'idle')
+  }
 
   async function analyze() {
-    if (!imageUrl || !finding || busy) return
+    if (!imageUrl || !finding || !imageMatches || phase === 'working') return
     const id = ++requestId.current
     const key = cacheKey(imageUrl, finding, stationId)
-    setBusy(true)
+    const ctrl = new AbortController()
+    abortRef.current = ctrl
+    setPhase('working')
     setError('')
     try {
       const imageData = await visibleJpeg(imageUrl, stationId)
@@ -113,19 +126,20 @@ export default function AiImageAnalysis({
       const res = await fetch('/api/rru-analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: ctrl.signal,
         body: JSON.stringify({
           imageData: imageData ?? undefined,
           imageUrl: imageData ? undefined : imageUrl,
-          finding,
+          finding: finding.replace(/^\d{1,3}\s*[mf]\b\s*/i, ''),
           station: stationName,
           modality,
-          accession,
         }),
       })
       const data = (await res.json()) as Analysis & { ok?: boolean; error?: string }
       if (requestId.current !== id) return
       if (!res.ok || data.ok === false) {
         setError(data.error || 'Analysis failed.')
+        setPhase('error')
         return
       }
       const next: Analysis = {
@@ -139,15 +153,20 @@ export default function AiImageAnalysis({
         cached: data.cached,
       }
       setResult(next)
+      setPhase('complete')
       try {
         sessionStorage.setItem(key, JSON.stringify(next))
       } catch {
         /* a full storage quota should not hide the read */
       }
-    } catch {
-      if (requestId.current === id) setError('Could not reach the image analysis.')
-    } finally {
-      if (requestId.current === id) setBusy(false)
+    } catch (err) {
+      if (requestId.current !== id) return
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setPhase(result ? 'complete' : 'idle')
+        return
+      }
+      setError('Could not reach the image analysis.')
+      setPhase('error')
     }
   }
 
@@ -160,18 +179,32 @@ export default function AiImageAnalysis({
       </h3>
       <div className="px-3 pb-3">
         <p className="text-[9px] leading-snug text-rr-dim">
-          Reads the frame on screen against this case stem. A teaching analogue, not a diagnosis.
+          Reads the frame on screen against this case stem. It runs only when that frame belongs to the case.
         </p>
-        <button
-          type="button"
-          onClick={() => void analyze()}
-          disabled={!imageUrl || busy}
-          className="mt-2 w-full rounded border border-[#a78bfa]/50 bg-[#a78bfa]/15 px-2 py-1.5 text-[10px] font-bold tracking-wider text-white transition-colors hover:border-[#c4b5fd] disabled:opacity-40"
-        >
-          {busy ? 'READING THE FRAME…' : result ? 'ANALYZE AGAIN' : 'ANALYZE THIS IMAGE'}
-        </button>
-        {!imageUrl && (
-          <p className="mt-2 text-[10px] text-rr-dim">Select a case with a picture first.</p>
+        <div className="mt-2 flex gap-1">
+          <button
+            type="button"
+            onClick={() => void analyze()}
+            disabled={!imageUrl || !imageMatches || phase === 'working'}
+            className="flex-1 rounded border border-[#a78bfa]/50 bg-[#a78bfa]/15 px-2 py-1.5 text-[10px] font-bold tracking-wider text-white transition-colors hover:border-[#c4b5fd] disabled:opacity-40"
+          >
+            {phase === 'working' ? 'WORKING' : phase === 'complete' ? 'ANALYZE AGAIN' : phase === 'error' ? 'RETRY' : 'ANALYZE THIS IMAGE'}
+          </button>
+          {phase === 'working' && (
+            <button
+              type="button"
+              onClick={cancel}
+              className="rounded border border-rr-line px-2 py-1.5 text-[10px] font-bold text-white"
+            >
+              CANCEL
+            </button>
+          )}
+        </div>
+        <p className="mt-1 text-[10px] tracking-wider text-rr-dim uppercase">
+          {phase === 'working' ? 'Working' : phase === 'complete' ? 'Complete' : phase === 'error' ? 'Error' : 'Idle'}
+        </p>
+        {!imageMatches && (
+          <p className="mt-2 text-[10px] text-rr-dim">No matched case image, so analysis stays off.</p>
         )}
         {error && <p className="mt-2 text-[10px] leading-snug text-rr-red">{error}</p>}
         {result && tone && (

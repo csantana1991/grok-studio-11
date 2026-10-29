@@ -1,20 +1,22 @@
 import { useEffect, useState } from 'react'
 import { caseSources, searchTerms } from '../data/imageSources'
 import { displayUrl } from '../data/liveMatch'
+import { publicQuery, publishedFits, studyKind } from '../data/caseDossier'
 
 interface Props {
   finding: string
+  categoryId?: string
   label: string
   href: string
   onPick?: (label: string, href: string) => void
 }
 
 /** Source browser sitting above Control. Figures come from Open-i. Every library is listed here. */
-export default function SourceWindow({ finding, label, href, onPick }: Props) {
+export default function SourceWindow({ finding, categoryId = '', label, href, onPick }: Props) {
   const [gallery, setGallery] = useState<{ url: string; caption: string }[]>([])
   const [picked, setPicked] = useState(0)
   const [status, setStatus] = useState<'loading' | 'ready'>('loading')
-  const q = searchTerms(finding || '')
+  const q = publicQuery(searchTerms(finding || ''))
   const sources = caseSources(q)
 
   useEffect(() => {
@@ -34,7 +36,12 @@ export default function SourceWindow({ finding, label, href, onPick }: Props) {
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { results?: { url: string; caption: string }[] } | null) => {
         if (cancel) return
-        setGallery((data?.results || []).filter((row) => row.url))
+        const kind = studyKind(finding, categoryId)
+        setGallery(
+          (data?.results || []).filter(
+            (row) => row.url && publishedFits(kind, `${row.url} ${row.caption || ''}`),
+          ),
+        )
         setStatus('ready')
       })
       .catch(() => {
@@ -44,7 +51,7 @@ export default function SourceWindow({ finding, label, href, onPick }: Props) {
       cancel = true
       window.clearTimeout(timer)
     }
-  }, [q])
+  }, [q, finding, categoryId])
 
   const shown = gallery[picked]
   const site = href || sources.find((s) => s.label === (label || 'Open-i'))?.href || sources[1].href
@@ -78,10 +85,11 @@ export default function SourceWindow({ finding, label, href, onPick }: Props) {
           <>
             {shown ? <img src={displayUrl(shown.url)} alt="" className="max-h-40 w-full object-contain" /> : null}
             <p className="px-2 py-1 text-[12px] leading-snug text-white">
-              {shown?.caption ||
-                (status === 'loading'
+              {shown?.caption
+                ? `Published reference, not this demo row. ${shown.caption}`
+                : status === 'loading'
                   ? 'Looking up figures for this case...'
-                  : 'No Open-i figure came back for this line. Use a source above, or Open site.')}
+                  : 'No published figure matched this study type. Use a source above, or Open site.'}
             </p>
           </>
         ) : (

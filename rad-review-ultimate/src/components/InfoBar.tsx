@@ -42,7 +42,7 @@ export default function InfoBar({ station, slice }: Props) {
           What it is saying
         </span>
         <span className="rounded border border-rr-line bg-rr-raised px-1.5 py-px text-[9px] font-bold text-rr-text tabular-nums">
-          {station.name} &middot; SLICE {formatSlice(slice)}
+          {station.name} &middot; ATLAS {formatSlice(slice)}/100
         </span>
         <span className="ml-auto text-[9px] font-bold text-rr-blue-lit">{open ? 'HIDE' : 'SHOW'}</span>
       </button>

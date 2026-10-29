@@ -14,6 +14,8 @@ interface Props {
   nucleusCount: number
   onOpenNucleus: () => void
   reviewedCount: number
+  /** Verdicts a person actually clicked. Separate from the automatic sweep. */
+  humanReviewed?: number
   totalEncounters: number
   pendingReview: number
   onOpenReview: () => void
@@ -67,6 +69,7 @@ export default function Header({
   nucleusCount,
   onOpenNucleus,
   reviewedCount,
+  humanReviewed = 0,
   totalEncounters,
   pendingReview,
   onOpenReview,
@@ -80,7 +83,7 @@ export default function Header({
         <h1 className="shrink-0 text-[12px] font-bold tracking-[0.08em] whitespace-nowrap text-white">
           RAD REVIEW ULTIMATE
           <span className="mx-1.5 text-rr-dim">|</span>
-          <span className="text-rr-text">Residency Log</span>
+          <span className="text-rr-text">Demo log</span>
         </h1>
         <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto py-0.5">
           <Chip
@@ -119,11 +122,10 @@ export default function Header({
           <button
             type="button"
             onClick={onOpenReview}
-            title={`Checked ${reviewedCount.toLocaleString()} of ${totalEncounters.toLocaleString()}`}
+            title={`Automatic check ${reviewedCount.toLocaleString()} of ${totalEncounters.toLocaleString()}. ${pendingReview.toLocaleString()} flagged. A person approved or rejected ${humanReviewed.toLocaleString()}.`}
             className="rounded border border-rr-line px-2 py-1 text-[9px] font-bold text-rr-dim"
           >
-            QA {reviewedCount.toLocaleString()}
-            {pendingReview > 0 ? ` · ${pendingReview}` : ''}
+            AUTO {reviewedCount.toLocaleString()} · YOU {humanReviewed.toLocaleString()}
           </button>
           <button
             type="button"

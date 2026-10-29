@@ -12,6 +12,7 @@ import { basename } from '../data/sourceImages'
 import { CREDIT_BY_FILE, shortCredit } from '../data/credits'
 import PlateImg from './PlateImg'
 import { caseSources, searchTerms } from '../data/imageSources'
+import { publicQuery } from '../data/caseDossier'
 import { displayUrl } from '../data/liveMatch'
 import SourcePicker from './SourcePicker'
 
@@ -75,6 +76,12 @@ interface Props {
   onDragEdge?: (e: React.PointerEvent) => void
   /** Show this source in the window above Control. */
   onPickSource?: (label: string, href: string) => void
+  /** Honest line about the picture currently eligible for this case. */
+  imageNote?: string
+  /** What the case frame actually is. The atlas slider is labeled separately. */
+  frameLabel?: string
+  /** Stack control label. A static plate is not a 120-slice DICOM series. */
+  stackLabel?: string
 }
 
 const UNIQUE_IMAGES = Array.from(new Set(Object.values(IMAGES) as string[]))
@@ -113,6 +120,9 @@ export default function Viewer({
   onJudgeImage,
   onDragEdge,
   onPickSource,
+  imageNote,
+  frameLabel = 'NO CASE IMAGE',
+  stackLabel = 'ATLAS 0–100',
 }: Props) {
   const frameRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -120,9 +130,9 @@ export default function Viewer({
   const [failed, setFailed] = useState<Record<string, boolean>>({})
   const [dragOver, setDragOver] = useState(false)
   const [sourcesOpen, setSourcesOpen] = useState(false)
-  // 'case' shows the encounter's own matched imagery; 'atlas' shows the
-  // head-to-toe station reference. Case wins whenever a match exists.
-  const [mode, setMode] = useState<'case' | 'atlas'>('case')
+  // 'case' is the one accepted frame. 'atlas' is the head-to-toe reference,
+  // opened on purpose. A missing case image does not silently become the atlas.
+  const [atlasOn, setAtlasOn] = useState(false)
   const [panel, setPanel] = useState<{ min: boolean; max: boolean; h: number }>(() => {
     try {
       const raw = JSON.parse(localStorage.getItem('rr-viewer-chrome') || '{}') as {
@@ -137,36 +147,18 @@ export default function Viewer({
   })
   const gripRef = useRef<HTMLDivElement>(null)
   const [caseFailed, setCaseFailed] = useState(false)
-  const [gallery, setGallery] = useState<{ url: string; caption: string }[]>([])
-  const [picked, setPicked] = useState(0)
-  useEffect(() => setCaseFailed(false), [caseImage?.url])
   useEffect(() => {
-    const q = searchTerms(finding || '')
-    if (q.length < 3) return
-    let cancel = false
-    setGallery([])
-    setPicked(0)
-    fetch('/api/pmc/match?source=openi&q=' + encodeURIComponent(q))
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { results?: { url: string; caption: string }[] } | null) => {
-        if (cancel || !data?.results) return
-        setGallery(data.results.filter((row) => row.url))
-      })
-      .catch(() => {})
-    return () => {
-      cancel = true
-    }
-  }, [finding])
+    setCaseFailed(false)
+    setAtlasOn(false)
+  }, [caseImage?.url, finding])
   const [sourceLabel, setSourceLabel] = useState('Open-i')
-  const [sourceHref, setSourceHref] = useState('')
   const [sourceOpen, setSourceOpen] = useState(true)
   useEffect(() => {
     setSourceOpen(true)
     setSourceLabel('Open-i')
-    setSourceHref('')
   }, [finding])
-  const shown = gallery[picked]
-  const showCase = Boolean(caseImage || shown) && mode === 'case' && !caseFailed
+  const showCase = Boolean(caseImage) && !atlasOn && !caseFailed
+  const showAtlas = atlasOn
 
   useEffect(() => {
     try {
@@ -235,10 +227,11 @@ export default function Viewer({
         onNextMatch?.()
         return
       }
+      if (!showAtlas) return
       const rect = e.currentTarget.getBoundingClientRect()
       onSlice(sliceFromClientY(e.clientY, rect))
     },
-    [cyclesOnClick, onNextMatch, onSlice],
+    [cyclesOnClick, onNextMatch, onSlice, showAtlas],
   )
 
   const handleMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -321,7 +314,7 @@ export default function Viewer({
           </button>
         </span>
         <span className="rounded border border-rr-line bg-rr-raised px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap text-rr-text tabular-nums">
-          SLICE {formatSlice(slice)}/{MAX_SLICE}
+          {showAtlas ? `ATLAS ${formatSlice(slice)}/${MAX_SLICE}` : frameLabel}
         </span>
         <span
           className="rounded border px-1.5 py-0.5 text-[10px] font-bold tracking-wider whitespace-nowrap"
@@ -332,21 +325,19 @@ export default function Viewer({
         <span className="text-[9px] tracking-[0.14em] whitespace-nowrap text-rr-dim uppercase">
           {station.plane} &middot; {modalityLabel}
         </span>
-        {caseImage && (
           <button
             type="button"
-            onClick={() => setMode(showCase ? 'atlas' : 'case')}
-            title="Switch between this encounter's matched imagery and the head-to-toe atlas"
+            onClick={() => setAtlasOn((v) => !v)}
+            title={showAtlas ? 'Back to the case frame' : 'Open the head-to-toe atlas. It is not this case’s DICOM stack.'}
             className={
               'rounded border px-1.5 py-0.5 text-[9px] font-bold tracking-wider whitespace-nowrap transition-colors ' +
-              (showCase
+              (showAtlas
                 ? 'border-rr-green/50 bg-rr-green/10 text-rr-green'
                 : 'border-rr-line bg-rr-raised text-rr-dim hover:border-rr-dim')
             }
           >
-            {showCase ? 'CASE IMAGE' : 'STATION ATLAS'}
+            {showAtlas ? 'CASE FRAME' : 'STATION ATLAS'}
           </button>
-        )}
 
         {onShowNucleus && nucleusCount > 0 && (
           <button
@@ -366,10 +357,10 @@ export default function Viewer({
           <button
             type="button"
             onClick={onOpenStack}
-            title="Open the 120-position multiplanar stack for this encounter"
+            title={stackLabel.startsWith('SERIES') ? 'Open the matched series' : 'Head-to-toe atlas, same 0–100 scale as the slider. Not this case’s DICOM stack.'}
             className="rounded border border-rr-blue-lit/60 bg-rr-blue/20 px-2 py-0.5 text-[9px] font-bold tracking-wider whitespace-nowrap text-rr-blue-lit transition-colors hover:bg-rr-blue/40"
           >
-            120-SLICE STACK
+            {stackLabel}
           </button>
         )}
 
@@ -415,14 +406,18 @@ export default function Viewer({
                 onError={() => markFailed(src)}
                 className="rr-fade pointer-events-none absolute inset-0 h-full w-full object-contain"
                 style={{
-                  opacity: !showCase && path === station.image && !failed[src] ? 1 : 0,
+                  opacity: showAtlas && path === station.image && !failed[src] ? 1 : 0,
                 }}
               />
             )
           })}
 
-          {/* The selected encounter's own matched published imagery */}
-          {(caseImage || shown) && (
+          {imageNote && (
+            <p className="pointer-events-none absolute top-2 right-20 left-2 z-10 max-w-xl rounded border border-white/40 bg-black/80 px-2 py-1 text-[11px] leading-snug font-bold text-[#ffe14a]">
+              {imageNote}
+            </p>
+          )}
+          {caseImage && (
             <div
               className="rr-fade pointer-events-none absolute overflow-hidden border-2 border-white bg-black"
               style={
@@ -438,20 +433,17 @@ export default function Viewer({
               }
             >
               <PlateImg
-                key={`${shown?.url || caseImage?.url}-${imageIndex}`}
-                src={displayUrl(shown?.url || caseImage?.url || '')}
+                key={`${caseImage.url}-${imageIndex}`}
+                src={displayUrl(caseImage.url)}
                 stationId={station.id}
-                alt={shown?.caption || caseImage?.caption || finding || ''}
-                onError={() => {
-                  if (gallery.length > picked + 1) setPicked((n) => n + 1)
-                  else setCaseFailed(true)
-                }}
+                alt={caseImage.caption || finding || ''}
+                onError={() => setCaseFailed(true)}
                 className="absolute"
               />
             </div>
           )}
 
-          {!showCase && imageMissing && (
+          {showAtlas && imageMissing && (
             <div
               className="pointer-events-none absolute top-0 bottom-0 left-0 flex flex-col items-center justify-center gap-3 px-6 text-center"
               style={{ right: SCALE_W }}
@@ -498,7 +490,28 @@ export default function Viewer({
           )}
 
           {/* No matched imagery yet: offer an explicit live search */}
-          {!caseImage && onSearchCase && (
+          {!showCase && !showAtlas && (
+            <div className="pointer-events-none absolute inset-x-0 top-16 bottom-16 flex flex-col items-center justify-center gap-2 px-6 text-center">
+              <span className="rounded border border-[#ffe14a]/60 bg-black/80 px-3 py-1 text-[12px] font-bold tracking-[0.12em] text-[#ffe14a]">
+                NO MATCHED CASE IMAGE
+              </span>
+              <p className="max-w-md text-[11px] leading-relaxed text-white">
+                {imageNote || 'No file on hand matches this study type.'}
+              </p>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setAtlasOn(true)
+                }}
+                className="pointer-events-auto rounded border border-rr-blue-lit bg-rr-blue/30 px-3 py-1.5 text-[10px] font-bold tracking-[0.14em] text-white"
+              >
+                SHOW STATION ATLAS
+              </button>
+            </div>
+          )}
+
+          {!caseImage && onSearchCase && !showAtlas && (
             <div className="pointer-events-none absolute inset-x-0 bottom-8 flex flex-col items-center gap-2">
               <button
                 type="button"
@@ -515,28 +528,28 @@ export default function Viewer({
               </button>
               <p className="rounded bg-black/70 px-2 py-0.5 text-[9px] text-rr-dim">
                 {caseSearchEmpty
-                  ? 'No openly licensed figure found — showing the station atlas'
-                  : 'Searches PubMed Central for an openly licensed figure'}
+                  ? 'No openly licensed figure matched this study type.'
+                  : 'Searches published figures. A hit is a reference, not this row’s scan.'}
               </p>
             </div>
           )}
 
-          {!showCase && <div className="rr-grid pointer-events-none absolute inset-0" />}
+          {!showAtlas && <div className="rr-grid pointer-events-none absolute inset-0" />}
 
-          {!showCase && (
+          {showAtlas && (
           <div
             className="pointer-events-none absolute right-0 left-0 h-px bg-rr-red"
             style={{ top: `${crosshairPct}%`, boxShadow: '0 0 6px rgba(239,68,68,0.8)' }}
           />
           )}
-          {!showCase && <div className="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px bg-rr-red/35" />}
-          {!showCase && (
+          {showAtlas && <div className="pointer-events-none absolute top-0 bottom-0 left-1/2 w-px bg-rr-red/35" />}
+          {showAtlas && (
           <div
             className="pointer-events-none absolute left-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-rr-red"
             style={{ top: `${crosshairPct}%` }}
           />
           )}
-          {!showCase && (
+          {showAtlas && (
           <div
             className="pointer-events-none absolute left-1 rounded bg-rr-red px-1 py-px text-[9px] font-bold text-white tabular-nums"
             style={{ top: `calc(${crosshairPct}% + 4px)` }}
@@ -545,8 +558,8 @@ export default function Viewer({
           </div>
           )}
 
-          {/* Lesion marks for the active station */}
-          {!showCase && !imageMissing &&
+          {/* Lesion marks belong to the atlas, not to the case measurement. */}
+          {showAtlas && !imageMissing &&
             station.lesions.map((l) => (
               <div
                 key={l.label}
@@ -558,7 +571,7 @@ export default function Viewer({
             ))}
 
           {/* Hover readout while the pointer is over the frame */}
-          {hover && (
+          {showAtlas && hover && (
             <div
               className="pointer-events-none absolute right-[7.5rem] bottom-7 left-1 z-20 truncate rounded bg-black/80 px-2 py-0.5 text-[10px] text-white"
             >
@@ -679,14 +692,13 @@ export default function Viewer({
                   >
                     +
                   </button>
-                  {caseSources(searchTerms(finding)).map(({ label, href }) => (
+                  {caseSources(publicQuery(searchTerms(finding))).map(({ label, href }) => (
                     <button
                       key={label}
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation()
                         setSourceLabel(label)
-                        setSourceHref(href)
                         setSourceOpen(true)
                         onPickSource?.(label, href)
                       }}
@@ -709,37 +721,12 @@ export default function Viewer({
                   />
                 </div>
               </div>
-              {gallery.length > 0 && (
-                <div
-                  className="pointer-events-auto absolute bottom-7 left-2 z-10 flex gap-1 overflow-x-auto"
-                  style={{ right: `calc(${SCALE_W} + 8px)` }}
-                >
-                  {gallery.map((g, i) => (
-                    <button
-                      key={g.url}
-                      type="button"
-                      title={g.caption}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setPicked(i)
-                        setCaseFailed(false)
-                      }}
-                      className={
-                        'h-12 w-12 shrink-0 overflow-hidden rounded border bg-black ' +
-                        (i === picked ? 'border-white' : 'border-rr-line')
-                      }
-                    >
-                      <img src={displayUrl(g.url)} alt="" className="h-full w-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
               {caseImage && (
               <div
                 className="pointer-events-none absolute bottom-0 left-0 h-6 overflow-hidden bg-black/75 px-2 py-0.5 text-[8px] leading-6 whitespace-nowrap text-rr-dim"
                 style={{ right: SCALE_W }}
               >
-                <span className="text-rr-text">{(shown?.caption || caseImage.caption).slice(0, 190)}</span>
+                <span className="text-rr-text">{caseImage.caption.slice(0, 190)}</span>
                 {' — '}
                 {caseImage.authors.split(',')[0]} et al., {caseImage.journal}{' '}
                 {caseImage.year} · {caseImage.license.toUpperCase()} · {caseImage.pmcid} ·
@@ -750,7 +737,7 @@ export default function Viewer({
           )}
 
           {/* CC BY attribution -- licence condition, do not remove */}
-          {!showCase && !imageMissing && credit && (
+          {showAtlas && !imageMissing && credit && (
             <div
               className="pointer-events-none absolute bottom-0 left-0 bg-black/65 px-2 py-0.5 text-[8px] leading-tight text-rr-dim"
               style={{ right: SCALE_W }}

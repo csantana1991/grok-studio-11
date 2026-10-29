@@ -13,14 +13,21 @@ export function NucleusImage({
   className: string
   note?: boolean
 }) {
-  const missing = url.startsWith('/nucleus/')
+  const missing = !url || url.startsWith('/nucleus/')
   const [src, setSrc] = useState(missing ? fallback : url)
   const [usedFallback, setUsedFallback] = useState(missing)
   useEffect(() => {
-    const gone = url.startsWith('/nucleus/')
-    setSrc(gone && fallback ? fallback : url)
+    const gone = !url || url.startsWith('/nucleus/')
+    setSrc(gone ? fallback : url)
     setUsedFallback(gone)
   }, [url, fallback])
+  if (!src) {
+    return (
+      <span className="block px-1 text-[9px] font-bold leading-snug text-[#ffe14a]">
+        No matched case image
+      </span>
+    )
+  }
   return (
     <span className="block">
       <img

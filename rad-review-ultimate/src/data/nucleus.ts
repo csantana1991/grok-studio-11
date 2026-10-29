@@ -350,12 +350,26 @@ export function localTeachingPlate(study: {
   collection?: string
   region?: string
 }): string {
-  const hay = `${study.collection || ''} ${study.modality || ''} ${study.region || ''} ${study.title || ''}`
-  if (/mibi|myocard|perfusion|cardiac|heart/i.test(hay)) return '/studio/assets/images/cardiac-ac.jpg'
-  if (/thyroid|i-131|iodine/i.test(hay)) return '/studio/assets/images/thyroid-scan-i123.jpg'
-  if (/bone/i.test(hay)) return '/studio/assets/images/bone-scan-wb.jpg'
-  if (/breast|ultrasound/i.test(hay)) return '/studio/assets/images/case-us-1.jpg'
-  if (/dotatate|psma|lu-177|y-90|ra-223/i.test(hay)) return '/studio/assets/images/rai-therapy.jpg'
-  if (/chest|pediatr|radiograph|\bdx\b|x-ray|xray/i.test(hay)) return '/studio/assets/dr/one/xr-1.jpg'
-  return '/studio/assets/images/gamma-camera-patient.jpg'
+  const hay = `${study.collection || ''} ${study.modality || ''} ${study.region || ''} ${study.title || ''}`.toLowerCase()
+  if (/muga|equilibrium radionuclide|gated blood|\berna\b/.test(hay)) return ''
+  if (/pyp|pyrophosphate/.test(hay)) return '/studio/assets/dr/one/pyp-1.jpg'
+  if (/cardiac mri|myocarditis/.test(hay)) return '/studio/assets/dr/ct-396.jpg'
+  if (/mibi|sestamibi|tetrofosmin|myocardial perfusion/.test(hay) && !/parathyroid/.test(hay)) {
+    return '/studio/assets/images/cardiac-ac.jpg'
+  }
+  if (/thyroid|i-131|i-123|iodine|pertechnetate/.test(hay)) return '/studio/assets/dr/one/thyroid-1.jpg'
+  if (/bone scan|\bmdp\b|osseous/.test(hay)) return '/studio/assets/dr/one/bone-1.jpg'
+  if (/psma/.test(hay)) return '/studio/assets/dr/one/psma-pair-1.jpg'
+  if (/dotatate/.test(hay)) return '/studio/assets/dr/one/dota-1.jpg'
+  if (/hida|mebrofenin|hepatobiliary/.test(hay)) return '/studio/assets/dr/nm-hida.jpg'
+  if (/mag3|dmsa|renogram/.test(hay)) return '/studio/assets/dr/nm-mag3.jpg'
+  if (/v\/?q|ventilation/.test(hay)) return '/studio/assets/dr/one/vq-1.jpg'
+  if (/ultrasound|duplex/.test(hay)) return '/studio/assets/dr/case-us-1.jpg'
+  if (/mammogr/.test(hay)) return '/studio/assets/dr/one/mammo-4.jpg'
+  if (/\bmri\b/.test(hay) && /brain|head/.test(hay)) return '/studio/assets/dr/one/mr-1.jpg'
+  if (/\b(ct|cta)\b/.test(hay) && /chest|lung|pulmonary/.test(hay)) return '/studio/assets/dr/one/ct-chest-2.jpg'
+  if (/\b(ct|cta)\b/.test(hay) && /abdomen|pelvis/.test(hay)) return '/studio/assets/dr/one/ct-body-2.jpg'
+  if (/radiograph|x-ray|xray|\bcxr\b/.test(hay) && /chest|lung/.test(hay)) return '/studio/assets/dr/one/xr-1.jpg'
+  if (/\bfdg\b|\bpet\b/.test(hay) && !/psma|dota/.test(hay)) return '/studio/assets/dr/one/pet-mip-1.jpg'
+  return ''
 }

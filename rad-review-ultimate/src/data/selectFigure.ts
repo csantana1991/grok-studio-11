@@ -20,13 +20,15 @@ import { rankCandidates } from './qa/engine'
 import { captionFitsFinding } from './findingCaption'
 import { teachingMatch } from './teachingPlate'
 
-function teachingCandidate(c: Encounter): Candidate {
+function teachingCandidate(c: Encounter): Candidate | null {
+  const match = teachingMatch(c)
+  if (!match.url) return null
   return {
-    match: teachingMatch(c),
+    match,
     verification: {
       verdict: 'plausible',
       score: 0,
-      reasons: ['local stand-in — a published PubMed figure replaces this when one matches'],
+      reasons: ['Teaching plate for this study type'],
       captionStation: c.stationId,
     },
   }
@@ -115,9 +117,9 @@ export function candidatesFor(c: Encounter, index: FigureIndex): Candidate[] {
   const plate = teachingCandidate(c)
   if (own.length) {
     const reviewed = reviewCandidates(c, own)
-    if (reviewed.length) return [...reviewed, plate]
+    if (reviewed.length) return plate ? [...reviewed, plate] : reviewed
   }
-  return [plate]
+  return plate ? [plate] : []
 }
 
 /**

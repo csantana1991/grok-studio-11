@@ -1,14 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  buildStack,
+  buildAtlasStack,
   buildSeriesStack,
   stackCoverage,
-  PLANES,
-  STACK_SIZE,
-  type Plane,
 } from '../data/buildStack'
 import type { NucleusStudy } from '../data/nucleus'
-import { formatSlice } from '../data/stations'
+import { formatSlice, MAX_SLICE } from '../data/stations'
 import type { LiveMatch } from '../data/liveMatch'
 import type { Encounter } from '../data/generateCases'
 
@@ -35,38 +32,45 @@ export default function StackViewer({
   matches,
   studies = [],
 }: Props) {
-  const [plane, setPlane] = useState<Plane>('Axial')
+  void matches
   const [pos, setPos] = useState(0)
   const [studyIdx, setStudyIdx] = useState(0)
   // 'series' scrolls one real acquisition; 'atlas' walks the whole body.
   const [source, setSource] = useState<'series' | 'atlas'>('series')
   const frameRef = useRef<HTMLDivElement>(null)
 
-  const study = studies[Math.min(studyIdx, studies.length - 1)]
-  const useSeries = source === 'series' && Boolean(study)
+  const study = studies[Math.min(studyIdx, Math.max(0, studies.length - 1))]
+  const realImages = useMemo(
+    () => (study?.images || []).filter((im) => im.url && !im.url.startsWith('/nucleus/')),
+    [study],
+  )
+  const useSeries = source === 'series' && realImages.length > 1
 
   const stack = useMemo(
-    () => (useSeries && study ? buildSeriesStack(study) : buildStack(matches, plane)),
-    [useSeries, study, matches, plane],
+    () =>
+      useSeries && study
+        ? buildSeriesStack({ ...study, images: realImages })
+        : buildAtlasStack(),
+    [useSeries, study, realImages],
   )
   const coverage = useMemo(() => stackCoverage(stack), [stack])
-  const slice = stack[Math.min(pos, stack.length - 1)]
+  const slice = stack[Math.min(pos, Math.max(0, stack.length - 1))]
   const [dead, setDead] = useState<Record<string, boolean>>({})
   const remote = slice?.url && !dead[slice.url] ? slice.url : null
-  const shown = remote || slice?.station.image || null
+  const shown = useSeries ? remote : remote || null
 
   // Open at the encounter's own level rather than at the vertex.
   useEffect(() => {
     if (!open || !encounter) return
     // A real series is scrolled from its first slice; the head-to-toe stack
     // opens at the encounter's own level.
-    setPos(useSeries ? 0 : Math.round((encounter.slice / 100) * (STACK_SIZE - 1)))
+    setPos(useSeries ? 0 : Math.min(MAX_SLICE, Math.max(0, encounter.slice)))
   }, [open, encounter, useSeries])
 
   useEffect(() => {
     // Default to a real acquisition whenever one is matched.
-    if (open) setSource(studies.length ? 'series' : 'atlas')
-  }, [open, studies.length])
+    if (open) setSource(realImages.length > 1 ? 'series' : 'atlas')
+  }, [open, realImages.length])
 
   const step = useCallback(
     (d: number) => {
@@ -117,12 +121,15 @@ export default function StackViewer({
       {/* Study header */}
       <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-rr-line bg-rr-panel px-3 py-1.5">
         <span className="text-[11px] font-bold tracking-[0.16em] text-white">
-          MULTIPLANAR STACK
+          {useSeries ? `SERIES · ${stack.length}` : `ATLAS 0–${MAX_SLICE}`}
         </span>
         <span className="rounded border border-rr-line bg-rr-raised px-1.5 py-0.5 text-[10px] font-bold text-rr-text tabular-nums">
           {encounter.accession}
         </span>
-        <span className="max-w-md truncate text-[10px] text-rr-text">
+        <span className="max-w-md truncate text-[10px] text-[#ffe14a]">
+          {useSeries
+            ? 'Matched series. Not padded, and not the 0–100 atlas.'
+            : 'Head-to-toe atlas. Same 0–100 scale as the slider. Not this case’s DICOM stack.'}{' '}
           {encounter.finding}
         </span>
 
@@ -155,26 +162,14 @@ export default function StackViewer({
           </div>
         )}
 
-        <div className={'ml-2 flex gap-1 ' + (useSeries ? 'opacity-40' : '')}>
-          {PLANES.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPlane(p)}
-              className={
-                'rounded border px-2 py-0.5 text-[9px] font-bold tracking-wider transition-colors ' +
-                (plane === p
-                  ? 'border-rr-blue-lit bg-rr-blue/25 text-white'
-                  : 'border-rr-line bg-rr-raised text-rr-dim hover:border-rr-dim')
-              }
-            >
-              {p.toUpperCase()}
-            </button>
-          ))}
+        <div className="ml-2 flex gap-1">
+          <span className="rounded border border-rr-line bg-rr-raised px-2 py-0.5 text-[9px] font-bold tracking-wider text-rr-dim">
+            {useSeries ? 'PLANE FOLLOWS THIS SERIES' : 'ATLAS USES EACH STATION’S PLANE'}
+          </span>
         </div>
 
         <span className="rounded border border-rr-line bg-rr-raised px-1.5 py-0.5 text-[10px] font-bold text-rr-text tabular-nums">
-          {slice.index}/{stack.length}
+          {useSeries ? `frame ${slice.index} of ${stack.length}` : `atlas ${formatSlice(slice.level)} / ${MAX_SLICE}`}
         </span>
         <span className="rounded border border-rr-blue-lit/40 bg-rr-blue/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-rr-blue-lit">
           {slice.station.name}
@@ -267,19 +262,21 @@ export default function StackViewer({
         {/* Scrub rail */}
         <div className="flex w-56 shrink-0 flex-col border-l border-rr-line bg-rr-panel p-3">
           <p className="mb-1 text-[9px] font-bold tracking-[0.16em] text-rr-dim uppercase">
-            Series
+            {useSeries ? 'Series' : 'Atlas'}
           </p>
           <input
             type="range"
             min={0}
-            max={STACK_SIZE - 1}
-            value={pos}
+            max={Math.max(0, stack.length - 1)}
+            value={Math.min(pos, Math.max(0, stack.length - 1))}
             onChange={(e) => setPos(Number(e.target.value))}
-            aria-label="Stack position"
+            aria-label={useSeries ? 'Series frame' : 'Atlas position'}
             className="w-full accent-rr-red"
           />
           <p className="mt-1 text-[9px] text-rr-dim tabular-nums">
-            position {slice.index} of {STACK_SIZE}
+            {useSeries
+              ? `frame ${slice.index} of ${stack.length}`
+              : `atlas ${formatSlice(slice.level)} of ${MAX_SLICE}`}
           </p>
 
           <div className="mt-3 space-y-1 border-t border-rr-line pt-2 text-[9px]">

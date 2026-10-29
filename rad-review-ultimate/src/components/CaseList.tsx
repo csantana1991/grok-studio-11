@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Encounter } from '../data/generateCases'
 import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
-import { formatSlice, getStationForSlice } from '../data/stations'
+import { formatSlice } from '../data/stations'
 import PlateImg from './PlateImg'
 import { imageLabel, teachingPlateFor } from '../data/teachingPlate'
+import { reportsSuv, statedSuv, studyKind } from '../data/caseDossier'
 import { displayUrl } from '../data/liveMatch'
 
 export const ROW_H = 128
@@ -31,10 +32,6 @@ interface Props {
   caption?: string
 }
 
-function thumbFallback(slice: number): string {
-  return getStationForSlice(slice).image
-}
-
 function FullThumb({
   c,
   src,
@@ -47,15 +44,14 @@ function FullThumb({
   plain?: boolean
 }) {
   const local = teachingPlateFor(c).url
-  const station = thumbFallback(c.slice)
-  const [cur, setCur] = useState(local)
+  const [cur, setCur] = useState(src || local)
   useEffect(() => {
     const remote = src && !src.startsWith('/') ? displayUrl(src) : ''
-    if (!remote || remote === local) {
+    if (!remote) {
       setCur(src || local)
       return
     }
-    setCur(local)
+    setCur(local || '')
     let dead = false
     const img = new Image()
     const timer = window.setTimeout(() => {
@@ -67,7 +63,7 @@ function FullThumb({
     }
     img.onerror = () => {
       window.clearTimeout(timer)
-      if (!dead) setCur(local)
+      if (!dead) setCur(local || '')
     }
     img.src = remote
     return () => {
@@ -75,13 +71,14 @@ function FullThumb({
       window.clearTimeout(timer)
     }
   }, [src, local])
+  if (!cur) return null
   return (
     <PlateImg
       src={cur}
       stationId={c.stationId}
       alt=""
       plain={plain}
-      onError={() => setCur((now) => (now === local ? station : local))}
+      onError={() => setCur(local && cur !== local ? local : '')}
       className={className}
     />
   )
@@ -123,7 +120,13 @@ function Row({
       }
     >
       <span className="relative h-24 w-28 shrink-0 overflow-hidden rounded border border-rr-line bg-black">
-        <FullThumb c={c} src={thumb} plain className="absolute inset-0 h-full w-full" />
+        {thumb ? (
+          <FullThumb c={c} src={thumb} plain className="absolute inset-0 h-full w-full" />
+        ) : (
+          <span className="flex h-full items-center px-1 text-center text-[9px] font-bold text-[#ffe14a]">
+            No matched case image
+          </span>
+        )}
       </span>
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
       <div className="flex items-center gap-1.5">
@@ -158,8 +161,11 @@ function Row({
       )}
       {thumb && !caption && (
         <p className="line-clamp-1 text-[11px] leading-tight text-rr-amber">
-          Image: {imageLabel(c)}
+          {imageLabel(c)}
         </p>
+      )}
+      {!thumb && !caption && (
+        <p className="line-clamp-1 text-[11px] leading-tight text-[#ffe14a]">No matched case image</p>
       )}
 
       <div className="flex items-center gap-2 text-[11px] text-rr-dim">
@@ -167,16 +173,16 @@ function Row({
         <span className="text-rr-line">|</span>
         <span className="text-rr-text">{c.stationName}</span>
         <span className="text-rr-line">|</span>
-        <span className="tabular-nums">SLICE {formatSlice(c.slice)}</span>
+        <span className="tabular-nums">ATLAS {formatSlice(c.slice)}</span>
         <span className="text-rr-line">|</span>
         <span className="tabular-nums">
           {c.age}
           {c.sex}
         </span>
-        {c.suv && (
+        {reportsSuv(studyKind(c.finding, c.categoryId)) && statedSuv(c.finding) && (
           <>
             <span className="text-rr-line">|</span>
-            <span className="tabular-nums text-rr-amber">SUV {c.suv}</span>
+            <span className="tabular-nums text-rr-amber">SUV {statedSuv(c.finding)} demo</span>
           </>
         )}
         <span className="ml-auto tabular-nums">{c.acgme}</span>
@@ -240,7 +246,7 @@ export default function CaseList({
   const startIdx = Math.max(0, Math.floor(scrollTop / ROW_H) - OVERSCAN)
   const visibleCount = Math.ceil(viewportH / ROW_H) + OVERSCAN * 2
   const endIdx = Math.min(cases.length, startIdx + visibleCount)
-  const window = cases.slice(startIdx, endIdx)
+  const rows = cases.slice(startIdx, endIdx)
   const offsetY = startIdx * ROW_H
 
   const filmRef = useRef<HTMLDivElement>(null)
@@ -271,7 +277,7 @@ export default function CaseList({
             {cases.length.toLocaleString()}
           </span>
           <span className="text-[9px] tracking-[0.14em] text-rr-dim uppercase">
-            filtered
+            {query.trim() ? 'unique stems' : 'demo rows'}
           </span>
           <span className="ml-auto text-[9px] text-rr-dim tabular-nums">
             of {GRAND_TOTAL.toLocaleString()}
@@ -282,7 +288,7 @@ export default function CaseList({
           <input
             value={query}
             onChange={(e) => onQuery(e.target.value)}
-            placeholder="Search accession, MRN, finding, station, ACGME code..."
+            placeholder="Search finding, station, modality, demo id"
             spellCheck={false}
             className="min-w-0 flex-1 rounded border border-rr-line bg-rr-bg px-2 py-1.5 text-[11px] text-rr-text placeholder:text-rr-dim focus:border-rr-blue-lit focus:outline-none"
           />
@@ -343,7 +349,7 @@ export default function CaseList({
       {filmH > 0 && cases.length > 0 && (
         <div className="shrink-0 border-b border-rr-line px-2 pt-1" style={{ height: filmH + 16 }}>
           <div className="px-1 text-[11px] font-bold text-white tabular-nums">
-            {cases.length.toLocaleString()} images · scroll
+            {cases.length.toLocaleString()} rows · scroll
           </div>
           <div
             ref={filmRef}
@@ -365,7 +371,9 @@ export default function CaseList({
                       onClick={() => onSelect(c)}
                       className="relative h-full w-16 shrink-0 overflow-hidden rounded border border-rr-line bg-black"
                     >
-                      {src ? <FullThumb c={c} src={src} plain className="absolute inset-0 h-full w-full" /> : null}
+                      {src ? <FullThumb c={c} src={src} plain className="absolute inset-0 h-full w-full" /> : (
+                        <span className="flex h-full items-center px-0.5 text-center text-[8px] font-bold text-[#ffe14a]">No match</span>
+                      )}
                     </button>
                   )
                 })}
@@ -385,11 +393,11 @@ export default function CaseList({
             setFilmH(Math.min(220, Math.max(0, startH + (ev.clientY - startY))))
           }
           const up = () => {
-            window.removeEventListener('pointermove', move)
-            window.removeEventListener('pointerup', up)
+            globalThis.removeEventListener('pointermove', move)
+            globalThis.removeEventListener('pointerup', up)
           }
-          window.addEventListener('pointermove', move)
-          window.addEventListener('pointerup', up)
+          globalThis.addEventListener('pointermove', move)
+          globalThis.addEventListener('pointerup', up)
         }}
         className="h-3 shrink-0 cursor-ns-resize border-b border-rr-line bg-[#1d4ed8]"
       />
@@ -404,7 +412,7 @@ export default function CaseList({
         ) : (
           <div style={{ height: totalHeight, position: 'relative' }}>
             <div style={{ transform: `translateY(${offsetY}px)` }}>
-              {window.map((c) => (
+              {rows.map((c) => (
                 <Row
                   key={c.idx}
                   c={c}
@@ -421,7 +429,7 @@ export default function CaseList({
       </div>
 
       <div className="shrink-0 border-t border-rr-line px-3 py-1.5 text-[9px] text-rr-dim">
-        Virtualized &middot; row {ROW_H}px &middot; rendering {window.length} of{' '}
+        Virtualized &middot; row {ROW_H}px &middot; rendering {rows.length} of{' '}
         {cases.length.toLocaleString()} &middot; double-click to load
       </div>
     </aside>

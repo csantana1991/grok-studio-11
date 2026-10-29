@@ -24,7 +24,7 @@ import { matchStudies } from './data/nucleus'
 import { useDebounced, useNoPrint } from './hooks/useDebounced'
 import { useMountedImages } from './hooks/useMountedImages'
 import { useLiteratureMatches } from './hooks/useLiteratureMatches'
-import { oaFor, useOaCatalog } from './hooks/useOaCatalog'
+import { useOaCatalog } from './hooks/useOaCatalog'
 import { useFeedback } from './hooks/useFeedback'
 import { caseScript, figureScript, useAudiobook } from './hooks/useAudiobook'
 import { applyFeedback } from './data/feedback'
@@ -36,10 +36,10 @@ import { SOURCE_IMAGES } from './data/sourceImages'
 import {
   buildFigureIndex,
   candidatesFor as selectCandidates,
-  thumbFor as selectThumb,
   nucleusCandidate,
 } from './data/selectFigure'
-import { teachingMatch, teachingPlateFor } from './data/teachingPlate'
+import { teachingMatch } from './data/teachingPlate'
+import { buildDossier, publishedFits, resolveCaseFigure, studyKind } from './data/caseDossier'
 
 /**
  * Unmatched findings processed per "match all" run. Bounded to stay polite to
@@ -133,8 +133,18 @@ export default function App() {
     const q = debouncedQuery.trim().toLowerCase()
     if (!q) return cases
     const terms = q.split(/\s+/)
-    return cases.filter((c) => terms.every((t) => c.search.includes(t)))
-  }, [cases, debouncedQuery])
+    const seen = new Set<string>()
+    const out: Encounter[] = []
+    for (const c of cases) {
+      if (!terms.every((t) => c.search.includes(t))) continue
+      if (c.categoryId !== 'ALL' && filter !== 'ALL' && c.categoryId !== filter) continue
+      const key = c.categoryId + '|' + c.finding
+      if (seen.has(key)) continue
+      seen.add(key)
+      out.push(c)
+    }
+    return out
+  }, [cases, debouncedQuery, filter])
 
   const counts = useMemo(() => {
     const tally: Record<string, number> = {}
@@ -239,13 +249,10 @@ export default function App() {
 
   const thumbFor = useCallback(
     (c: Encounter) => {
-      const published = oaFor(c.finding, c.idx, oa)
-      if (published) return published.url
-      const litUrl = selectThumb(c, figureIndex)
-      if (litUrl && /^https?:\/\//i.test(litUrl)) return litUrl
-      return teachingPlateFor(c).url
+      const off = c.idx === selected?.idx ? matchOffset : 0
+      return resolveCaseFigure(c, oa.byFinding[c.finding], off)?.url || ''
     },
-    [figureIndex, oa],
+    [oa, selected?.idx, matchOffset],
   )
 
   /**
@@ -262,20 +269,21 @@ export default function App() {
   }, [cases])
 
   /** Nucleus studies matching the selected encounter's region and modality. */
-  const nucleusStudies = useMemo(
-    () =>
-      selected && nucleus.loaded
-        ? matchStudies(
-            nucleus,
-            selected.finding,
-            selected.stationId,
-            selected.categoryId,
-            6,
-            selected.age,
-          )
-        : [],
-    [nucleus, selected],
-  )
+  const nucleusStudies = useMemo(() => {
+    if (!selected || !nucleus.loaded) return []
+    const kind = studyKind(selected.finding, selected.categoryId)
+    return matchStudies(
+      nucleus,
+      selected.finding,
+      selected.stationId,
+      selected.categoryId,
+      6,
+      selected.age,
+    ).filter((st) => {
+      const blob = `${st.modality} ${st.title} ${st.images[0]?.url || ''}`
+      return publishedFits(kind, blob)
+    })
+  }, [nucleus, selected])
 
   /** Reset the manual rematch cursor whenever the encounter changes. */
   useEffect(() => {
@@ -319,12 +327,6 @@ export default function App() {
     // dropped outright and approved ones lead.
     return applyFeedback(merged, feedback.model)
   }, [selected, candidatesFor, nucleusStudies, feedback.model, atlasPick])
-
-  /** How many leading candidates came from Nucleus. */
-  const nucleusLead = useMemo(
-    () => nucleusStudies.filter((st) => st.images.length).length,
-    [nucleusStudies],
-  )
 
   /**
    * The selected encounter's candidates, ordered by how well each represents the
@@ -384,18 +386,32 @@ export default function App() {
   /** Everything actually rendered: broken frames, collapsed layouts, thumbnails. */
   const pageAudit = usePageImageAudit()
 
-  const oaList = selected ? oa.byFinding[selected.finding] : undefined
-  const matchPoolSize = oaList?.length ? oaList.length : orderedMatches.length
-
+  const resolved = selected
+    ? resolveCaseFigure(selected, oa.byFinding[selected.finding], matchOffset)
+    : null
   const caseImage = (() => {
-    if (!selected) return undefined
-    const fromOpenI = oaFor(selected.finding, selected.idx + matchOffset, oa)
-    if (fromOpenI) return fromOpenI
-    const teaching = teachingMatch(selected)
-    const published = currentMatch?.match
-    if (published && /^https?:\/\//i.test(published.url)) return published
-    return teaching
+    if (!selected || !resolved) return undefined
+    if (resolved.source === 'plate') return teachingMatch(selected)
+    const fromOpenI = (oa.byFinding[selected.finding] || []).find((m) => m.url === resolved.url)
+    return fromOpenI
   })()
+  const dossier = selected
+    ? buildDossier(
+        selected,
+        caseImage
+          ? {
+              url: caseImage.url,
+              caption: caseImage.caption,
+              source: resolved?.source === 'openi' ? 'openi' : 'plate',
+            }
+          : null,
+      )
+    : null
+  const matchPoolSize = resolved?.openCount ?? 0
+  const seriesCount = nucleusStudies.reduce((n, st) => {
+    const real = st.images.filter((im) => im.url && !im.url.startsWith('/nucleus/')).length
+    return real > 1 ? Math.max(n, real) : n
+  }, 0)
 
   const audio = useAudiobook()
   const playAllRef = useRef(false)
@@ -494,6 +510,7 @@ export default function App() {
         nucleusCount={nucleus.studies.length}
         onOpenNucleus={() => setNucleusOpen(true)}
         reviewedCount={qa.progress.done}
+        humanReviewed={feedback.counts.approved + feedback.counts.rejected}
         totalEncounters={cases.length}
         pendingReview={qa.exceptions.length}
         onOpenReview={() => setReviewOpen(true)}
@@ -591,12 +608,7 @@ export default function App() {
                     feedback.judge(caseImage.url, v, selected.finding, selected.stationId)
                 : undefined
             }
-            nucleusCount={nucleusLead}
-            onShowNucleus={
-              nucleusLead > 0 && selected
-                ? () => setMatchOffset(-(selected.idx % Math.max(1, rankedMatches.length)))
-                : undefined
-            }
+            nucleusCount={0}
             caseSearching={selectedFinding ? lit.state[selectedFinding] === 'loading' : false}
             caseSearchEmpty={selectedFinding ? lit.state[selectedFinding] === 'empty' : false}
             onSearchCase={
@@ -604,6 +616,15 @@ export default function App() {
             }
             onDragEdge={dragSplit}
             onPickSource={(label, href) => setSourcePick({ label, href })}
+            imageNote={dossier?.imageNote}
+            frameLabel={
+              dossier?.imageRole === 'teaching-plate'
+                ? '1 FRAME · TEACHING PLATE'
+                : dossier?.imageRole === 'published-reference'
+                  ? '1 FRAME · REFERENCE'
+                  : 'NO CASE IMAGE'
+            }
+            stackLabel={seriesCount > 1 ? `SERIES · ${seriesCount}` : 'ATLAS 0–100'}
           />
           <InfoBar station={station} slice={slice} />
         </div>
@@ -619,23 +640,25 @@ export default function App() {
         >
         <SourceWindow
           finding={selected?.finding ?? ''}
+          categoryId={selected?.categoryId}
           label={sourcePick.label}
           href={sourcePick.href}
           onPick={(label, href) => setSourcePick({ label, href })}
         />
         <ControlPanel
           active={selected}
+          dossier={dossier}
           slice={slice}
           station={station}
           onSlice={setSlice}
           analysis={
             <AiImageAnalysis
-              imageUrl={caseImage?.url}
+              imageUrl={dossier && dossier.imageRole !== 'none' ? caseImage?.url : undefined}
+              imageMatches={Boolean(dossier && dossier.imageRole !== 'none' && caseImage)}
               finding={selected?.finding ?? ''}
               stationId={selected?.stationId ?? station.id}
               stationName={selected?.stationName ?? station.name}
-              modality={cat?.label ?? ''}
-              accession={selected?.accession ?? ''}
+              modality={dossier?.modalityLabel ?? cat?.label ?? ''}
             />
           }
           literature={
@@ -671,12 +694,21 @@ export default function App() {
 
       <AudiobookBar
         speaking={audio.speaking}
+        phase={audio.phase}
         rate={audio.rate}
         onRate={audio.setRate}
         line={audio.line}
         index={audio.index}
         total={audio.total}
         onPlayCase={() => {
+          if (audio.phase === 'playing') {
+            audio.pause()
+            return
+          }
+          if (audio.phase === 'paused') {
+            audio.resume()
+            return
+          }
           if (!selected) return
           playAllRef.current = false
           playEncounter(selected, false)
@@ -707,9 +739,9 @@ export default function App() {
         <span className="text-rr-line">|</span>
         <span>{filtered.length.toLocaleString()} in current view</span>
         <span className="text-rr-line">|</span>
-        <span className="text-rr-green">Slice 042 = UPPER ABDOMEN</span>
+        <span className="text-rr-green">Atlas 042 = UPPER ABDOMEN</span>
         <span className="text-rr-line">|</span>
-        <span className="text-rr-green">Slice 095 = ANKLE</span>
+        <span className="text-rr-green">Atlas 095 = ANKLE</span>
         <span className="ml-auto">Hardcopy disabled &middot; teaching log</span>
       </footer>
 

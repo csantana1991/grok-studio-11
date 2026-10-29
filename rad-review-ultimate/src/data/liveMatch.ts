@@ -7,6 +7,8 @@
  * The UI must always present it as such, with its citation attached.
  */
 
+import { publicQuery } from './caseDossier'
+
 export interface LiveMatch {
   url: string
   caption: string
@@ -31,7 +33,6 @@ export interface MatchResponse {
   blocked?: boolean
 }
 
-/** In-memory cache so re-selecting a case never re-hits the network. */
 const cache = new Map<string, MatchResponse>()
 
 export function cachedMatch(query: string): MatchResponse | undefined {
@@ -55,7 +56,8 @@ export async function fetchMatches(
   const hit = cache.get(query)
   if (hit && !force) return hit
 
-  const url = `/api/pmc/match?source=openi&q=${encodeURIComponent(query)}&limit=${limit}`
+  const sent = publicQuery(query)
+  const url = `/api/pmc/match?source=openi&q=${encodeURIComponent(sent || query)}&limit=${limit}`
   const r = await fetch(url, { signal })
   if (r.status === 429) {
     const body = (await r.json().catch(() => ({}))) as MatchResponse

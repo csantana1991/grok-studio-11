@@ -8,8 +8,7 @@
 
 import type { Encounter } from './generateCases'
 import type { LiveMatch } from './liveMatch'
-import { GRAND_TOTAL } from './categories'
-import { FINDING_PLATES } from './findingPlates'
+import type { StudyKind } from './caseDossier'
 
 const DR = '/studio/assets/dr/'
 
@@ -26,14 +25,13 @@ const POOLS: Record<string, string[]> = {
   dotatate: ['one/dota-1.jpg'],
   bone: ['one/bone-1.jpg'],
   thyroid: ['one/thyroid-1.jpg'],
-  mammo: ['findings/f-545a14848ba3.jpg', 'one/mammo-4.jpg'],
+  mammo: ['one/mammo-4.jpg'],
   ctChest: ['one/ct-chest-2.jpg', 'one/ct-chest-3.jpg'],
   ctBody: ['one/ct-body-2.jpg'],
   ctHead: ['one/mr-1.jpg'],
   us: ['case-us-1.jpg'],
-  cardiac: ['one/pyp-1.jpg'],
-  xrChest: ['one/xr-1.jpg'],
-  xrLimb: ['one/bone-1.jpg'],
+  pyp: ['one/pyp-1.jpg'],
+  xrChest: ['one/xr-1.jpg', 'one/xr-2.jpg'],
   hida: ['nm-hida.jpg'],
   renal: ['nm-mag3.jpg'],
   vq: ['one/vq-1.jpg'],
@@ -56,65 +54,130 @@ const KIND_LABEL: Record<string, string> = {
   ctBody: 'Abdomen CT example',
   ctHead: 'Brain MRI example',
   us: 'Ultrasound example',
-  cardiac: 'PYP scan example',
+  pyp: 'PYP scan example',
   xrChest: 'Chest radiograph example',
-  xrLimb: 'Bone scan example',
   hida: 'HIDA scan example',
   renal: 'MAG3 renogram example',
   vq: 'V/Q scan example',
 }
 
-export function plateKind(finding: string, categoryId: string): string {
+export function plateKind(finding: string, categoryId: string): string | null {
   const f = finding.toLowerCase()
   const cat = categoryId.toLowerCase()
-  if (/mrcp|choledocho|biliary|cholangio|bile duct/.test(f)) return 'mrcp'
-  if (cat === 'mammo' || (/bi-rads|tomosynthesis|mammogram|gynaecomastia|implant/.test(f) && !/\bpet\b|\bfdg\b/.test(f))) return 'mammo'
-  if (cat === 'us' || /\bultrasound\b|\bduplex\b|\bdoppler\b/.test(f)) return 'us'
-  if (cat === 'cardiac' || /cardiac mri|coronary cta|myocard|\bmuga\b|\bpyp\b|flurpiridaz|thallium viability|stress pet myocardial|\btavi\b|pericardial/.test(f)) return 'cardiac'
-  if (/thyroid scan|thyroid uptake|graves disease|i-123|i-131|autonomous nodule|pertechnetate|parathyroid/.test(f)) return 'thyroid'
+  if (/\bmuga\b|gated blood|equilibrium radionuclide|\berna\b/.test(f)) return null
+  if (/\bpyp\b|pyrophosphate/.test(f)) return 'pyp'
+  if (/parathyroid/.test(f)) return null
+  if (/\becho\b/.test(f)) return null
+  if (/sestamibi|tetrofosmin|myocardial perfusion|\bmibi\b|stress pet myocardial|thallium viability/.test(f)) {
+    return 'mpi'
+  }
   if (/\bpsma\b/.test(f)) return 'psma'
   if (/dotatate|octreotide|krenning/.test(f)) return 'dotatate'
+  if (/\bv\/?q\b|ventilation[- ]perfusion|ventilation study/.test(f)) return 'vq'
   if (/hida|hepatobiliary iminodiacetic/.test(f)) return 'hida'
   if (/mag3|dmsa|renogram|captopril/.test(f)) return 'renal'
-  if (/\bv\/?q\b|ventilation study/.test(f)) return 'vq'
-  if (cat === 'therapy') {
-    if (/y-90|radioembol/.test(f)) return 'hida'
-    if (/ra-223|osseous|bone metast|femor/.test(f)) return 'bone'
-    if (/brain|hippocamp/.test(f)) return 'mriBrain'
-    if (/lung|chest/.test(f)) return 'ctChest'
-    return 'ctBody'
+  if (/thyroid scan|thyroid uptake|graves|pertechnetate|\bi-123\b|\bi-131\b|radioiodine/.test(f)) {
+    return 'thyroid'
   }
-  if (/bone scan|three-phase|\bmdp\b|ra-223/.test(f)) return 'bone'
+  if (/bone scan|three-phase bone|\bmdp\b|ra-223/.test(f)) return 'bone'
+  if (/leukocyte/.test(f)) return null
+  if (/mrcp|choledocholithiasis/.test(f)) return 'mrcp'
+  if (cat === 'mammo' || (/mammogram|tomosynthesis|\bbi-rads\b/.test(f) && !/\bmri\b/.test(f))) return 'mammo'
+  if (cat === 'us' || (/\bultrasound\b|\bduplex\b|\bdoppler\b/.test(f) && !/\bct\b|\bmri\b/.test(f))) return 'us'
+  if (cat === 'rad' || /radiograph/.test(f) || /bronchiolitis|steeple sign|\bcroup\b/.test(f)) {
+    if (/chest|pneumo|pleural|pneumonia|effusion|hilar|pacemaker|\brib\b|tube|carina|kerley|silhouette|sarcoid|miliary|asbestos|nasogastric|subcutaneous|lobar|contusion|cxr|bronchiolitis|steeple|\bcroup\b|acute chest/.test(f)) {
+      return 'xrChest'
+    }
+    return null
+  }
   const mri = cat === 'mri' || /\bmri\b|\bmra\b/.test(f)
-  const ct = !mri && (cat === 'ct' || /\bct\b|\bcta\b/.test(f))
-  const rad = cat === 'rad' || /radiograph/.test(f)
   if (mri) {
-    if (/knee|\bacl\b|menisc|patella/.test(f)) return 'mriKnee'
+    if (/knee|\bacl\b|menisc/.test(f)) return 'mriKnee'
     if (/shoulder|slap|rotator|supraspinatus/.test(f)) return 'mriShoulder'
-    if (/spine|lumbar|cervical|discitis|epidural|cord signal/.test(f)) return 'mriSpine'
-    if (/breast/.test(f)) return 'mammo'
-    if (/cardiac|myocarditis|cardiomyopathy/.test(f)) return 'cardiac'
-    if (/liver|hepat|adrenal|pancrea|abdomen/.test(f)) return 'mrcp'
-    if (/ankle|foot|forefoot|thigh|hip|wrist|elbow|sacroiliac/.test(f)) return 'bone'
-    if (/prostate|pelvis|uterine|rectal|endometrio|fistula/.test(f)) return 'ctBody'
-    return 'mriBrain'
+    if (/spine|lumbar|cervical|discitis|epidural|cord signal|stenosis/.test(f)) return 'mriSpine'
+    if (/cardiac|myocarditis|cardiomyopathy|viability|amyloid|takotsubo|fabry|sarcoid|myxoma|pericarditis|arrhythmogenic|hypertrophic/.test(f)) {
+      return 'cardiacMri'
+    }
+    if (/brain|pituitary|orbit|\bms\b|demyelin|glioblastoma|schwannoma|herpes|hydrocephalus|cavernous|encephalopathy|infarct|seizure|cortical dysplasia/.test(f)) {
+      return 'mriBrain'
+    }
+    return null
   }
+  const ct = !mri && (cat === 'ct' || /\bct\b|\bcta\b/.test(f))
   if (ct) {
-    if (/head|brain|subarachnoid|subdural|facial|temporal|sinus|ischaem|\bmca\b|stroke|odontoid/.test(f)) return 'ctHead'
-    if (/chest|lung|pulmonary|\bpe\b|aort|pneumothorax|thymoma|bronch|emphysema|nodule|lymphang|miliary|covid|mediastin/.test(f)) return 'ctChest'
-    if (/femur|extremity|tibial/.test(f)) return 'bone'
-    return 'ctBody'
+    if (/head|brain|facial|temporal|sinus|odontoid|spine|extremity|limb|femur|tibial|wrist|pelvis|prostate/.test(f)) {
+      return null
+    }
+    if (/chest|lung|pulmonary|\bpe\b|aort|pneumothorax|thymoma|bronch|emphysema|nodule|lymphang|miliary|covid|mediastin|coronary|calcium score|tavi|pulmonary vein|atrial appendage|aortic root|prosthetic valve/.test(f)) {
+      return 'ctChest'
+    }
+    if (/abdomen|renal|liver|pancrea|bowel|colon|appendix|divertic|spleen|adrenal|urogram|enterography|stone|viscus/.test(f)) {
+      return 'ctBody'
+    }
+    return null
   }
-  if (rad) {
-    if (/chest|pneumo|pleural|pneumonia|effusion|hilar|pacemaker|\brib\b|tube|carina|kerley|silhouette|sarcoid|miliary|asbestos|nasogastric|subcutaneous|lobar|contusion/.test(f)) return 'xrChest'
-    return 'xrLimb'
-  }
-  if (cat === 'pethyb' || cat === 'pethybrid' || /\bpet\b|\bfdg\b|deauville|\bsuv\b/.test(f)) {
-    if (/brain|skull|scalp|pituitary/.test(f)) return 'petBrain'
+  if (cat === 'pethyb' || /\bpet\b|\bfdg\b|deauville|\bsuv\b/.test(f)) {
+    if (/brain|skull|pituitary/.test(f)) return 'petBrain'
     return 'pet'
   }
-  if (cat === 'nuc' || cat === 'nuclear') return 'bone'
-  return 'ctBody'
+  return null
+}
+
+const FILE_KIND: [string, StudyKind][] = [
+  ['/one/mr-1.jpg', 'mri'],
+  ['/case-mr-3.jpg', 'mri'],
+  ['/case-mr-2.jpg', 'mri'],
+  ['/one/mr-2.jpg', 'mri'],
+  ['/one/mr-3.jpg', 'mri'],
+  ['/one/mr-4.jpg', 'mri'],
+  ['/mrcp-choledocholithiasis.jpg', 'mri'],
+  ['/ct-396.jpg', 'mri'],
+  ['/one/pet-mip-1.jpg', 'pet-fdg'],
+  ['/nm-petmri-brain.jpg', 'pet-fdg'],
+  ['/one/psma-pair-1.jpg', 'pet-psma'],
+  ['/one/dota-1.jpg', 'pet-dota'],
+  ['/one/bone-1.jpg', 'bone'],
+  ['/one/thyroid-1.jpg', 'thyroid'],
+  ['/one/mammo-4.jpg', 'mammo'],
+  ['/one/ct-chest-2.jpg', 'ct'],
+  ['/one/ct-body-2.jpg', 'ct'],
+  ['/case-us-1.jpg', 'us'],
+  ['/one/pyp-1.jpg', 'pyp'],
+  ['/cardiac-ac.jpg', 'mpi'],
+  ['/one/xr-1.jpg', 'radiograph'],
+  ['/one/xr-2.jpg', 'radiograph'],
+  ['/nm-hida.jpg', 'hida'],
+  ['/nm-mag3.jpg', 'renal'],
+  ['/one/vq-1.jpg', 'vq'],
+]
+
+/** Kind of a checked local file, or null when the file is not an allow-listed plate. */
+export function knownPlateKind(url: string): StudyKind | null {
+  const u = url.toLowerCase()
+  for (const [file, kind] of FILE_KIND) {
+    if (u.endsWith(file)) return kind
+  }
+  return null
+}
+
+/** The finding's checked modality plate, or '' when no plate is this study type. */
+function pick(finding: string, _stationId: string, categoryId: string): string {
+  const key = plateKind(finding, categoryId)
+  if (!key) return ''
+  if (key === 'mpi') return '/studio/assets/images/cardiac-ac.jpg'
+  if (key === 'cardiacMri') return '/studio/assets/dr/ct-396.jpg'
+  const pool = POOLS[key]
+  if (!pool) return ''
+  const name = pool.find((file) => !NOT_MEDICAL.has(file))
+  if (!name) return ''
+  return DR + name
+}
+
+export function imageLabel(c: { finding: string; categoryId: string; idx?: number }): string {
+  const key = plateKind(c.finding, c.categoryId)
+  if (!key) return 'No matched case image'
+  const label = KIND_LABEL[key] ?? (key === 'cardiacMri' ? 'Cardiac MRI example' : key === 'mpi' ? 'Myocardial perfusion example' : 'Teaching image')
+  return `${label}. Not this row’s own scan.`
 }
 
 /** Files that are not medical images. Checked by looking at the plates. */
@@ -201,25 +264,10 @@ const NOT_MEDICAL = new Set([
   'findings/f-47fec47b2efc.jpg',
 ])
 
-/** The finding's own file when the library has a real study, otherwise the checked modality plate. */
-function pick(finding: string, stationId: string, categoryId: string): string {
-  void stationId
-  const named = FINDING_PLATES[finding]
-  if (named && !NOT_MEDICAL.has(named)) return DR + named
-  const pool = POOLS[plateKind(finding, categoryId)] ?? POOLS.ctBody
-  const name = pool.find((file) => !NOT_MEDICAL.has(file)) ?? 'one/ct-body-2.jpg'
-  return DR + name
-}
-
-export function imageLabel(c: { finding: string; categoryId: string; idx?: number }): string {
-  const label = KIND_LABEL[plateKind(c.finding, c.categoryId)] ?? 'Teaching image'
-  const n = (c.idx ?? 0) + 1
-  return `${label} · ${n.toLocaleString()} / ${GRAND_TOTAL.toLocaleString()}`
-}
-
 /** A literature figure may replace the plate only when it is this same checked file. */
 export function plateAgrees(finding: string, categoryId: string, hay: string): boolean {
-  const name = pick(finding, '', categoryId).slice(DR.length)
+  const name = pick(finding, '', categoryId)
+  if (!name) return false
   const file = name.split('/').pop() || name
   return hay.includes(name) || hay.includes(file)
 }
@@ -229,9 +277,12 @@ export function teachingPlateFor(c: Pick<Encounter, 'finding' | 'stationId' | 'c
   caption: string
 } {
   const url = pick(c.finding, c.stationId, c.categoryId)
-  const label = KIND_LABEL[plateKind(c.finding, c.categoryId)] ?? 'Teaching image'
-  const n = (c.idx ?? 0) + 1
-  const caption = `${label}. Image ${n.toLocaleString()} of ${GRAND_TOTAL.toLocaleString()}.`
+  const key = plateKind(c.finding, c.categoryId)
+  const label = !key
+    ? ''
+    : (KIND_LABEL[key] ??
+      (key === 'cardiacMri' ? 'Cardiac MRI example' : key === 'mpi' ? 'Myocardial perfusion example' : 'Teaching image'))
+  const caption = url ? `${label}. Teaching plate, not this row’s scan.` : ''
   return { url, caption }
 }
 

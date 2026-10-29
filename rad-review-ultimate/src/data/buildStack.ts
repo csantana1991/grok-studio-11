@@ -143,6 +143,23 @@ export function buildSeriesStack(study: NucleusStudy): StackSlice[] {
   }))
 }
 
+/** One atlas frame per slider step, 0 through 100. Not padded to 120. */
+export function buildAtlasStack(): StackSlice[] {
+  const out: StackSlice[] = []
+  for (let level = 0; level <= MAX_SLICE; level++) {
+    const station = getStationForSlice(level)
+    out.push({
+      index: level + 1,
+      level,
+      station,
+      url: station.image,
+      source: 'atlas',
+      label: `${station.name} atlas. Same 0–100 scale as the slider. Not this case’s DICOM stack.`,
+    })
+  }
+  return out
+}
+
 /** Mid-point of the study's station, used to anchor its series. */
 function seriesLevelFor(study: NucleusStudy): number {
   if (!study.stationId) return 50

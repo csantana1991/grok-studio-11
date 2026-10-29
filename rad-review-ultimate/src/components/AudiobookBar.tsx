@@ -1,5 +1,6 @@
 interface Props {
   speaking: boolean
+  phase?: 'idle' | 'playing' | 'paused' | 'done' | 'unavailable'
   rate: number
   onRate: (n: number) => void
   line: string
@@ -13,6 +14,7 @@ interface Props {
 
 export default function AudiobookBar({
   speaking,
+  phase = 'idle',
   rate,
   onRate,
   line,
@@ -33,12 +35,15 @@ export default function AudiobookBar({
       <div className="flex items-center gap-2 bg-rr-panel px-3 py-1.5">
       <button
         type="button"
-        onClick={speaking ? onStop : onPlayCase}
-        title={speaking ? 'Pause audiobook' : 'Play this case'}
+        onClick={onPlayCase}
+        title={phase === 'playing' ? 'Pause narration' : phase === 'paused' ? 'Resume narration' : 'Play this case'}
         className="flex h-8 w-8 items-center justify-center rounded border border-rr-blue-lit bg-rr-blue/30 text-[13px] font-bold text-rr-blue-lit"
       >
-        {speaking ? '❚❚' : '▶'}
+        {phase === 'playing' ? '❚❚' : '▶'}
       </button>
+      <span className="w-16 text-[9px] font-bold tracking-wider text-[#ffe14a] uppercase">
+        {phase === 'playing' ? 'Playing' : phase === 'paused' ? 'Paused' : phase === 'done' ? 'Finished' : phase === 'unavailable' ? 'No audio' : 'Ready'}
+      </span>
       <button
         type="button"
         onClick={onPlayList}
@@ -46,6 +51,14 @@ export default function AudiobookBar({
         className="rounded border border-rr-line bg-rr-raised px-2 py-1 text-[9px] font-bold tracking-[0.12em] text-rr-text uppercase hover:border-rr-blue-lit"
       >
         Play list
+      </button>
+      <button
+        type="button"
+        onClick={onStop}
+        title="Stop narration"
+        className="rounded border border-rr-line bg-rr-raised px-2 py-1 text-[9px] font-bold tracking-[0.12em] text-rr-text uppercase hover:border-rr-blue-lit"
+      >
+        Stop
       </button>
       <label className="flex items-center gap-1 text-[9px] font-bold tracking-[0.12em] text-rr-dim uppercase">
         Speed
@@ -63,7 +76,15 @@ export default function AudiobookBar({
       <div className="min-w-0 flex-1">
         <p className="truncate text-[10px] font-bold text-white">{label}</p>
         <p className="text-[15px] leading-snug font-bold text-[#ffe14a]">
-          {speaking && total ? line : 'Press play. The yellow line is the sentence being spoken.'}
+          {phase === 'playing' && total
+            ? line
+            : phase === 'paused'
+              ? 'Paused. Press play to resume.'
+              : phase === 'done'
+                ? 'Finished.'
+                : phase === 'unavailable'
+                  ? line || 'Narration is not available in this browser.'
+                  : 'Press play. The yellow line is the sentence being spoken.'}
         </p>
       </div>
       </div>
