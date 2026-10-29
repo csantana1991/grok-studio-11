@@ -26,6 +26,8 @@ interface Props {
   onToggleAtlas: () => void
   /** Rendered directly under the search box, at one case row's width. */
   atlasPanel?: ReactNode
+  /** The sentence the audiobook is speaking, shown on the playing row. */
+  caption?: string
 }
 
 function thumbFallback(slice: number): string {
@@ -44,12 +46,14 @@ function Row({
   onSelect,
   onLoad,
   thumb,
+  caption,
 }: {
   c: Encounter
   selected: boolean
   onSelect: (c: Encounter) => void
   onLoad: (c: Encounter) => void
   thumb?: string
+  caption?: string
 }) {
   const cat = CATEGORY_BY_ID[c.categoryId]
   const [src, setSrc] = useState(thumb)
@@ -105,7 +109,12 @@ function Row({
       </div>
 
       <p className="line-clamp-2 text-[15px] leading-snug text-white">{c.finding}</p>
-      {thumb && (
+      {caption && (
+        <p className="line-clamp-2 text-[12px] font-semibold leading-snug text-[#facc15]">
+          {caption}
+        </p>
+      )}
+      {thumb && !caption && (
         <p className="line-clamp-1 text-[11px] leading-tight text-rr-amber">
           Image: {imageLabel(c)}
         </p>
@@ -149,6 +158,7 @@ export default function CaseList({
   atlasOpen,
   onToggleAtlas,
   atlasPanel,
+  caption,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
@@ -344,6 +354,7 @@ export default function CaseList({
                   onSelect={onSelect}
                   onLoad={onLoad}
                   thumb={thumbFor(c)}
+                  caption={c.idx === selectedIdx ? caption : undefined}
                 />
               ))}
             </div>

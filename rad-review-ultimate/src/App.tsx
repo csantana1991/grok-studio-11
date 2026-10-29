@@ -519,6 +519,7 @@ export default function App() {
           thumbFor={thumbFor}
           atlasOpen={atlasOpen}
           onToggleAtlas={() => setAtlasOpen((v) => !v)}
+          caption={audio.speaking ? audio.line : ''}
           atlasPanel={
             <RadAtlasPanel
               open={atlasOpen}
