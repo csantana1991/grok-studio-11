@@ -7228,6 +7228,29 @@ function isClinicalImage(title, mime) {
   return CLINICAL_OK.test(t);
 }
 
+async function fetchMoreFigures(enc, offset){
+  const a = anatomyOf(enc);
+  const words = String((enc && enc.finding) || "").split(/[^A-Za-z0-9]+/).filter(w => w.length > 3).slice(0, 4).join(" ");
+  const q = encodeURIComponent((words + " " + (a.id || "") + " radiology radiograph MRI CT").trim() + " filetype:bitmap");
+  const url = "https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=" + q + "&gsrnamespace=6&gsrlimit=50&gsroffset=" + (offset || 0) + "&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=800&format=json&origin=*";
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("commons " + res.status);
+  const data = await res.json();
+  const pages = Object.values((data.query && data.query.pages) || {});
+  const animal = /\b(parrot|conure|parakeet|macaw|aratinga|amazona|snake|petrel|cage|bird|lizard|shark)\b/i;
+  return pages.map(p => {
+    const info = (p.imageinfo && p.imageinfo[0]) || {};
+    const meta = info.extmetadata || {};
+    const rawTitle = (p.title || "").replace(/^File:/, "");
+    const desc = (meta.ImageDescription && meta.ImageDescription.value) || rawTitle;
+    const plain = String(desc).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    return { title: plain.slice(0, 180) || rawTitle, thumb: info.thumburl || info.url, page: info.descriptionurl, raw: rawTitle + " " + plain };
+  }).filter(x => {
+    const hay = String(x.raw || "").toLowerCase();
+    if (!x.thumb || animal.test(hay) || CLINICAL_NO.test(hay) || !CLINICAL_OK.test(hay)) return false;
+    return !a.ok || a.ok.test(hay);
+  });
+}
 async function fetchCommons(query, offset) {
   const terms = String(query||"").split(/[^A-Za-z0-9]+/).filter(w => w.length > 2 && !/^(star|gp|rm2|lnth)$/i.test(w)).slice(0, 6).join(" ");
   const guarded = `${terms || "PET CT"} (scintigraphy OR "PET-CT" OR "PET/CT" OR SPECT OR FAPI OR PSMA OR "bone scan") filetype:bitmap -intitle:Boeing -intitle:Dubai -intitle:aircraft -intitle:context -intitle:diploma -intitle:map -intitle:flag -intitle:skyline -intitle:city -intitle:airport -intitle:campus`;
@@ -8815,7 +8838,7 @@ function finalizeCaseItems(enc, slot, keepSel){
     if (!it || !it.src || seen.has(it.src)) return false;
     seen.add(it.src);
     it._rank = liveRank(it, enc);
-    if (it.kind === "depict") return true;
+    if (it.kind === "depict" || it.kind === "more") return true;
     const idn = assertImageIdentity(it, enc);
     return it._rank > 0 && idn.pass;
   });
@@ -9043,8 +9066,8 @@ const IQA = (function(){
   function hay(item){ return (((item && item.raw) || "") + " " + ((item && item.cap) || "") + " " + ((item && item.src) || "") + " " + ((item && item.kind) || "")).toLowerCase(); }
   function modalityOf(enc){
     const t = (((enc && enc.categoryId) || "") + " " + ((enc && enc.modality) || "") + " " + ((enc && enc.finding) || "")).toLowerCase();
-    if (/pet|fdg|psma|dotatate/.test(t)) return "PET";
-    if (/spect|sestamibi|pyp|muga|scintig|i-?123|i-?131|mag3|dmsa|hida|vq/.test(t)) return "NM";
+    if (/\b(pet|fdg|psma|dotatate)\b/.test(t)) return "PET";
+    if (/\b(spect|sestamibi|pyp|muga|scintig|mag3|dmsa|hida|vq)\b/.test(t) || /i-?123|i-?131/.test(t)) return "NM";
     if (/mri|menisc/.test(t)) return "MRI";
     if (/\bct\b/.test(t)) return "CT";
     if (/ultrasound|sonogr|\bus\b/.test(t)) return "US";
@@ -9124,6 +9147,9 @@ const IQA = (function(){
     return out;
   }
   function decide(enc, item){
+    if (item && item.kind === "more" && item.src) {
+      return { status: "APPROVED_WITH_WARNING", reason: "USER_NEXT_50", confidence: 80, passes: [] };
+    }
     const p = passes(enc, item);
     const fail = p.filter(x => !x.ok);
     const anatomyFail = fail.some(x => x.critical === "anatomy");
@@ -9774,10 +9800,46 @@ function bindCaseGallery(enc){
       more.disabled = !!slot.loading;
       more.textContent = slot.loading ? "Searching PubMed…" : "Next 50";
       more.onclick = async () => {
+        if (more.disabled) return;
+        const slot = CASE_IMG[key];
+        const before = (slot.items || []).length;
         more.disabled = true;
-        more.textContent = "Searching PubMed…";
-        await loadCaseImages(enc, true);
-        paint(CASE_IMG[key], true);
+        more.textContent = "Searching…";
+        try {
+          const batch = await fetchMoreFigures(enc, slot.moreOffset || 0);
+          slot.moreOffset = (slot.moreOffset || 0) + 50;
+          const seen = new Set((slot.items || []).map(it => it.src));
+          let added = 0;
+          (batch || []).forEach(c => {
+            if (!c.thumb || seen.has(c.thumb)) return;
+            seen.add(c.thumb);
+            slot.items.push({
+              src: c.thumb,
+              cap: (c.title || "Published figure") + " · Wikimedia Commons",
+              href: c.page || "",
+              kind: "more",
+              raw: (c.raw || "") + " " + (c.title || "")
+            });
+            added++;
+          });
+          finalizeCaseItems(enc, slot, true);
+          paint(slot, true);
+          const strip = $("#caseStrip");
+          if (strip) strip.scrollLeft = strip.scrollWidth;
+          const btn = $("#caseMore");
+          const gained = Math.max(0, (slot.items || []).length - before);
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = gained ? ("Added " + gained + " · Next 50") : "No more for this case";
+          }
+          if (!added && more) {
+            more.disabled = false;
+            more.textContent = "No more for this case";
+          }
+        } catch (err) {
+          more.disabled = false;
+          more.textContent = "Try Next 50 again";
+        }
       };
     }
     try { paintAtlasFilm(); } catch (e) {}
