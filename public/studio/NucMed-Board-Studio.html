@@ -5426,7 +5426,7 @@ async function liveSearchTerm(term){
   enc.finding = q + " " + (enc.finding || "");
   const collected = [];
   const jobs = [
-    fetchWikiImages(q).then(r => (r||[]).forEach(x => collected.push(Object.assign({ kind:"wiki" }, x)))).catch(()=>{}),
+    fetchAtlasStills(q).then(r => (r||[]).forEach(x => collected.push(Object.assign({ kind:"wiki" }, x)))).catch(()=>{}),
     fetchCommons(q, 0).then(r => (r||[]).forEach(x => collected.push(Object.assign({ kind:"commons", src:x.thumb, title:x.title, raw:x.raw||x.title }, x)))).catch(()=>{}),
     fetchPmcLinked(q, 1).then(r => (r||[]).forEach(x => collected.push(Object.assign({ kind:"pmc", src:x.thumb||x.src, title:x.title, raw:x.raw||x.title }, x)))).catch(()=>{}),
     fetchPmcFigures(q, 1).then(r => (r||[]).forEach(x => collected.push(Object.assign({ kind:"pmc" }, x)))).catch(()=>{}),
@@ -9366,7 +9366,7 @@ const CaseQA = {
     for (const q of qs.slice(0, 3)) {
       try {
         const jobs = [];
-        if (typeof fetchWikiImages === "function") jobs.push(fetchWikiImages(q));
+        if (typeof fetchAtlasStills === "function") jobs.push(fetchAtlasStills(q));
         if (typeof fetchCommons === "function") jobs.push(fetchCommons(q, 0));
         if (typeof fetchPmcFigures === "function") jobs.push(fetchPmcFigures(q, 1));
         if (typeof fetchPmcLinked === "function") jobs.push(fetchPmcLinked(q, 1));
@@ -10187,6 +10187,40 @@ function raFitsQuery(query, f){
   if (/emboli|pe\b|pulmonary/.test(q) && /breast|knee/.test(hay)) s -= 40;
   return s;
 }
+async function fetchAtlasStills(query){
+  const q = String(query || "").trim().slice(0, 80);
+  if (q.length < 2) return [];
+  const imaging = q + " (MRI OR CT OR PET OR radiograph OR ultrasound OR scintigraphy)";
+  const junk = /portrait|biography|painting|flag of|skyline|aircraft|airport|football|soccer|logo|coat of arms|politician|election|diagram only/i;
+  const out = [];
+  const seen = new Set();
+  function push(title, src, page, raw){
+    const hay = (title + " " + raw + " " + src).toLowerCase();
+    if (!src || seen.has(src) || junk.test(hay)) return;
+    if (typeof isPlacePhoto === "function" && isPlacePhoto(hay)) return;
+    seen.add(src);
+    out.push({ title: String(title || q).slice(0, 140), thumb: src, src: src, page: page || "", raw: raw || title || q, kind: "wiki" });
+  }
+  try {
+    const wiki = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(imaging) + "&gsrlimit=10&prop=pageimages|info&inprop=url&pithumbsize=800&format=json&origin=*";
+    const data = await (await fetch(wiki)).json();
+    Object.values((data.query && data.query.pages) || {}).forEach(p => {
+      if (!p || !p.thumbnail || !p.thumbnail.source) return;
+      push(p.title, p.thumbnail.source, p.fullurl, p.title);
+    });
+  } catch (e) {}
+  try {
+    const commons = "https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q + " (MRI OR CT OR PET OR radiograph OR ultrasound) filetype:bitmap") + "&gsrnamespace=6&gsrlimit=12&prop=imageinfo&iiprop=url|mime&iiurlwidth=800&format=json&origin=*";
+    const data = await (await fetch(commons)).json();
+    Object.values((data.query && data.query.pages) || {}).forEach(p => {
+      const info = (p.imageinfo && p.imageinfo[0]) || {};
+      const title = String(p.title || "").replace(/^File:/, "");
+      if (info.mime && !/^image\//i.test(info.mime)) return;
+      push(title, info.thumburl || info.url, info.descriptionurl, title);
+    });
+  } catch (e) {}
+  return out;
+}
 async function raSearchPmc(query){
   const started = Date.now();
   const figures = [];
@@ -10206,9 +10240,7 @@ async function raSearchPmc(query){
     });
   }
   const jobs = [
-    (typeof fetchCommons==="function" ? fetchCommons(query, 0) : Promise.resolve([])).then(r => pushFigs(r, "com")).catch(()=>{}),
-    (typeof fetchPmcLinked==="function" ? fetchPmcLinked(query, 1) : Promise.resolve([])).then(r => pushFigs(r, "pmcl")).catch(()=>{}),
-    (typeof fetchWikiImages==="function" ? fetchWikiImages(query) : Promise.resolve([])).then(r => pushFigs(r, "wiki")).catch(()=>{})
+    fetchAtlasStills(query).then(r => pushFigs(r, "atlas")).catch(()=>{})
   ];
   await Promise.race([
     Promise.all(jobs),
@@ -10299,28 +10331,16 @@ async function raSearchTcia(query){
 }
 async function raSearchOpenNeuro(query){
   const started = Date.now();
-  const studies = [];
-  try {
-    const res = await fetch("https://openneuro.org/crn/graphql", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: "query($q:String!){ datasets(first:8, orderBy:{created:descending}){ edges{ node{ id name } } } }",
-        variables: { q: query }
-      })
-    });
-    if (!res.ok) throw new Error("openneuro");
-    const data = await res.json();
-    const edges = (((data||{}).data||{}).datasets||{}).edges || [];
-    edges.slice(0,8).forEach(ed => {
-      const n = ed.node || {};
-      studies.push({
-        id: "on-"+n.id, title: n.name || n.id, collection: "OpenNeuro", format: "BIDS",
-        modalities: ["MR"], fullStudyUrl: "https://openneuro.org/datasets/"+n.id
-      });
-    });
-  } catch (e) {}
-  return { studies, status: { source:"openneuro", state: studies.length?"ok":"error", count: studies.length, latencyMs: Date.now()-started } };
+  const q = String(query || "").trim();
+  const studies = q.length >= 2 ? [{
+    id: "on-search",
+    title: "OpenNeuro search · " + q,
+    collection: "OpenNeuro",
+    format: "BIDS",
+    modalities: ["MR"],
+    fullStudyUrl: "https://openneuro.org/search?query=" + encodeURIComponent(q)
+  }] : [];
+  return { studies, status: { source:"openneuro", state: studies.length ? "ok" : "empty", count: studies.length, latencyMs: Date.now()-started } };
 }
 function raTimeout(p, ms, fallback){
   return Promise.race([p, new Promise(r => setTimeout(() => r(fallback), ms))]);
