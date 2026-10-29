@@ -76,8 +76,8 @@ interface Props {
 
 const UNIQUE_IMAGES = Array.from(new Set(Object.values(IMAGES) as string[]))
 
-/** Width of the station scale gutter, kept clear of overlaying content. */
-const SCALE_W = '11rem'
+/** Width of the station scale, sitting on the image border. */
+const SCALE_W = '4.6rem'
 
 export default function Viewer({
   slice,
@@ -133,8 +133,28 @@ export default function Viewer({
   })
   const gripRef = useRef<HTMLDivElement>(null)
   const [caseFailed, setCaseFailed] = useState(false)
+  const [gallery, setGallery] = useState<{ url: string; caption: string }[]>([])
+  const [picked, setPicked] = useState(0)
   useEffect(() => setCaseFailed(false), [caseImage?.url])
-  const showCase = Boolean(caseImage) && mode === 'case' && !caseFailed
+  useEffect(() => {
+    const q = searchTerms(finding || '')
+    if (q.length < 3) return
+    let cancel = false
+    setGallery([])
+    setPicked(0)
+    fetch('/api/pmc/match?source=openi&q=' + encodeURIComponent(q))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { results?: { url: string; caption: string }[] } | null) => {
+        if (cancel || !data?.results) return
+        setGallery(data.results.filter((row) => row.url))
+      })
+      .catch(() => {})
+    return () => {
+      cancel = true
+    }
+  }, [finding])
+  const shown = gallery[picked]
+  const showCase = Boolean(caseImage || shown) && mode === 'case' && !caseFailed
 
   useEffect(() => {
     try {
@@ -390,9 +410,9 @@ export default function Viewer({
           })}
 
           {/* The selected encounter's own matched published imagery */}
-          {caseImage && (
+          {(caseImage || shown) && (
             <div
-              className="rr-fade pointer-events-none absolute overflow-hidden bg-black"
+              className="rr-fade pointer-events-none absolute overflow-hidden border-2 border-white bg-black"
               style={
                 showCase
                   ? {
@@ -406,11 +426,14 @@ export default function Viewer({
               }
             >
               <PlateImg
-                key={`${caseImage.url}-${imageIndex}`}
-                src={caseImage.url}
+                key={`${shown?.url || caseImage?.url}-${imageIndex}`}
+                src={shown?.url || caseImage?.url || ''}
                 stationId={station.id}
-                alt={caseImage.caption || finding || ''}
-                onError={() => setCaseFailed(true)}
+                alt={shown?.caption || caseImage?.caption || finding || ''}
+                onError={() => {
+                  if (gallery.length > picked + 1) setPicked((n) => n + 1)
+                  else setCaseFailed(true)
+                }}
                 className="absolute"
               />
             </div>
@@ -646,24 +669,25 @@ export default function Viewer({
                   </button>
                   {(
                     [
-                      ['PubMed', `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(searchTerms(finding))}`],
-                      ['Open-i', `https://openi.nlm.nih.gov/search?query=${encodeURIComponent(searchTerms(finding))}`],
-                      ['Radiopaedia', `https://radiopaedia.org/search?lang=us&q=${encodeURIComponent(searchTerms(finding))}&scope=cases`],
-                      ['MedPix', `https://medpix.nlm.nih.gov/search?q=${encodeURIComponent(searchTerms(finding))}`],
-                      ['Eurorad', `https://www.eurorad.org/search?search=${encodeURIComponent(searchTerms(finding))}`],
-                      ['OE login', `https://www.openevidence.com/ask?query=${encodeURIComponent(searchTerms(finding))}`],
+                      ['PubMed', 'pubmed'],
+                      ['Open-i', 'openi'],
+                      ['Radiopaedia', 'radiopaedia'],
+                      ['MedPix', 'medpix'],
+                      ['Eurorad', 'eurorad'],
+                      ['OE login', 'oe'],
                     ] as const
-                  ).map(([label, href]) => (
-                    <a
+                  ).map(([label]) => (
+                    <button
                       key={label}
-                      href={href}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      onClick={(e) => e.stopPropagation()}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setPicked(0)
+                      }}
                       className="rounded border border-rr-line bg-black/80 px-1.5 py-0.5 text-[8px] font-bold tracking-wide text-white hover:border-rr-blue-lit"
                     >
                       {label}
-                    </a>
+                    </button>
                   ))}
                   <SourcePicker
                     open={sourcesOpen}
@@ -676,16 +700,43 @@ export default function Viewer({
                   />
                 </div>
               </div>
+              {gallery.length > 0 && (
+                <div
+                  className="pointer-events-auto absolute bottom-7 left-2 z-10 flex gap-1 overflow-x-auto"
+                  style={{ right: `calc(${SCALE_W} + 8px)` }}
+                >
+                  {gallery.map((g, i) => (
+                    <button
+                      key={g.url}
+                      type="button"
+                      title={g.caption}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setPicked(i)
+                        setCaseFailed(false)
+                      }}
+                      className={
+                        'h-12 w-12 shrink-0 overflow-hidden rounded border bg-black ' +
+                        (i === picked ? 'border-white' : 'border-rr-line')
+                      }
+                    >
+                      <img src={g.url} alt="" className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {caseImage && (
               <div
                 className="pointer-events-none absolute bottom-0 left-0 h-6 overflow-hidden bg-black/75 px-2 py-0.5 text-[8px] leading-6 whitespace-nowrap text-rr-dim"
                 style={{ right: SCALE_W }}
               >
-                <span className="text-rr-text">{caseImage.caption.slice(0, 190)}</span>
+                <span className="text-rr-text">{(shown?.caption || caseImage.caption).slice(0, 190)}</span>
                 {' — '}
                 {caseImage.authors.split(',')[0]} et al., {caseImage.journal}{' '}
                 {caseImage.year} · {caseImage.license.toUpperCase()} · {caseImage.pmcid} ·
                 doi:{caseImage.doi}
               </div>
+              )}
             </>
           )}
 
@@ -704,7 +755,7 @@ export default function Viewer({
 
           {/* Station scale down the right edge */}
           <div
-            className="absolute top-0 right-0 bottom-0 flex flex-col justify-between overflow-hidden border-l border-rr-line bg-rr-bg/90"
+            className="absolute top-0 right-0 bottom-0 flex flex-col justify-between overflow-hidden border-l-2 border-white bg-black/55"
             style={{ width: SCALE_W }}
           >
             {SCALE_TICKS.map((t) => {
@@ -718,14 +769,10 @@ export default function Viewer({
                     onSlice(t.slice)
                   }}
                   className={
-                    'relative flex min-h-0 w-full flex-1 items-center gap-1 overflow-hidden px-1.5 text-left text-[14px] font-bold leading-none transition-colors ' +
-                    (on ? 'bg-white/15 text-white' : 'text-white hover:bg-white/10')
+                    'relative flex min-h-0 w-full flex-1 items-center gap-0.5 overflow-hidden px-0.5 text-left text-[8px] leading-none text-white ' +
+                    (on ? 'bg-white/20 font-bold' : '')
                   }
                 >
-                  <span
-                    className="h-px w-2 shrink-0"
-                    style={{ background: on ? '#ef4444' : '#3a3a46' }}
-                  />
                   <span className="shrink-0 tabular-nums">{formatSlice(t.slice)}</span>
                   <span className="truncate">{t.name}</span>
                 </button>
