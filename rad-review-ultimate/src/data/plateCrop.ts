@@ -70,33 +70,29 @@ export function wholeBodyLayout(
 }
 
 /**
- * A stable window into the teaching plate. The same encounter always opens
- * the same frame, and a different encounter never opens the same one.
+ * Show the whole plate. A tighter crop was hiding the scan in a black corner.
+ * The encounter number, not the crop, is what makes each of the 33,000 distinct.
  */
-export function encounterFrame(idx: number): {
+export function encounterFrame(_idx: number): {
   left: string
   top: string
   width: string
   height: string
-  objectFit: 'cover'
+  objectFit: 'contain'
   maxWidth: 'none'
   maxHeight: 'none'
-  bottom: 'auto'
-  right: 'auto'
+  bottom: string
+  right: string
 } {
-  const n = ((idx % 33000) + 33000) % 33000
-  const zoom = 175 + (n % 8) * 6
-  const x = Math.floor(n / 8) % 65
-  const y = Math.floor(n / 520) % 65
   return {
-    objectFit: 'cover',
-    width: `${zoom}%`,
-    height: `${zoom}%`,
+    objectFit: 'contain',
+    width: '100%',
+    height: '100%',
     maxWidth: 'none',
     maxHeight: 'none',
-    left: `${-x}%`,
-    top: `${-y}%`,
-    bottom: 'auto',
-    right: 'auto',
+    left: '0',
+    top: '0',
+    bottom: '0',
+    right: '0',
   }
 }
