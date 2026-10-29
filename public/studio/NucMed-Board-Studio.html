@@ -216,7 +216,8 @@ td code, .mono { font-family: var(--mono); color: var(--gold); }
   background: #3a5a6a; border-radius: 2px;
 }
 .player-row { display: flex; align-items: center; gap: 12px; padding: 8px 18px; }
-.wiki-dock { display: none !important; }
+.wiki-dock { display: none; gap: 8px; overflow-x: auto; padding: 8px 12px 10px; }
+.wiki-dock.has-tiles { display: flex !important; }
 .wiki-tile {
   flex: 0 0 auto; width: 108px; background: #10232e; border: 1px solid var(--line);
   border-radius: 10px; overflow: hidden; cursor: zoom-in; padding: 0;
@@ -1247,9 +1248,11 @@ body.player-min { --player-h: 48px; }
 
 /* RadAtlas live search docks BESIDE the lesson/quiz instead of covering it */
 body.live-open:not(.live-float):not(.live-min):not(.live-max) .work {
+  display: grid !important;
   grid-template-columns: minmax(0,1fr) minmax(240px, var(--live-w, 36vw)) !important;
 }
 body.atlas-open.live-open:not(.live-float):not(.live-min):not(.live-max) .work {
+  display: grid !important;
   grid-template-columns: minmax(0,1fr) 10px minmax(180px, var(--atlas-w, 30vw)) minmax(220px, var(--live-w, 32vw)) !important;
 }
 body.live-open:not(.live-float):not(.live-min) #livePop.live-pop {
@@ -2032,7 +2035,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
     </div>
     <div id="atlasFilm" aria-label="Atlas images — scroll and click"></div>
     <div class='player-script' id='playerScript'></div>
-    <div class='wiki-dock' id='wikiDock' style="display:none"></div>
+    <div class='wiki-dock' id='wikiDock'></div>
   </footer>
 </section>
 </div>
@@ -5711,6 +5714,15 @@ async function liveSearchTerm(term){
     };
   });
   if (stat) stat.textContent = working.length + " QA-approved / " + collected.length + " fetched · Wikipedia · PubMed · web/CC · denied images hidden";
+  const dock = document.getElementById("wikiDock");
+  if (dock) {
+    dock.classList.add("has-tiles");
+    dock.innerHTML = working.slice(0, 8).map(it => {
+      const src = it.src || it.thumb;
+      const cap = String(it.title || it.cap || q).slice(0, 80).replace(/</g, "");
+      return `<button type="button" class="wiki-tile"><img alt="" src="${src}" referrerpolicy="no-referrer"><span>${cap}</span></button>`;
+    }).join("");
+  }
 }
 function bindLessonLiveSearch(){
   const root = document.getElementById("stage");
@@ -10228,6 +10240,10 @@ function renderAcademy(){
   if (state.nbaSel >= filtered.length) state.nbaSel = 0;
   const enc = filtered[state.nbaSel];
   if (enc) state.nbaSlice = enc.slice;
+  if (enc && state._pubmedKey !== enc.studyKey) {
+    state._pubmedKey = enc.studyKey;
+    setTimeout(() => { try { liveSearchTerm(enc.finding); } catch (e) {} }, 60);
+  }
   const st = rrStationForSlice(state.nbaSlice);
   const nDR = rows.filter(r => r.track === "DR").length;
   const nNM = rows.filter(r => r.track === "NM").length;
@@ -10995,6 +11011,7 @@ async function raRun(){
   if (prev[0]) { RAD_ATLAS.workspace = { title: prev[0].title, subtitle: prev[0].collection+" · TCIA", url: prev[0].fullStudyUrl, preview: prev[0].previewUrl, kind:"study", list:prev, index:0, imageCount:prev[0].imageCount, seriesUid:prev[0].seriesUid, collection:prev[0].collection }; raPaintWorkspace(); }
   else if (figs[0]) { RAD_ATLAS.workspace = { title: figs[0].title, subtitle: figs[0].pmcid, url: figs[0].articleUrl, preview: figs[0].imageUrl, kind:"source" }; raPaintWorkspace(); }
   if (RAD_ATLAS.query && RAD_ATLAS.query.length >= 2) raPubmedSearch(RAD_ATLAS.query);
+  try { liveSearchTerm(data.query); } catch (e) {}
   bindWidgetPlay({ finding: "RadAtlas results for "+data.query+". "+figs.length+" article figures, "+prev.length+" study previews.", stationName:"ATLAS", categoryId:"nuclear" }, "radatlas");
   try { IQA.paintBadges(); } catch(e) {}
 }
