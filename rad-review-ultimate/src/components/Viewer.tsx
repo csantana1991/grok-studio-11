@@ -561,7 +561,7 @@ export default function Viewer({
                   {verdict === 'mismatch'
                     ? 'REGION MISMATCH — figure shows a different body part'
                     : caseImage.tier === 'anatomy'
-                      ? `${station.name} REGION EXAMPLE — not matched to this finding`
+                      ? caseImage.caption.split('.')[0]
                       : verdict === 'confirmed'
                         ? `VERIFIED — depicts ${station.name}`
                         : 'RELATED PUBLISHED CASE'}

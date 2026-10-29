@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import type { Encounter } from '../data/generateCases'
 import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
 import { formatSlice, getStationForSlice } from '../data/stations'
+import { labelForPlateUrl } from '../data/teachingPlate'
 import { wholeBodyLayout } from '../data/plateCrop'
 
 export const ROW_H = 128
@@ -119,6 +120,11 @@ function Row({
       </div>
 
       <p className="line-clamp-2 text-[15px] leading-snug text-white">{c.finding}</p>
+      {thumb && (
+        <p className="line-clamp-1 text-[11px] leading-tight text-rr-amber">
+          Image: {labelForPlateUrl(thumb)}
+        </p>
+      )}
 
       <div className="flex items-center gap-2 text-[11px] text-rr-dim">
         <span style={{ color: cat.accent }}>{cat.pill}</span>
@@ -302,13 +308,13 @@ export default function CaseList({
               <button
                 key={p.src}
                 type="button"
-                title={p.finding}
+                title={`Image: ${labelForPlateUrl(p.src)}. Case: ${p.finding}`}
                 onClick={() => onSelect(p.encounter)}
                 className="w-16 shrink-0"
               >
                 <img
                   src={p.src}
-                  alt={p.finding}
+                  alt={labelForPlateUrl(p.src)}
                   className="h-14 w-16 rounded border border-rr-line bg-black object-contain"
                 />
               </button>

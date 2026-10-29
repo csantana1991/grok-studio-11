@@ -90,6 +90,6 @@ describe('the displayed figure is the best-supported one', () => {
     const list = candidatesFor(enc, wrongOnly)
     expect(list).toHaveLength(1)
     expect(list[0].match.journal).toBe('NucMed Board Studio plate library')
-    expect(figureFor(enc, wrongOnly)?.match.url).toContain('/findings/')
+    expect(figureFor(enc, wrongOnly)?.match.url).toContain('case-mr-2.jpg')
   })
 })

@@ -1,72 +1,65 @@
 /**
- * One teaching image per finding.
+ * Checked teaching image for each case.
  *
- * Most findings have their own file. A few confirmed mismatches share a
- * same-modality plate instead of a picture of the wrong body part.
+ * The image label names the picture that was reviewed. It does not repeat
+ * the case diagnosis, because the old per-finding files often showed a
+ * different study.
  */
 
 import type { Encounter } from './generateCases'
 import type { LiveMatch } from './liveMatch'
-import { FINDING_PLATES } from './findingPlates'
 
 const DR = '/studio/assets/dr/'
 
+/** First file of each pool was checked by eye. The label is that picture, not the case sentence. */
 const POOLS: Record<string, string[]> = {
   mriBrain: ['one/mr-1.jpg', 'case-mr-3.jpg'],
-  mriKnee: ['one/mr-2.jpg', 'case-mr-2.jpg'],
+  mriKnee: ['case-mr-2.jpg', 'one/mr-2.jpg'],
   mriShoulder: ['one/mr-3.jpg'],
   mriSpine: ['one/mr-4.jpg'],
   mrcp: ['mrcp-choledocholithiasis.jpg'],
-  pet: [
-    'one/pet-mip-1.jpg',
-    'one/pet-mip-2.jpg',
-    'one/pet-mip-3.jpg',
-    'one/pet-ax-1.jpg',
-    'one/pet-ax-2.jpg',
-    'one/pet-ax-3.jpg',
-    'one/pet-fuse-1.jpg',
-    'one/pet-fuse-2.jpg',
-    'one/pet-quad-1.jpg',
-    'one/pet-quad-2.jpg',
-    'one/pet-quad-3.jpg',
-    'one/pet-quad-4.jpg',
-    'one/fdg-pair-1.jpg',
-    'one/fdg-pair-2.jpg',
-  ],
-  petBrain: ['nm-petmri-brain.jpg', 'one/mr-1.jpg'],
-  psma: ['one/psma-pair-1.jpg', 'one/psma-pair-2.jpg', 'one/psma-1.jpg', 'one/psma-2.jpg'],
+  pet: ['one/pet-mip-1.jpg'],
+  petBrain: ['nm-petmri-brain.jpg'],
+  psma: ['one/psma-pair-1.jpg'],
   dotatate: ['one/dota-1.jpg'],
-  bone: [
-    'one/bone-1.jpg',
-    'one/bone-2.jpg',
-    'one/bone-3.jpg',
-    'one/bone-4.jpg',
-    'one/bone4-1.jpg',
-    'one/bone4-2.jpg',
-    'one/bone4-3.jpg',
-    'one/bone4-4.jpg',
-  ],
-  thyroid: ['one/thyroid-1.jpg', 'one/thyroid-2.jpg', 'one/thyroid-3.jpg', 'one/thyroid-4.jpg', 'one/iodine-1.jpg', 'one/iodine-2.jpg'],
-  mammo: [
-    'one/mammo-1.jpg',
-    'one/mammo-2.jpg',
-    'one/mammo-3.jpg',
-    'one/mammo-4.jpg',
-    'one/breast-1.jpg',
-    'one/breast-2.jpg',
-    'one/breast-3.jpg',
-    'one/breast-4.jpg',
-  ],
-  ctChest: ['one/ct-chest-1.jpg', 'one/ct-chest-2.jpg', 'one/ct-chest-3.jpg', 'one/ct-body-1.jpg'],
-  ctBody: ['case-ct-1.jpg', 'one/ct-body-2.jpg', 'one/ct-body-3.jpg'],
-  ctHead: ['one/mr-1.jpg', 'case-mr-3.jpg'],
-  us: ['case-us-1.jpg', 'case-us-2.jpg'],
-  cardiac: ['one/pyp-1.jpg', 'one/pyp-2.jpg', 'one/pyp-3.jpg', 'one/pyp-4.jpg', 'one/pyp-5.jpg', 'one/pyp-6.jpg'],
-  xrChest: ['xr-chest.jpg', 'gi-398.jpg', 'gi-399.jpg'],
-  xrLimb: ['one/xr-1.jpg', 'one/xr-2.jpg', 'one/bone-1.jpg', 'one/bone-2.jpg'],
+  bone: ['one/bone-1.jpg'],
+  thyroid: ['one/thyroid-1.jpg'],
+  mammo: ['one/mammo-1.jpg'],
+  ctChest: ['one/ct-chest-1.jpg'],
+  ctBody: ['one/ct-body-2.jpg'],
+  ctHead: ['one/mr-1.jpg'],
+  us: ['case-us-1.jpg'],
+  cardiac: ['one/pyp-1.jpg'],
+  xrChest: ['xr-chest.jpg'],
+  xrLimb: ['one/xr-1.jpg'],
   hida: ['nm-hida.jpg'],
   renal: ['nm-mag3.jpg'],
-  vq: ['one/vq-1.jpg', 'one/vq-2.jpg', 'one/vq-3.jpg', 'one/vq-4.jpg', 'one/vq-5.jpg', 'one/vq-6.jpg'],
+  vq: ['one/vq-1.jpg'],
+}
+
+const KIND_LABEL: Record<string, string> = {
+  mriBrain: 'Brain MRI example',
+  mriKnee: 'Knee MRI example',
+  mriShoulder: 'Shoulder MRI example',
+  mriSpine: 'Lumbar spine MRI example',
+  mrcp: 'MRCP example',
+  pet: 'FDG PET example',
+  petBrain: 'Brain PET example',
+  psma: 'PSMA PET example',
+  dotatate: 'DOTATATE PET example',
+  bone: 'Bone scan example',
+  thyroid: 'Thyroid scan example',
+  mammo: 'Mammogram example',
+  ctChest: 'Chest CT example',
+  ctBody: 'Abdomen CT example',
+  ctHead: 'Brain MRI example',
+  us: 'Ultrasound example',
+  cardiac: 'PYP scan example',
+  xrChest: 'Chest radiograph example',
+  xrLimb: 'Foot radiograph example',
+  hida: 'HIDA scan example',
+  renal: 'MAG3 renogram example',
+  vq: 'V/Q scan example',
 }
 
 export function plateKind(finding: string, categoryId: string): string {
@@ -122,20 +115,24 @@ export function plateKind(finding: string, categoryId: string): string {
   return 'ctBody'
 }
 
-const BY_FINDING: Record<string, string> = FINDING_PLATES
-
-/** One file per finding. The same wording always opens the same frame. */
+/** The checked picture for this case. Random finding files are not used: they were labeled with the wrong diagnosis. */
 function pick(finding: string, stationId: string, categoryId: string): string {
   void stationId
-  const name = BY_FINDING[finding] ?? (POOLS[plateKind(finding, categoryId)] ?? POOLS.ctBody)[0]
+  const name = (POOLS[plateKind(finding, categoryId)] ?? POOLS.ctBody)[0]
   return DR + name
 }
 
-/** A shared literature figure must not replace this finding's own file. */
+export function labelForPlateUrl(url: string): string {
+  const file = url.split('/').pop() || ''
+  for (const [kind, files] of Object.entries(POOLS)) {
+    if (files[0].endsWith(file)) return KIND_LABEL[kind]
+  }
+  return 'Teaching image'
+}
+
+/** A literature figure may replace the plate only when it is this same checked file. */
 export function plateAgrees(finding: string, categoryId: string, hay: string): boolean {
-  void categoryId
-  const name = BY_FINDING[finding]
-  if (!name) return false
+  const name = (POOLS[plateKind(finding, categoryId)] ?? POOLS.ctBody)[0]
   const file = name.split('/').pop() || name
   return hay.includes(name) || hay.includes(file)
 }
@@ -145,12 +142,8 @@ export function teachingPlateFor(c: Pick<Encounter, 'finding' | 'stationId' | 'c
   caption: string
 } {
   const url = pick(c.finding, c.stationId, c.categoryId)
-  const file = url.split('/').pop() || url
-  const kind = plateKind(c.finding, c.categoryId)
-  // Do not copy the diagnosis into the caption. The checker treats shared
-  // wording as proof the file depicts that disease, and most plates are only
-  // a same-modality example.
-  const caption = `Teaching plate (${file}). ${kind} example only. Not confirmed as the case diagnosis.`
+  const label = KIND_LABEL[plateKind(c.finding, c.categoryId)] ?? 'Teaching image'
+  const caption = `${label}. Not confirmed as this diagnosis.`
   return { url, caption }
 }
 
