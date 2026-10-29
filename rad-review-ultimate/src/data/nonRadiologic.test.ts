@@ -79,9 +79,15 @@ describe('non-radiological figure detection', () => {
     ).toBe(true)
     expect(
       isNonRadiologic(
-        'Navy corpsman PhM3 C Jerry Gottlieb treating a dog for bullet wound in neck. Dog was a pet found on Peleliu',
+        'Amazona aestiva -pet in round cage-6a – Blue-fronted Amazon also called',
       ),
     ).toBe(true)
+    expect(
+      isNonRadiologic('Adult Pacific Ring Neck Snake (on a stick) – Adult Pacific Ring Neck'),
+    ).toBe(true)
+    expect(
+      isNonRadiologic('Axial MRI of the cord showing the snake-eye sign in the cervical spine'),
+    ).toBe(false)
   })
 
   it('does not reject a spectral Doppler waveform, which is a real image', () => {

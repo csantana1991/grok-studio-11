@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { matchCredit, type LiveMatch } from '../data/liveMatch'
+import { isNonRadiologic } from '../data/nonRadiologic'
 import type { BatchProgress, LoopStatus, MatchState } from '../hooks/useLiteratureMatches'
 import { TARGET_PER_CASE } from '../hooks/useLiteratureMatches'
 
@@ -205,7 +206,9 @@ export default function LiteratureMatch({
 
             {matches && matches.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                {matches.map((m) => (
+                {matches
+                  .filter((m) => !isNonRadiologic(`${m.title} ${m.caption}`))
+                  .map((m) => (
                   <button
                     key={m.url}
                     type="button"

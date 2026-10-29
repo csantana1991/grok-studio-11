@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchMatches, primeCache, type LiveMatch } from '../data/liveMatch'
+import { isNonRadiologic } from '../data/nonRadiologic'
 import {
   loadAllMatches,
   saveMatches,
@@ -89,6 +90,7 @@ export function useLiteratureMatches(enabled: boolean, allFindings: string[] = [
       const merged = [...existing]
       for (const m of incoming) {
         if (seen.has(m.url)) continue
+        if (isNonRadiologic(`${m.title} ${m.caption}`)) continue
         seen.add(m.url)
         merged.push(m)
       }
@@ -109,9 +111,15 @@ export function useLiteratureMatches(enabled: boolean, allFindings: string[] = [
       .then(() => loadAllMatches())
       .then((saved) => {
         if (cancelled || !Object.keys(saved).length) return
-        primeCache(saved)
-        storeRef.current = saved
-        setStore(saved)
+        const clean: Record<string, LiveMatch[]> = {}
+        for (const [finding, list] of Object.entries(saved)) {
+          const kept = list.filter((m) => !isNonRadiologic(`${m.title} ${m.caption}`))
+          if (kept.length !== list.length) void saveMatches(finding, kept)
+          if (kept.length) clean[finding] = kept
+        }
+        primeCache(clean)
+        storeRef.current = clean
+        setStore(clean)
         setState((s) => {
           const next = { ...s }
           for (const k of Object.keys(saved)) next[k] ??= 'done'

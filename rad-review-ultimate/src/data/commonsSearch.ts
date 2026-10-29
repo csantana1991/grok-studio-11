@@ -1,3 +1,4 @@
+import { isNonRadiologic } from './nonRadiologic'
 /**
  * WIKIMEDIA COMMONS — a second figure source, for when PubMed Central will not
  * serve us.
@@ -91,7 +92,7 @@ const NOT_IMAGING =
 
 /** Titles that read as radiology. Commons search alone is too permissive. */
 const IMAGING =
-  /\b(mri|ct|computed tomograph|magnetic resonance|radiograph|x-?ray|ultrasound|sonograph|scintigraph|spect|pet|mammogra|angiogra|fluorosco|dexa|myelogra|arthrogra)\b/i
+  /\b(mri|\bct\b|computed tomograph|magnetic resonance|radiograph|x-?ray|ultrasound|sonograph|scintigraph|\bspect\b|pet\s*[/\-]?\s*ct|pet\s+scan|fdg|positron|mammogra|angiogra|fluorosco|dexa|myelogra|arthrogra)\b/i
 
 /**
  * Commons categories that mark a file as radiological.
@@ -103,7 +104,7 @@ const IMAGING =
  * is the convenient one. Either will do; neither is invented.
  */
 const CATEGORY_IMAGING =
-  /(x-?rays? of|radiographs? of|ct scans? of|mri of|mris? of|ultrasounds? of|sonograms? of|scintigraph|pet scans?|angiograms? of|mammograms? of|medical imaging|radiology)/i
+  /\b(x-?rays? of|radiographs? of|ct scans? of|mri of|mris? of|ultrasounds? of|sonograms? of|scintigraph|pet scans?|angiograms? of|mammograms? of|medical imaging|radiology)\b/i
 
 interface CommonsPage {
   title?: string
@@ -274,7 +275,10 @@ export async function searchCommons(
       .map((c) => plain(c.title).replace(/^Category:/, ''))
       .join(' · ')
     if (!IMAGING.test(caption) && !CATEGORY_IMAGING.test(categories)) continue
-    if (NOT_IMAGING.test(caption)) continue
+    if (NOT_IMAGING.test(caption) || NOT_IMAGING.test(categories)) continue
+    // "pet" in a filename is an animal. A PET scan says PET/CT, PET scan, or FDG.
+    if (/\b(birds?|snakes?|parrots?|parakeets?|conures?|pets|reptiles|wildlife)\b/i.test(categories)) continue
+    if (isNonRadiologic(caption) || isNonRadiologic(categories)) continue
 
     const lc = caption.toLowerCase()
     out.push({
