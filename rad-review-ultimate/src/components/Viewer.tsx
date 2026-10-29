@@ -72,6 +72,8 @@ interface Props {
   onJudgeImage?: (v: 'approved' | 'rejected') => void
   /** Drag the title bar to resize this pane against the worklist. */
   onDragEdge?: (e: React.PointerEvent) => void
+  /** Show this source in the window above Control. */
+  onPickSource?: (label: string, href: string) => void
 }
 
 const UNIQUE_IMAGES = Array.from(new Set(Object.values(IMAGES) as string[]))
@@ -109,6 +111,7 @@ export default function Viewer({
   imageVerdict,
   onJudgeImage,
   onDragEdge,
+  onPickSource,
 }: Props) {
   const frameRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -693,6 +696,7 @@ export default function Viewer({
                         setSourceLabel(label)
                         setSourceHref(href)
                         setSourceOpen(true)
+                        onPickSource?.(label, href)
                       }}
                       className={
                         'rounded border bg-black/80 px-1.5 py-0.5 text-[8px] font-bold tracking-wide text-white hover:border-rr-blue-lit ' +
@@ -713,64 +717,6 @@ export default function Viewer({
                   />
                 </div>
               </div>
-              {sourceOpen && (
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="pointer-events-auto absolute top-14 bottom-8 left-2 z-30 flex flex-col overflow-hidden rounded border-2 border-white bg-black"
-                  style={{ width: 'min(48%, 540px)' }}
-                >
-                  <div className="flex items-center gap-2 border-b border-white/40 px-2 py-1">
-                    <span className="text-[13px] font-bold text-[#ffe14a]">{sourceLabel}</span>
-                    {sourceHref ? (
-                      <a
-                        href={sourceHref}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[11px] font-bold text-white underline"
-                      >
-                        Open site
-                      </a>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => setSourceOpen(false)}
-                      className="ml-auto text-[12px] font-bold text-white"
-                    >
-                      Close
-                    </button>
-                  </div>
-                  {sourceLabel === 'Open-i' || !sourceHref ? (
-                    <div className="rr-scroll min-h-0 flex-1 overflow-y-scroll">
-                      {(shown ? [shown] : gallery).slice(0, 1).map((g) => (
-                        <img key={g.url} src={g.url} alt="" className="w-full bg-black object-contain" />
-                      ))}
-                      <p className="px-2 py-1 text-[13px] leading-snug text-white">
-                        {shown?.caption || (gallery.length ? '' : 'Looking up figures for this case...')}
-                      </p>
-                      <div className="flex gap-1 px-2 pb-2">
-                        {gallery.map((g, i) => (
-                          <button
-                            key={g.url}
-                            type="button"
-                            onClick={() => {
-                              setPicked(i)
-                              setCaseFailed(false)
-                            }}
-                            className={
-                              'h-14 w-14 shrink-0 overflow-hidden border bg-black ' +
-                              (i === picked ? 'border-white' : 'border-white/30')
-                            }
-                          >
-                            <img src={g.url} alt="" className="h-full w-full object-cover" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <iframe title={sourceLabel} src={sourceHref} className="min-h-0 w-full flex-1 bg-white" />
-                  )}
-                </div>
-              )}
               {gallery.length > 0 && (
                 <div
                   className="pointer-events-auto absolute bottom-7 left-2 z-10 flex gap-1 overflow-x-auto"

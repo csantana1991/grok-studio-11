@@ -13,6 +13,7 @@ import QaConsole from './components/QaConsole'
 import RadAtlasPanel from './components/RadAtlasPanel'
 import AiImageAnalysis from './components/AiImageAnalysis'
 import AudiobookBar from './components/AudiobookBar'
+import SourceWindow from './components/SourceWindow'
 import type { LiveMatch } from './data/liveMatch'
 import { useImageQa } from './hooks/useImageQa'
 import { rankCandidates } from './data/qa/engine'
@@ -174,6 +175,7 @@ export default function App() {
   /** Share of the screen given to the worklist. Drag the blue bar or the viewer title. */
   const [listShare, setListShare] = useState(28)
   const [rightW, setRightW] = useState(300)
+  const [sourcePick, setSourcePick] = useState({ label: 'Open-i', href: '' })
   const stageRef = useRef<HTMLElement>(null)
 
   const dragSplit = useCallback((e: React.PointerEvent) => {
@@ -215,6 +217,7 @@ export default function App() {
   /** Reset the rematch cursor whenever the selected encounter changes. */
   useEffect(() => {
     setMatchOffset(0)
+    setSourcePick({ label: 'Open-i', href: '' })
   }, [selected?.idx])
 
   /**
@@ -600,6 +603,7 @@ export default function App() {
               selectedFinding ? () => void lit.ensure(selectedFinding, true) : undefined
             }
             onDragEdge={dragSplit}
+            onPickSource={(label, href) => setSourcePick({ label, href })}
           />
           <InfoBar station={station} slice={slice} />
         </div>
@@ -613,6 +617,11 @@ export default function App() {
           className="rr-side flex min-h-0 w-full shrink-0 flex-col overflow-hidden xl:h-full"
           style={{ ['--rr-right' as string]: `${rightW}px` }}
         >
+        <SourceWindow
+          finding={selected?.finding ?? ''}
+          label={sourcePick.label}
+          href={sourcePick.href}
+        />
         <ControlPanel
           active={selected}
           slice={slice}
