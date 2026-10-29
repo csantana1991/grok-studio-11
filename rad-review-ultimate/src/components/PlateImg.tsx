@@ -28,7 +28,7 @@ export default function PlateImg({
   const timer = useRef(0)
   useEffect(() => {
     if (!src || src.startsWith('/')) return
-    timer.current = window.setTimeout(() => err.current?.(), 4000)
+    timer.current = window.setTimeout(() => err.current?.(), 8000)
     return () => window.clearTimeout(timer.current)
   }, [src])
   return (

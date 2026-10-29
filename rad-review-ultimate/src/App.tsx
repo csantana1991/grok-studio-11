@@ -237,7 +237,16 @@ export default function App() {
     [figureIndex],
   )
 
-  const thumbFor = useCallback((c: Encounter) => teachingPlateFor(c).url, [])
+  const thumbFor = useCallback(
+    (c: Encounter) => {
+      const published = oaFor(c.finding, c.idx, oa)
+      if (published) return published.url
+      const litUrl = selectThumb(c, figureIndex)
+      if (litUrl && /^https?:\/\//i.test(litUrl)) return litUrl
+      return teachingPlateFor(c).url
+    },
+    [figureIndex, oa],
+  )
 
   /**
    * THE AUTONOMOUS IMAGE QA AGENT.
@@ -380,11 +389,9 @@ export default function App() {
 
   const caseImage = (() => {
     if (!selected) return undefined
-    const phone = typeof window !== 'undefined' && window.matchMedia('(max-width: 820px)').matches
-    const teaching = teachingMatch(selected)
-    if (phone) return teaching
     const fromOpenI = oaFor(selected.finding, selected.idx + matchOffset, oa)
     if (fromOpenI) return fromOpenI
+    const teaching = teachingMatch(selected)
     const published = currentMatch?.match
     if (published && /^https?:\/\//i.test(published.url)) return published
     return teaching

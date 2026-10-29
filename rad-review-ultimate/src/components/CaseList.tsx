@@ -4,6 +4,7 @@ import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
 import { formatSlice, getStationForSlice } from '../data/stations'
 import PlateImg from './PlateImg'
 import { imageLabel, teachingPlateFor } from '../data/teachingPlate'
+import { displayUrl } from '../data/liveMatch'
 
 export const ROW_H = 128
 const OVERSCAN = 6
@@ -34,25 +35,54 @@ function thumbFallback(slice: number): string {
   return getStationForSlice(slice).image
 }
 
-function FilmThumb({ c, src }: { c: Encounter; src: string }) {
+function FullThumb({
+  c,
+  src,
+  className,
+  plain,
+}: {
+  c: Encounter
+  src?: string
+  className: string
+  plain?: boolean
+}) {
   const local = teachingPlateFor(c).url
   const station = thumbFallback(c.slice)
-  const [cur, setCur] = useState(src || local)
-  useEffect(() => setCur(src || local), [src, local])
+  const [cur, setCur] = useState(local)
+  useEffect(() => {
+    const remote = src && !src.startsWith('/') ? displayUrl(src) : ''
+    if (!remote || remote === local) {
+      setCur(src || local)
+      return
+    }
+    setCur(local)
+    let dead = false
+    const img = new Image()
+    const timer = window.setTimeout(() => {
+      dead = true
+    }, 8000)
+    img.onload = () => {
+      window.clearTimeout(timer)
+      if (!dead) setCur(remote)
+    }
+    img.onerror = () => {
+      window.clearTimeout(timer)
+      if (!dead) setCur(local)
+    }
+    img.src = remote
+    return () => {
+      dead = true
+      window.clearTimeout(timer)
+    }
+  }, [src, local])
   return (
     <PlateImg
       src={cur}
       stationId={c.stationId}
       alt=""
-      plain
-      onError={() => {
-        setCur((now) => {
-          if (now !== local) return local
-          if (now !== station) return station
-          return now
-        })
-      }}
-      className="absolute inset-0 h-full w-full"
+      plain={plain}
+      onError={() => setCur((now) => (now === local ? station : local))}
+      className={className}
     />
   )
 }
@@ -79,7 +109,6 @@ function Row({
   caption?: string
 }) {
   const cat = CATEGORY_BY_ID[c.categoryId]
-  const [src, setSrc] = useState(thumb)
   return (
     <button
       type="button"
@@ -93,19 +122,9 @@ function Row({
         (selected ? 'bg-rr-blue/20' : 'hover:bg-[#141419]')
       }
     >
-      {src && (
-        <span className="relative h-24 w-28 shrink-0 overflow-hidden rounded border border-rr-line bg-black">
-          <PlateImg
-            src={src}
-            stationId={c.stationId}
-            onError={() => {
-              const fallback = thumbFallback(c.slice)
-              setSrc((cur) => (cur === fallback ? cur : fallback))
-            }}
-            className="absolute inset-0 h-full w-full"
-          />
-        </span>
-      )}
+      <span className="relative h-24 w-28 shrink-0 overflow-hidden rounded border border-rr-line bg-black">
+        <FullThumb c={c} src={thumb} className="absolute inset-0 h-full w-full" />
+      </span>
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
       <div className="flex items-center gap-1.5">
         <span
@@ -346,7 +365,7 @@ export default function CaseList({
                       onClick={() => onSelect(c)}
                       className="relative h-full w-16 shrink-0 overflow-hidden rounded border border-rr-line bg-black"
                     >
-                      {src ? <FilmThumb c={c} src={src} /> : null}
+                      {src ? <FullThumb c={c} src={src} plain className="absolute inset-0 h-full w-full" /> : null}
                     </button>
                   )
                 })}

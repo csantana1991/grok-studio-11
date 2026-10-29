@@ -12,11 +12,10 @@ const EMPTY: OaCatalog = { byFinding: {}, unique: 0 }
 export function useOaCatalog(): OaCatalog {
   const [catalog, setCatalog] = useState<OaCatalog>(EMPTY)
   useEffect(() => {
-    if (window.matchMedia('(max-width: 820px)').matches) return
     let cancelled = false
     const url = new URL('oa-catalog.json', document.baseURI).href
     const ctrl = new AbortController()
-    const timer = window.setTimeout(() => ctrl.abort(), 8000)
+    const timer = window.setTimeout(() => ctrl.abort(), 20000)
     fetch(url, { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { images?: LiveMatch[]; map?: Record<string, number[]>; unique?: number } | null) => {
