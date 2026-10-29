@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import { useFilledPlate } from '../data/plateCrop'
 
 export default function PlateImg({
@@ -23,5 +23,26 @@ export default function PlateImg({
         objectFit: 'contain',
         ...fill,
       }
-  return <img src={src} alt={alt ?? ''} draggable={false} className={className} style={style} onError={onError} />
+  const err = useRef(onError)
+  err.current = onError
+  const timer = useRef(0)
+  useEffect(() => {
+    if (!src || src.startsWith('/')) return
+    timer.current = window.setTimeout(() => err.current?.(), 4000)
+    return () => window.clearTimeout(timer.current)
+  }, [src])
+  return (
+    <img
+      src={src}
+      alt={alt ?? ''}
+      draggable={false}
+      className={className}
+      style={style}
+      onLoad={() => window.clearTimeout(timer.current)}
+      onError={() => {
+        window.clearTimeout(timer.current)
+        err.current?.()
+      }}
+    />
+  )
 }

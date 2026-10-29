@@ -267,6 +267,11 @@ type IdleWindow = Window & {
 }
 
 function schedule(fn: () => void): void {
+  const phone = window.matchMedia('(max-width: 820px)').matches
+  if (phone) {
+    setTimeout(fn, 400)
+    return
+  }
   const w = window as IdleWindow
   if (typeof w.requestIdleCallback === 'function') w.requestIdleCallback(fn, { timeout: 200 })
   else setTimeout(fn, 0)
