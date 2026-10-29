@@ -7258,6 +7258,37 @@ async function fetchMoreFigures(enc, offset){
     return !a.ok || a.ok.test(hay);
   });
 }
+async function fetchCaseFigures(enc, offset){
+  const q = caseQuery(enc);
+  const commonsP = fetchMoreFigures(enc, offset).catch(() => []);
+  const openiP = fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(q))
+    .then(r => r.ok ? r.json() : { results: [] })
+    .then(d => (d.results || []).map(m => ({
+      title: m.title || m.caption || "Open-i figure",
+      thumb: String(m.url || "").indexOf("https://openi.nlm.nih.gov/imgs/") === 0
+        ? "/api/pmc/img?src=" + encodeURIComponent(m.url) : m.url,
+      page: "https://openi.nlm.nih.gov/search?query=" + encodeURIComponent(q),
+      raw: (m.caption || "") + " " + (m.title || "")
+    })))
+    .catch(() => []);
+  const pmcP = fetchPmcFigures(q, Math.floor((offset || 0) / 40) + 1)
+    .then(rows => (rows || []).map(it => ({
+      title: it.cap || it.raw || "PubMed figure",
+      thumb: it.src,
+      page: it.href || "",
+      raw: it.raw || it.cap || ""
+    })))
+    .catch(() => []);
+  const parts = await Promise.all([commonsP, openiP, pmcP]);
+  const seen = new Set();
+  const out = [];
+  parts.forEach(list => (list || []).forEach(c => {
+    if (!c || !c.thumb || seen.has(c.thumb)) return;
+    seen.add(c.thumb);
+    out.push(c);
+  }));
+  return out;
+}
 async function fetchCommons(query, offset) {
   const terms = String(query||"").split(/[^A-Za-z0-9]+/).filter(w => w.length > 2 && !/^(star|gp|rm2|lnth)$/i.test(w)).slice(0, 6).join(" ");
   const guarded = `${terms || "PET CT"} (scintigraphy OR "PET-CT" OR "PET/CT" OR SPECT OR FAPI OR PSMA OR "bone scan") filetype:bitmap -intitle:Boeing -intitle:Dubai -intitle:aircraft -intitle:context -intitle:diploma -intitle:map -intitle:flag -intitle:skyline -intitle:city -intitle:airport -intitle:campus`;
@@ -8971,6 +9002,23 @@ async function loadCaseImages(enc, more){
         : Promise.resolve()
     ]);
     slot.offset += 20;
+    fetchCaseFigures(enc, 0).then(batch => {
+      const seen = new Set((slot.items || []).map(it => it.src));
+      (batch || []).forEach(c => {
+        if (!c.thumb || seen.has(c.thumb)) return;
+        seen.add(c.thumb);
+        slot.items.push({
+          src: c.thumb,
+          cap: c.title || "Published figure",
+          href: c.page || "",
+          kind: "more",
+          raw: c.raw || c.title || ""
+        });
+      });
+      finalizeCaseItems(enc, slot, true);
+      const gal = document.querySelector(".case-gal");
+      if (gal && gal.dataset.key === key) bindCaseGallery(enc);
+    }).catch(() => {});
   } catch (e) {}
   slot.items = await keepWorkingImages(slot.items);
   finalizeCaseItems(enc, slot, more);
@@ -9813,7 +9861,7 @@ function bindCaseGallery(enc){
         more.disabled = true;
         more.textContent = "Searching…";
         try {
-          const batch = await fetchMoreFigures(enc, slot.moreOffset || 0);
+          const batch = await fetchCaseFigures(enc, slot.moreOffset || 0);
           slot.moreOffset = (slot.moreOffset || 0) + 50;
           const seen = new Set((slot.items || []).map(it => it.src));
           let added = 0;
@@ -9822,7 +9870,7 @@ function bindCaseGallery(enc){
             seen.add(c.thumb);
             slot.items.push({
               src: c.thumb,
-              cap: (c.title || "Published figure") + " · Wikimedia Commons",
+              cap: c.title || "Published figure",
               href: c.page || "",
               kind: "more",
               raw: (c.raw || "") + " " + (c.title || "")
