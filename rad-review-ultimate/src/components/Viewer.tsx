@@ -153,6 +153,14 @@ export default function Viewer({
       cancel = true
     }
   }, [finding])
+  const [sourceLabel, setSourceLabel] = useState('Open-i')
+  const [sourceHref, setSourceHref] = useState('')
+  const [sourceOpen, setSourceOpen] = useState(true)
+  useEffect(() => {
+    setSourceOpen(true)
+    setSourceLabel('Open-i')
+    setSourceHref('')
+  }, [finding])
   const shown = gallery[picked]
   const showCase = Boolean(caseImage || shown) && mode === 'case' && !caseFailed
 
@@ -669,22 +677,27 @@ export default function Viewer({
                   </button>
                   {(
                     [
-                      ['PubMed', 'pubmed'],
-                      ['Open-i', 'openi'],
-                      ['Radiopaedia', 'radiopaedia'],
-                      ['MedPix', 'medpix'],
-                      ['Eurorad', 'eurorad'],
-                      ['OE login', 'oe'],
+                      ['PubMed', `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(searchTerms(finding))}`],
+                      ['Open-i', `https://openi.nlm.nih.gov/search?query=${encodeURIComponent(searchTerms(finding))}`],
+                      ['Radiopaedia', `https://radiopaedia.org/search?lang=us&q=${encodeURIComponent(searchTerms(finding))}&scope=cases`],
+                      ['MedPix', `https://medpix.nlm.nih.gov/search?q=${encodeURIComponent(searchTerms(finding))}`],
+                      ['Eurorad', `https://www.eurorad.org/search?search=${encodeURIComponent(searchTerms(finding))}`],
+                      ['OE login', `https://www.openevidence.com/ask?query=${encodeURIComponent(searchTerms(finding))}`],
                     ] as const
-                  ).map(([label]) => (
+                  ).map(([label, href]) => (
                     <button
                       key={label}
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation()
-                        setPicked(0)
+                        setSourceLabel(label)
+                        setSourceHref(href)
+                        setSourceOpen(true)
                       }}
-                      className="rounded border border-rr-line bg-black/80 px-1.5 py-0.5 text-[8px] font-bold tracking-wide text-white hover:border-rr-blue-lit"
+                      className={
+                        'rounded border bg-black/80 px-1.5 py-0.5 text-[8px] font-bold tracking-wide text-white hover:border-rr-blue-lit ' +
+                        (sourceOpen && sourceLabel === label ? 'border-white' : 'border-rr-line')
+                      }
                     >
                       {label}
                     </button>
@@ -700,6 +713,64 @@ export default function Viewer({
                   />
                 </div>
               </div>
+              {sourceOpen && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="pointer-events-auto absolute top-14 bottom-8 left-2 z-30 flex flex-col overflow-hidden rounded border-2 border-white bg-black"
+                  style={{ width: 'min(48%, 540px)' }}
+                >
+                  <div className="flex items-center gap-2 border-b border-white/40 px-2 py-1">
+                    <span className="text-[13px] font-bold text-[#ffe14a]">{sourceLabel}</span>
+                    {sourceHref ? (
+                      <a
+                        href={sourceHref}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-bold text-white underline"
+                      >
+                        Open site
+                      </a>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => setSourceOpen(false)}
+                      className="ml-auto text-[12px] font-bold text-white"
+                    >
+                      Close
+                    </button>
+                  </div>
+                  {sourceLabel === 'Open-i' || !sourceHref ? (
+                    <div className="rr-scroll min-h-0 flex-1 overflow-y-scroll">
+                      {(shown ? [shown] : gallery).slice(0, 1).map((g) => (
+                        <img key={g.url} src={g.url} alt="" className="w-full bg-black object-contain" />
+                      ))}
+                      <p className="px-2 py-1 text-[13px] leading-snug text-white">
+                        {shown?.caption || (gallery.length ? '' : 'Looking up figures for this case...')}
+                      </p>
+                      <div className="flex gap-1 px-2 pb-2">
+                        {gallery.map((g, i) => (
+                          <button
+                            key={g.url}
+                            type="button"
+                            onClick={() => {
+                              setPicked(i)
+                              setCaseFailed(false)
+                            }}
+                            className={
+                              'h-14 w-14 shrink-0 overflow-hidden border bg-black ' +
+                              (i === picked ? 'border-white' : 'border-white/30')
+                            }
+                          >
+                            <img src={g.url} alt="" className="h-full w-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <iframe title={sourceLabel} src={sourceHref} className="min-h-0 w-full flex-1 bg-white" />
+                  )}
+                </div>
+              )}
               {gallery.length > 0 && (
                 <div
                   className="pointer-events-auto absolute bottom-7 left-2 z-10 flex gap-1 overflow-x-auto"

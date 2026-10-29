@@ -27,34 +27,38 @@ export const Route = createFileRoute("/api/pmc/match")({
         const url = new URL(request.url);
         const q = (url.searchParams.get("q") || "").slice(0, 300);
         if (url.searchParams.get("source") === "openi") {
-          const terms = q.split(/[^A-Za-z0-9+-]+/).filter((w) => w.length >= 3).slice(0, 6);
-          if (!terms.length) return Response.json({ query: q, results: [] });
+          const words = q.split(/[^A-Za-z0-9+-]+/).filter((w) => w.length >= 3).slice(0, 6);
+          if (!words.length) return Response.json({ query: q, results: [] });
+          const tries = [words.slice(0, 3), words.slice(0, 2), words.slice(0, 1)];
           try {
-            const search =
-              "https://openi.nlm.nih.gov/api/search?query=" +
-              encodeURIComponent(terms.join(" ")) +
-              "&n=12&m=1&it=x,c,m,p,u";
-            const res = await fetch(search, { signal: AbortSignal.timeout(8000) });
-            if (!res.ok) return Response.json({ query: q, results: [] });
-            const data = (await res.json()) as {
-              list?: { title?: string; imgLarge?: string; journal?: string }[];
-            };
-            const results = (data.list || [])
-              .filter((row) => row.imgLarge && !JUNK.test(row.title || ""))
-              .slice(0, 12)
-              .map((row) => ({
-                url: "https://openi.nlm.nih.gov" + row.imgLarge,
-                caption: row.title || q,
-                relevance: 2,
-                pmcid: "",
-                title: row.title || q,
-                authors: "Open-i",
-                journal: row.journal || "Open-i",
-                year: "",
-                doi: "",
-                license: "CC BY",
-              }));
-            return Response.json({ query: q, results });
+            for (const terms of tries) {
+              const search =
+                "https://openi.nlm.nih.gov/api/search?query=" +
+                encodeURIComponent(terms.join(" ")) +
+                "&n=12&m=1&it=x,c,m,p,u";
+              const res = await fetch(search, { signal: AbortSignal.timeout(8000) });
+              if (!res.ok) continue;
+              const data = (await res.json()) as {
+                list?: { title?: string; imgLarge?: string; journal?: string }[];
+              };
+              const results = (data.list || [])
+                .filter((row) => row.imgLarge && !JUNK.test(row.title || "") && !/e-poster|poster session/i.test(row.title || ""))
+                .slice(0, 12)
+                .map((row) => ({
+                  url: "https://openi.nlm.nih.gov" + row.imgLarge,
+                  caption: row.title || q,
+                  relevance: 2,
+                  pmcid: "",
+                  title: row.title || q,
+                  authors: "Open-i",
+                  journal: row.journal || "Open-i",
+                  year: "",
+                  doi: "",
+                  license: "CC BY",
+                }));
+              if (results.length) return Response.json({ query: q, results });
+            }
+            return Response.json({ query: q, results: [] });
           } catch {
             return Response.json({ query: q, results: [] });
           }
