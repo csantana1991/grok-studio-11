@@ -27,13 +27,13 @@ const POOLS: Record<string, string[]> = {
   bone: ['one/bone-1.jpg'],
   thyroid: ['one/thyroid-1.jpg'],
   mammo: ['one/mammo-1.jpg'],
-  ctChest: ['one/ct-chest-1.jpg'],
+  ctChest: ['one/ct-chest-2.jpg', 'one/ct-chest-3.jpg'],
   ctBody: ['one/ct-body-2.jpg'],
   ctHead: ['one/mr-1.jpg'],
   us: ['case-us-1.jpg'],
   cardiac: ['one/pyp-1.jpg'],
-  xrChest: ['xr-chest.jpg'],
-  xrLimb: ['one/xr-1.jpg'],
+  xrChest: ['one/xr-1.jpg'],
+  xrLimb: ['one/bone-1.jpg'],
   hida: ['nm-hida.jpg'],
   renal: ['nm-mag3.jpg'],
   vq: ['one/vq-1.jpg'],
@@ -58,7 +58,7 @@ const KIND_LABEL: Record<string, string> = {
   us: 'Ultrasound example',
   cardiac: 'PYP scan example',
   xrChest: 'Chest radiograph example',
-  xrLimb: 'Foot radiograph example',
+  xrLimb: 'Bone scan example',
   hida: 'HIDA scan example',
   renal: 'MAG3 renogram example',
   vq: 'V/Q scan example',
@@ -117,11 +117,44 @@ export function plateKind(finding: string, categoryId: string): string {
   return 'ctBody'
 }
 
-/** The finding's own file when the library has one, otherwise the checked modality plate. */
+/** Files that are not medical images. Checked by looking at the plates. */
+const NOT_MEDICAL = new Set([
+  'findings/f-120ebfe6476e.jpg',
+  'findings/f-235ba8299238.jpg',
+  'findings/f-136cc4ce7a65.jpg',
+  'findings/f-0bb3755d7216.jpg',
+  'findings/f-2c7a45bd3a1e.jpg',
+  'findings/f-da4fefdf11a4.jpg',
+  'findings/f-49174daffba2.jpg',
+  'findings/f-bd8e48b069d1.jpg',
+  'findings/f-980391e4595b.jpg',
+  'findings/f-b1a39588fdd1.jpg',
+  'findings/f-5c2d4b04274d.jpg',
+  'findings/f-2bab3736a45b.jpg',
+  'findings/f-d1eb6708c108.jpg',
+  'findings/f-37048e089e42.jpg',
+  'findings/f-4b515e5e90a8.jpg',
+  'findings/f-b334ce81ac3b.jpg',
+  'findings/f-e75c99f4651a.jpg',
+  'findings/f-1c28b389ead9.jpg',
+  'findings/f-74cce839a7cb.jpg',
+  'findings/f-ad2aeb142d2f.jpg',
+  'findings/f-e3ad9014135b.jpg',
+  'findings/f-33a625e1c107.jpg',
+  'findings/f-e480d7130c09.jpg',
+  'findings/f-7b6c756c765c.jpg',
+  'findings/f-c83f78263af4.jpg',
+  'findings/f-8657786de02a.jpg',
+  'findings/f-92d35ac8162b.jpg',
+  'findings/f-54ad8f79d70c.jpg',
+  'findings/f-23f4fcc9337a.jpg',
+])
+
+/** The finding's own file when the library has a real study, otherwise the checked modality plate. */
 function pick(finding: string, stationId: string, categoryId: string): string {
   void stationId
   const named = FINDING_PLATES[finding]
-  if (named) return DR + named
+  if (named && !NOT_MEDICAL.has(named)) return DR + named
   const name = (POOLS[plateKind(finding, categoryId)] ?? POOLS.ctBody)[0]
   return DR + name
 }

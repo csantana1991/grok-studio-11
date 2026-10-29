@@ -9,7 +9,7 @@
     if (/bone/i.test(hay)) return '/studio/assets/images/bone-scan-wb.jpg'
     if (/breast|ultrasound/i.test(hay)) return '/studio/assets/images/case-us-1.jpg'
     if (/dotatate|psma|lu-177|y-90|ra-223/i.test(hay)) return '/studio/assets/images/rai-therapy.jpg'
-    if (/chest|pediatr|radiograph|x-ray|xray/i.test(hay)) return '/studio/assets/images/xr-chest.jpg'
+    if (/chest|pediatr|radiograph|x-ray|xray/i.test(hay)) return '/studio/assets/dr/one/xr-1.jpg'
     return '/studio/assets/images/gamma-camera-patient.jpg'
   }
   function nearby(img) {
