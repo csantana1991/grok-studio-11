@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { wholeBodyLayout } from '../data/plateCrop'
+import { publicQuery } from '../data/caseDossier'
 
 interface Props {
   imageUrl?: string
@@ -130,7 +131,7 @@ export default function AiImageAnalysis({
         body: JSON.stringify({
           imageData: imageData ?? undefined,
           imageUrl: imageData ? undefined : imageUrl,
-          finding: finding.replace(/^\d{1,3}\s*[mf]\b\s*/i, ''),
+          finding: publicQuery(finding),
           station: stationName,
           modality,
         }),

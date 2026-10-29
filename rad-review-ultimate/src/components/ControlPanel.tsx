@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { Encounter } from '../data/generateCases'
 import type { CaseDossier } from '../data/caseDossier'
+import { reportsSuv } from '../data/caseDossier'
 import {
   CATEGORY_BY_ID,
   GROUP_1,
@@ -241,7 +242,11 @@ export default function ControlPanel({
                   Q3 · Measurement
                 </dt>
                 <dd className="text-rr-text">
-                  {dossier?.suv ? `Stem SUV ${dossier.suv}. Demo number from the written stem, not a measured scan.` : 'No SUV on this study.'}
+                  {dossier?.suv
+                    ? `Stem SUV ${dossier.suv}. Demo number from the written stem, not a measured scan.`
+                    : dossier && reportsSuv(dossier.kind)
+                      ? 'No SUV number is written in this stem.'
+                      : 'No SUV on this study.'}
                 </dd>
               </div>
             </dl>

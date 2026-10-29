@@ -24,12 +24,11 @@ import { matchStudies } from './data/nucleus'
 import { useDebounced, useNoPrint } from './hooks/useDebounced'
 import { useMountedImages } from './hooks/useMountedImages'
 import { useLiteratureMatches } from './hooks/useLiteratureMatches'
-import { useOaCatalog } from './hooks/useOaCatalog'
 import { useFeedback } from './hooks/useFeedback'
 import { caseScript, figureScript, useAudiobook } from './hooks/useAudiobook'
 import { applyFeedback } from './data/feedback'
 import { generateCases, type Encounter } from './data/generateCases'
-import { CATEGORY_BY_ID, GRAND_TOTAL } from './data/categories'
+import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from './data/categories'
 import { getStationForSlice } from './data/stations'
 import { FINDING_POOLS } from './data/findings'
 import { SOURCE_IMAGES } from './data/sourceImages'
@@ -39,7 +38,7 @@ import {
   nucleusCandidate,
 } from './data/selectFigure'
 import { teachingMatch } from './data/teachingPlate'
-import { buildDossier, publishedFits, resolveCaseFigure, studyKind } from './data/caseDossier'
+import { buildDossier, caseSearchBlob, publishedFits, resolveCaseFigure, resolveVisibleFigure, studyKind } from './data/caseDossier'
 
 /**
  * Unmatched findings processed per "match all" run. Bounded to stay polite to
@@ -79,6 +78,7 @@ export default function App() {
   const [stackOpen, setStackOpen] = useState(false)
   const [nucleusOpen, setNucleusOpen] = useState(false)
   const [reviewOpen, setReviewOpen] = useState(false)
+  const [pinNote, setPinNote] = useState('')
   const [atlasOpen, setAtlasOpen] = useState(false)
   /**
    * A figure the reader pulled in from RAD ATLAS, pinned ahead of every other
@@ -97,9 +97,6 @@ export default function App() {
     return [...set]
   }, [])
   const lit = useLiteratureMatches(liveEnabled, allFindings)
-  const oa = useOaCatalog()
-
-  // Nucleus case library (optional export at public/nucleus-export.json).
   const nucleus = useNucleusLibrary()
 
   // Reader verdicts on images, persisted and fed back into ranking.
@@ -136,21 +133,26 @@ export default function App() {
     const seen = new Set<string>()
     const out: Encounter[] = []
     for (const c of cases) {
-      if (!terms.every((t) => c.search.includes(t))) continue
-      if (c.categoryId !== 'ALL' && filter !== 'ALL' && c.categoryId !== filter) continue
+      const blob = caseSearchBlob(c)
+      if (!terms.every((t) => blob.includes(t))) continue
       const key = c.categoryId + '|' + c.finding
       if (seen.has(key)) continue
       seen.add(key)
       out.push(c)
     }
     return out
-  }, [cases, debouncedQuery, filter])
+  }, [cases, debouncedQuery])
 
   const counts = useMemo(() => {
     const tally: Record<string, number> = {}
+    if (!debouncedQuery.trim()) {
+      for (const c of CATEGORIES) tally[c.id] = c.count
+      return tally
+    }
+    for (const c of CATEGORIES) tally[c.id] = 0
     for (const c of byQuery) tally[c.categoryId] = (tally[c.categoryId] ?? 0) + 1
     return tally
-  }, [byQuery])
+  }, [byQuery, debouncedQuery])
 
   const filtered = useMemo(
     () => (filter === 'ALL' ? byQuery : byQuery.filter((c) => c.categoryId === filter)),
@@ -228,6 +230,7 @@ export default function App() {
   useEffect(() => {
     setMatchOffset(0)
     setSourcePick({ label: 'Open-i', href: '' })
+    setPinNote('')
   }, [selected?.idx])
 
   /**
@@ -247,12 +250,17 @@ export default function App() {
     [figureIndex],
   )
 
+  const rejectedUrl = useCallback(
+    (url: string) => feedback.model.byUrl[url]?.verdict === 'rejected',
+    [feedback.model],
+  )
+
   const thumbFor = useCallback(
     (c: Encounter) => {
-      const off = c.idx === selected?.idx ? matchOffset : 0
-      return resolveCaseFigure(c, oa.byFinding[c.finding], off)?.url || ''
+      const pin = atlasPick?.accession === c.accession ? atlasPick.match : null
+      return resolveVisibleFigure(c, { pin, rejected: rejectedUrl })?.url || ''
     },
-    [oa, selected?.idx, matchOffset],
+    [atlasPick, rejectedUrl],
   )
 
   /**
@@ -387,13 +395,17 @@ export default function App() {
   const pageAudit = usePageImageAudit()
 
   const resolved = selected
-    ? resolveCaseFigure(selected, oa.byFinding[selected.finding], matchOffset)
+    ? resolveVisibleFigure(selected, {
+        pin: atlasPick?.accession === selected.accession ? atlasPick.match : null,
+        rejected: rejectedUrl,
+      })
     : null
   const caseImage = (() => {
     if (!selected || !resolved) return undefined
     if (resolved.source === 'plate') return teachingMatch(selected)
-    const fromOpenI = (oa.byFinding[selected.finding] || []).find((m) => m.url === resolved.url)
-    return fromOpenI
+    const pin = atlasPick?.accession === selected.accession ? atlasPick.match : null
+    if (pin && pin.url === resolved.url) return { ...pin, caption: resolved.caption || pin.caption }
+    return undefined
   })()
   const dossier = selected
     ? buildDossier(
@@ -504,6 +516,7 @@ export default function App() {
         active={filter}
         onSelect={setFilter}
         counts={counts}
+        allCount={debouncedQuery.trim() ? byQuery.length : GRAND_TOTAL}
         mountedCount={mountedCount}
         totalImages={SOURCE_IMAGES.length}
         onOpenMount={() => setMountOpen(true)}
@@ -534,6 +547,8 @@ export default function App() {
           query={query}
           onQuery={setQuery}
           filter={filter}
+          counts={counts}
+          allCount={debouncedQuery.trim() ? byQuery.length : GRAND_TOTAL}
           onFilter={setFilter}
           indexing={indexing}
           thumbFor={thumbFor}
@@ -548,6 +563,17 @@ export default function App() {
               encounter={selected}
               onUse={(m) => {
                 if (!selected) return
+                const kind = studyKind(selected.finding, selected.categoryId)
+                const blob = `${m.url} ${m.caption || ''} ${m.title || ''}`
+                if (!publishedFits(kind, blob)) {
+                  setPinNote('That figure does not name this study type, so it was not placed on the case.')
+                  return
+                }
+                if (feedback.model.byUrl[m.url]?.verdict === 'rejected') {
+                  setPinNote('That figure was rejected, so it stays off the case.')
+                  return
+                }
+                setPinNote('')
                 setAtlasPick({ accession: selected.accession, match: m })
                 setMatchOffset(0)
               }}
@@ -584,9 +610,15 @@ export default function App() {
                 ? currentMatch.verification.reasons
                 : ['modality example only — not confirmed as this diagnosis']
             }
-            agentStatus={liveCheck.status}
-            agentReasons={liveCheck.reasons}
-            agentBusy={liveCheck.busy}
+            agentStatus={
+              currentMatch && caseImage?.url === currentMatch.match.url ? liveCheck.status : null
+            }
+            agentReasons={
+              currentMatch && caseImage?.url === currentMatch.match.url ? liveCheck.reasons : []
+            }
+            agentBusy={
+              Boolean(currentMatch && caseImage?.url === currentMatch.match.url && liveCheck.busy)
+            }
             matchIndex={matchPoolSize ? matchOffset % matchPoolSize : 0}
             matchTotal={matchPoolSize}
             onNextMatch={
@@ -616,7 +648,17 @@ export default function App() {
             }
             onDragEdge={dragSplit}
             onPickSource={(label, href) => setSourcePick({ label, href })}
-            imageNote={dossier?.imageNote}
+            imageNote={pinNote || dossier?.imageNote}
+            onRestoreImage={
+              selected && !resolved
+                ? (() => {
+                    const plate = resolveCaseFigure(selected)
+                    if (!plate?.url || !rejectedUrl(plate.url)) return undefined
+                    const url = plate.url
+                    return () => feedback.judge(url, 'rejected', selected.finding, selected.stationId)
+                  })()
+                : undefined
+            }
             frameLabel={
               dossier?.imageRole === 'teaching-plate'
                 ? '1 FRAME · TEACHING PLATE'
@@ -670,6 +712,7 @@ export default function App() {
             />
             <LiteratureMatch
               finding={selected?.finding ?? ''}
+              categoryId={selected?.categoryId}
               matches={selectedFinding ? lit.store[selectedFinding] : undefined}
               state={selectedFinding ? lit.state[selectedFinding] : undefined}
               enabled={liveEnabled}

@@ -313,9 +313,10 @@ function AtlasCard({
           <button
             type="button"
             onClick={() => onUse(match)}
+            title="Show this figure only if its caption names the same study type. It stays labeled as a published reference."
             className="flex-1 rounded border border-rr-line px-1.5 py-0.5 text-[8px] font-bold tracking-wider text-rr-dim hover:border-rr-green hover:text-rr-green"
           >
-            SEND TO VIEWER
+            SHOW AS REFERENCE
           </button>
         )}
         {item.kind !== 'article_figure' && item.downloadUrl && (

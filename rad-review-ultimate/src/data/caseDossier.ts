@@ -247,6 +247,48 @@ export function resolveCaseFigure(
   return null
 }
 
+/** Finding text plus the tracer this study type actually uses. */
+export function caseSearchBlob(c: {
+  search: string
+  finding: string
+  categoryId: string
+}): string {
+  const kind = studyKind(c.finding, c.categoryId)
+  return `${c.search} ${kind} ${TRACER[kind] ?? ''}`.toLowerCase()
+}
+
+/**
+ * The picture the worklist and the viewer both use.
+ * A pinned reference is shown only when its caption names this study type.
+ * A rejected URL is omitted rather than replaced with a different study.
+ */
+export function resolveVisibleFigure(
+  enc: Pick<Encounter, 'finding' | 'categoryId' | 'stationId' | 'idx'>,
+  opts?: {
+    pin?: { url?: string; caption?: string; title?: string } | null
+    rejected?: (url: string) => boolean
+  },
+): ResolvedFigure | null {
+  const rejected = opts?.rejected ?? (() => false)
+  const pin = opts?.pin
+  const kind = studyKind(enc.finding, enc.categoryId)
+  if (
+    pin?.url &&
+    publishedFits(kind, `${pin.url} ${pin.caption || ''} ${pin.title || ''}`) &&
+    !rejected(pin.url)
+  ) {
+    return {
+      url: pin.url,
+      caption: pin.caption || pin.title || 'Published reference. Not this demo row.',
+      source: 'openi',
+      openCount: 0,
+    }
+  }
+  const plate = resolveCaseFigure(enc)
+  if (!plate?.url || rejected(plate.url)) return null
+  return plate
+}
+
 /** Strip age, sex, and identifiers before a query leaves the app. */
 export function publicQuery(text: string): string {
   return text

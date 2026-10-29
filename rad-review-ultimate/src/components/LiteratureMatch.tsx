@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { displayUrl, matchCredit, type LiveMatch } from '../data/liveMatch'
+import { publishedFits, publicQuery, studyKind } from '../data/caseDossier'
 import { isNonRadiologic } from '../data/nonRadiologic'
 import type { BatchProgress, LoopStatus, MatchState } from '../hooks/useLiteratureMatches'
 import { TARGET_PER_CASE } from '../hooks/useLiteratureMatches'
 
 interface Props {
   finding: string
+  categoryId?: string
   matches: LiveMatch[] | undefined
   state: MatchState | undefined
   enabled: boolean
@@ -39,6 +41,7 @@ function LicenceBadge({ license }: { license: string }) {
 
 export default function LiteratureMatch({
   finding,
+  categoryId = '',
   matches,
   state,
   enabled,
@@ -54,6 +57,15 @@ export default function LiteratureMatch({
   onToggleLoop,
 }: Props) {
   const [open, setOpen] = useState<LiveMatch | null>(null)
+  const kind = studyKind(finding, categoryId)
+  const seen = new Set<string>()
+  const visible = (matches || []).filter((m) => {
+    if (!m.url.startsWith('https://') || seen.has(m.url)) return false
+    if (/wikipedia/i.test(m.journal || '') || isNonRadiologic(`${m.title} ${m.caption}`)) return false
+    if (!publishedFits(kind, `${m.title} ${m.caption} ${m.url}`)) return false
+    seen.add(m.url)
+    return true
+  })
 
   return (
     <section className="border-b border-rr-line">
@@ -124,7 +136,7 @@ export default function LiteratureMatch({
           )}
           {loop.running && !loop.blocked && loop.current && (
             <p className="mt-0.5 truncate text-[8px] text-rr-dim">
-              working: {loop.current}
+              Background job, not this case: {publicQuery(loop.current)}
             </p>
           )}
         </div>
@@ -194,22 +206,20 @@ export default function LiteratureMatch({
             {state === 'loading' && (
               <p className="text-[10px] text-rr-dim">Searching PubMed Central...</p>
             )}
-            {state === 'empty' && (
+            {state === 'empty' || (matches && matches.length > 0 && visible.length === 0) ? (
               <p className="text-[10px] text-rr-dim">
-                No open-access figure matched this finding.
+                No published figure matched this study type.
               </p>
-            )}
+            ) : null}
             {state === 'error' && (
               <p className="text-[10px] text-rr-red">
                 Search failed. The public API may be unreachable.
               </p>
             )}
 
-            {matches && matches.length > 0 && (
+            {visible.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                {matches
-                  .filter((m) => m.url.startsWith('https://') && !/wikipedia/i.test(m.journal || '') && !isNonRadiologic(`${m.title} ${m.caption}`))
-                  .map((m) => (
+                {visible.map((m) => (
                   <button
                     key={m.url}
                     type="button"

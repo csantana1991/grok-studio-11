@@ -3,7 +3,7 @@ import type { Encounter } from '../data/generateCases'
 import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
 import { formatSlice } from '../data/stations'
 import PlateImg from './PlateImg'
-import { imageLabel, teachingPlateFor } from '../data/teachingPlate'
+import { imageLabel } from '../data/teachingPlate'
 import { reportsSuv, statedSuv, studyKind } from '../data/caseDossier'
 import { displayUrl } from '../data/liveMatch'
 
@@ -20,6 +20,9 @@ interface Props {
   onQuery: (q: string) => void
   filter: string
   onFilter: (id: string) => void
+  /** Per-category totals. Search results, not the catalog, when a query is active. */
+  counts?: Record<string, number>
+  allCount?: number
   indexing: boolean
   /** The exact figure this encounter will show in the viewer, if any. */
   thumbFor: (c: Encounter) => string | undefined
@@ -43,42 +46,25 @@ function FullThumb({
   className: string
   plain?: boolean
 }) {
-  const local = teachingPlateFor(c).url
-  const [cur, setCur] = useState(src || local)
+  const [dead, setDead] = useState(false)
   useEffect(() => {
-    const remote = src && !src.startsWith('/') ? displayUrl(src) : ''
-    if (!remote) {
-      setCur(src || local)
-      return
-    }
-    setCur(local || '')
-    let dead = false
-    const img = new Image()
-    const timer = window.setTimeout(() => {
-      dead = true
-    }, 8000)
-    img.onload = () => {
-      window.clearTimeout(timer)
-      if (!dead) setCur(remote)
-    }
-    img.onerror = () => {
-      window.clearTimeout(timer)
-      if (!dead) setCur(local || '')
-    }
-    img.src = remote
-    return () => {
-      dead = true
-      window.clearTimeout(timer)
-    }
-  }, [src, local])
-  if (!cur) return null
+    setDead(false)
+  }, [src])
+  if (!src || dead) {
+    return (
+      <span className="flex h-full items-center px-1 text-center text-[9px] font-bold text-[#ffe14a]">
+        No matched case image
+      </span>
+    )
+  }
+  const shown = src.startsWith('/') ? src : displayUrl(src)
   return (
     <PlateImg
-      src={cur}
+      src={shown}
       stationId={c.stationId}
       alt=""
       plain={plain}
-      onError={() => setCur(local && cur !== local ? local : '')}
+      onError={() => setDead(true)}
       className={className}
     />
   )
@@ -142,8 +128,9 @@ function Row({
             'rounded border px-1 py-px text-[8px] font-bold tracking-wider ' +
             STATUS_STYLE[c.status]
           }
+          title="Demo status. Not a signed report."
         >
-          {c.status}
+          demo {c.status}
         </span>
         {c.priority === 'STAT' && (
           <span className="rounded border border-rr-red/50 bg-rr-red/15 px-1 py-px text-[8px] font-bold tracking-wider text-rr-red">
@@ -159,7 +146,12 @@ function Row({
           {caption}
         </p>
       )}
-      {thumb && !caption && (
+      {thumb && !thumb.startsWith('/') && !caption && (
+        <p className="line-clamp-1 text-[11px] leading-tight text-rr-amber">
+          Published reference. Not this row’s scan.
+        </p>
+      )}
+      {thumb && thumb.startsWith('/') && !caption && (
         <p className="line-clamp-1 text-[11px] leading-tight text-rr-amber">
           {imageLabel(c)}
         </p>
@@ -185,7 +177,9 @@ function Row({
             <span className="tabular-nums text-rr-amber">SUV {statedSuv(c.finding)} demo</span>
           </>
         )}
-        <span className="ml-auto tabular-nums">{c.acgme}</span>
+        <span className="ml-auto tabular-nums" title="Demo code. Not an ACGME case log.">
+          demo {c.acgme}
+        </span>
       </div>
       </span>
     </button>
@@ -201,6 +195,8 @@ export default function CaseList({
   onQuery,
   filter,
   onFilter,
+  counts,
+  allCount = GRAND_TOTAL,
   indexing,
   thumbFor,
   atlasOpen,
@@ -327,7 +323,7 @@ export default function CaseList({
               : 'border-rr-line bg-rr-raised text-rr-dim hover:border-rr-dim')
           }
         >
-          ALL {GRAND_TOTAL.toLocaleString()}
+          ALL {(allCount).toLocaleString()}
         </button>
         {CATEGORIES.map((c) => (
           <button
@@ -341,7 +337,7 @@ export default function CaseList({
                 : 'border-rr-line bg-rr-raised text-rr-dim hover:border-rr-dim')
             }
           >
-            {c.pill} {c.count.toLocaleString()}
+            {c.pill} {(counts?.[c.id] ?? c.count).toLocaleString()}
           </button>
         ))}
       </div>

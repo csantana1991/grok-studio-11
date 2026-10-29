@@ -76,6 +76,8 @@ interface Props {
   onDragEdge?: (e: React.PointerEvent) => void
   /** Show this source in the window above Control. */
   onPickSource?: (label: string, href: string) => void
+  /** Bring back an image this browser hid with Reject. */
+  onRestoreImage?: () => void
   /** Honest line about the picture currently eligible for this case. */
   imageNote?: string
   /** What the case frame actually is. The atlas slider is labeled separately. */
@@ -123,6 +125,7 @@ export default function Viewer({
   imageNote,
   frameLabel = 'NO CASE IMAGE',
   stackLabel = 'ATLAS 0–100',
+  onRestoreImage,
 }: Props) {
   const frameRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -320,7 +323,7 @@ export default function Viewer({
           className="rounded border px-1.5 py-0.5 text-[10px] font-bold tracking-wider whitespace-nowrap"
           style={{ borderColor: accent + '66', background: accent + '1f', color: accent }}
         >
-          {station.name}
+          {showAtlas ? station.name : `ATLAS ${station.name}`}
         </span>
         <span className="text-[9px] tracking-[0.14em] whitespace-nowrap text-rr-dim uppercase">
           {station.plane} &middot; {modalityLabel}
@@ -365,9 +368,9 @@ export default function Viewer({
         )}
 
         <span className="ml-auto hidden text-[9px] whitespace-nowrap text-rr-dim xl:inline">
-          {cyclesOnClick
-            ? 'Click the image for the next match · scale or arrow keys navigate'
-            : 'Click the image to navigate · Arrow keys step · PgUp/PgDn jump station'}
+          {showAtlas
+            ? 'Click the atlas to move · Arrow keys step · PgUp/PgDn jump station'
+            : 'One case frame · the slider and the right scale move the atlas, not this picture'}
         </span>
       </div>
 
@@ -390,7 +393,7 @@ export default function Viewer({
           }}
           className={
             'relative h-full w-full overflow-hidden rounded border bg-black select-none ' +
-            (cyclesOnClick ? 'cursor-pointer ' : 'cursor-crosshair ') +
+            (showAtlas ? 'cursor-crosshair ' : 'cursor-default ') +
             (dragOver ? 'border-rr-blue-lit' : 'border-rr-line')
           }
         >
@@ -412,7 +415,7 @@ export default function Viewer({
             )
           })}
 
-          {imageNote && (
+          {imageNote && showAtlas && (
             <p className="pointer-events-none absolute top-2 right-20 left-2 z-10 max-w-xl rounded border border-white/40 bg-black/80 px-2 py-1 text-[11px] leading-snug font-bold text-[#ffe14a]">
               {imageNote}
             </p>
@@ -508,6 +511,18 @@ export default function Viewer({
               >
                 SHOW STATION ATLAS
               </button>
+              {onRestoreImage && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onRestoreImage()
+                  }}
+                  className="pointer-events-auto rounded border border-white/40 bg-black/80 px-3 py-1.5 text-[10px] font-bold tracking-[0.14em] text-white"
+                >
+                  UNDO REJECT
+                </button>
+              )}
             </div>
           )}
 
@@ -523,8 +538,8 @@ export default function Viewer({
                 className="pointer-events-auto rounded border border-rr-blue-lit bg-rr-blue/30 px-3 py-1.5 text-[10px] font-bold tracking-[0.14em] text-white shadow-lg transition-colors hover:bg-rr-blue/50 disabled:opacity-50"
               >
                 {caseSearching
-                  ? 'SEARCHING PUBLISHED LITERATURE...'
-                  : 'FIND REAL IMAGE FOR THIS CASE'}
+                  ? 'SEARCHING PUBLISHED REFERENCES...'
+                  : 'SEARCH PUBLISHED REFERENCES'}
               </button>
               <p className="rounded bg-black/70 px-2 py-0.5 text-[9px] text-rr-dim">
                 {caseSearchEmpty
@@ -575,17 +590,17 @@ export default function Viewer({
             <div
               className="pointer-events-none absolute right-[7.5rem] bottom-7 left-1 z-20 truncate rounded bg-black/80 px-2 py-0.5 text-[10px] text-white"
             >
-              {hoverStation.name} · Slice {formatSlice(hover.slice)} — {hoverStation.anatomy}
+              {hoverStation.name} · Atlas {formatSlice(hover.slice)} — {hoverStation.anatomy}
             </div>
           )}
 
           {/* Matched-encounter imagery: caption + citation. Licence condition. */}
           {showCase && caseImage && (
             <>
-              <div className="absolute top-1 right-[7.5rem] left-1 z-20 flex max-h-8 flex-nowrap items-center gap-1 overflow-hidden">
+              <div className="absolute top-1 right-[5.2rem] left-1 z-20 flex h-8 items-center gap-1 overflow-x-auto overflow-y-hidden">
                 <div
                   className={
-                    'pointer-events-none rounded border bg-black/80 px-2 py-0.5 text-[9px] font-bold tracking-wider ' +
+                    'pointer-events-none shrink-0 whitespace-nowrap rounded border bg-black/80 px-2 py-0.5 text-[9px] font-bold tracking-wider ' +
                     (verdict === 'mismatch'
                       ? 'border-rr-red/60 text-rr-red'
                       : caseImage.tier === 'anatomy' || verdict === 'plausible'
@@ -593,17 +608,13 @@ export default function Viewer({
                         : 'border-rr-green/50 text-rr-green')
                   }
                 >
-                  {verdict === 'mismatch'
-                    ? 'REGION MISMATCH — figure shows a different body part'
-                    : caseImage.tier === 'anatomy'
-                      ? caseImage.caption.split('.')[0]
-                      : verdict === 'confirmed'
-                        ? `VERIFIED — depicts ${station.name}`
-                        : 'RELATED PUBLISHED CASE'}
+                  {caseImage.tier === 'anatomy' || caseImage.journal?.includes('plate library')
+                    ? caseImage.caption.split('.')[0]
+                    : 'PUBLISHED REFERENCE — not this demo row'}
                   {caseLabel ? ` · ${caseLabel}` : ''}
                 </div>
                 {verdictReasons && verdictReasons.length > 0 && (
-                  <div className="pointer-events-none w-fit rounded bg-black/70 px-2 py-0.5 text-[8px] text-rr-dim">
+                  <div className="pointer-events-none w-fit shrink-0 whitespace-nowrap rounded bg-black/70 px-2 py-0.5 text-[8px] text-rr-dim">
                     {verdictReasons.join(' · ')}
                   </div>
                 )}
@@ -635,7 +646,7 @@ export default function Viewer({
                   <div className="pointer-events-auto flex w-fit items-center gap-1">
                     <button
                       type="button"
-                      title="Good teaching image for this case — rank it first in future"
+                      title="Save this plate as acceptable for this study type. Stored on this browser. Not a signed report."
                       onClick={(e) => {
                         e.stopPropagation()
                         onJudgeImage('approved')
@@ -651,7 +662,7 @@ export default function Viewer({
                     </button>
                     <button
                       type="button"
-                      title="Wrong or unhelpful — never show this image again"
+                      title="Hide this image. Stored on this browser. It is not replaced with a different study."
                       onClick={(e) => {
                         e.stopPropagation()
                         onJudgeImage('rejected')

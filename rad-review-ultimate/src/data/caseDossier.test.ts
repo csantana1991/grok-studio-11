@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildDossier, conflictsWith, publicQuery, resolveCaseFigure, statedSuv, studyKind } from './caseDossier'
+import { buildDossier, caseSearchBlob, conflictsWith, publicQuery, resolveCaseFigure, resolveVisibleFigure, statedSuv, studyKind } from './caseDossier'
 import type { Encounter } from './generateCases'
 
 function enc(partial: Partial<Encounter>): Encounter {
@@ -101,5 +101,41 @@ describe('case dossier', () => {
     const good = resolveCaseFigure(enc({ categoryId: 'CARDIAC', finding, stationId: 'CHEST' }))
     expect(good?.url).toContain('ct-396.jpg')
     expect(good?.source).toBe('plate')
+  })
+
+  it('keeps a rejected plate off the case and refuses a mismatched pin', () => {
+    const pet = enc({
+      categoryId: 'PETHYB',
+      finding: 'FDG PET NSCLC RUL SUV 11.8',
+      stationId: 'CHEST',
+    })
+    const plate = resolveVisibleFigure(pet)
+    expect(plate?.url).toContain('pet-mip-1.jpg')
+    const hidden = resolveVisibleFigure(pet, { rejected: (url) => url === plate?.url })
+    expect(hidden).toBeNull()
+    const pypPin = resolveVisibleFigure(pet, {
+      pin: { url: 'https://example.test/pyp.jpg', caption: 'Tc-99m PYP cardiac scan', title: 'PYP' },
+    })
+    expect(pypPin?.url ?? '').not.toContain('pyp')
+    expect(pypPin?.url).toContain('pet-mip-1.jpg')
+    const cited = resolveVisibleFigure(pet, {
+      pin: {
+        url: 'https://example.test/fdg.jpg',
+        caption: 'FDG PET maximum intensity projection',
+        title: 'FDG PET',
+      },
+    })
+    expect(cited?.source).toBe('openi')
+    expect(cited?.url).toContain('fdg.jpg')
+  })
+
+  it('searches the tracer named by the study, not a random SUV', () => {
+    const blob = caseSearchBlob({
+      search: 'muga equilibrium radionuclide',
+      finding: 'MUGA equilibrium radionuclide angiogram LVEF',
+      categoryId: 'CARDIAC',
+    })
+    expect(blob).toContain('labeled red cells')
+    expect(blob).not.toContain('suv')
   })
 })

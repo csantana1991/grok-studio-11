@@ -8,6 +8,8 @@ interface Props {
   active: string
   onSelect: (id: string) => void
   counts: Record<string, number>
+  /** Result total for the ALL chip. Catalog size when no search is active. */
+  allCount?: number
   mountedCount: number
   totalImages: number
   onOpenMount: () => void
@@ -63,6 +65,7 @@ export default function Header({
   active,
   onSelect,
   counts,
+  allCount = GRAND_TOTAL,
   mountedCount,
   totalImages,
   onOpenMount,
@@ -88,7 +91,7 @@ export default function Header({
         <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto py-0.5">
           <Chip
             label="ALL"
-            count={GRAND_TOTAL}
+            count={allCount}
             accent="#60a5fa"
             active={active === 'ALL'}
             onClick={() => onSelect('ALL')}
@@ -97,7 +100,7 @@ export default function Header({
             <Chip
               key={c.id}
               label={c.pill}
-              count={counts[c.id] ?? c.count}
+              count={counts[c.id] ?? 0}
               accent={c.accent}
               active={active === c.id}
               onClick={() => onSelect(c.id)}
