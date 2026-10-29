@@ -132,7 +132,7 @@ export function useLiteratureMatches(enabled: boolean, allFindings: string[] = [
   useEffect(() => {
     let cancelled = false
     const pull = () => {
-      fetch('/match-index.json', { cache: 'no-store' })
+      fetch(new URL('match-index.json', document.baseURI).href, { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
         .then((idx: { entries?: Record<string, { results: LiveMatch[] }> } | null) => {
           if (cancelled || !idx?.entries) return

@@ -24,9 +24,9 @@ function teachingCandidate(c: Encounter): Candidate {
   return {
     match: teachingMatch(c),
     verification: {
-      verdict: 'confirmed',
-      score: 1,
-      reasons: ['assigned teaching plate for this finding'],
+      verdict: 'plausible',
+      score: 0,
+      reasons: ['local stand-in — a published PubMed figure replaces this when one matches'],
       captionStation: c.stationId,
     },
   }
@@ -104,19 +104,20 @@ export function buildFigureIndex(store: Record<string, LiveMatch[]>): FigureInde
 
 /**
  * Verified candidate figures for an encounter, in display order.
- * Its own finding's figures win. If none fit, the assigned teaching plate is
- * the figure, which is also what the viewer shows.
+ * Its own finding's published figures win. The local plate is only the
+ * fallback, and it stays behind any real PubMed Central figure.
  */
 export function candidatesFor(c: Encounter, index: FigureIndex): Candidate[] {
   const pop = encounterPopulation(c.age, c.categoryId)
   const own = (index.byFinding.get(c.finding)?.[pop] ?? []).filter((x) =>
     captionFitsFinding(c.finding, x.match.caption),
   )
+  const plate = teachingCandidate(c)
   if (own.length) {
     const reviewed = reviewCandidates(c, own)
-    if (reviewed.length) return [teachingCandidate(c), ...reviewed]
+    if (reviewed.length) return [...reviewed, plate]
   }
-  return [teachingCandidate(c)]
+  return [plate]
 }
 
 /**

@@ -37,7 +37,7 @@ import {
   thumbFor as selectThumb,
   nucleusCandidate,
 } from './data/selectFigure'
-import { teachingMatch, teachingPlateFor, plateAgrees } from './data/teachingPlate'
+import { teachingMatch, teachingPlateFor } from './data/teachingPlate'
 
 /**
  * Unmatched findings processed per "match all" run. Bounded to stay polite to
@@ -235,7 +235,8 @@ export default function App() {
   const thumbFor = useCallback(
     (c: Encounter) => {
       const lit = selectThumb(c, figureIndex)
-      if (lit && plateAgrees(c.finding, c.categoryId, lit)) return lit
+      // A published figure (PubMed Central, Commons) outranks the local plate.
+      if (lit && /^https?:\/\//i.test(lit)) return lit
       return teachingPlateFor(c).url
     },
     [figureIndex],
@@ -383,16 +384,9 @@ export default function App() {
   const caseImage = (() => {
     if (!selected) return undefined
     const teaching = teachingMatch(selected)
-    if (
-      currentMatch &&
-      plateAgrees(
-        selected.finding,
-        selected.categoryId,
-        currentMatch.match.url + ' ' + currentMatch.match.caption,
-      )
-    ) {
-      return currentMatch.match
-    }
+    const published = currentMatch?.match
+    // Real open-access figures only. The local plate is the stand-in until one arrives.
+    if (published && /^https?:\/\//i.test(published.url)) return published
     return teaching
   })()
 
