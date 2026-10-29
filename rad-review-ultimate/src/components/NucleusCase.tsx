@@ -1,5 +1,45 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { NucleusStudy } from '../data/nucleus'
+import { localTeachingPlate } from '../data/nucleus'
+
+export function NucleusImage({
+  url,
+  fallback,
+  className,
+  note,
+}: {
+  url: string
+  fallback: string
+  className: string
+  note?: boolean
+}) {
+  const [src, setSrc] = useState(url)
+  const [usedFallback, setUsedFallback] = useState(false)
+  useEffect(() => {
+    setSrc(url)
+    setUsedFallback(false)
+  }, [url])
+  return (
+    <span className="block">
+      <img
+        src={src}
+        alt=""
+        className={className}
+        onError={() => {
+          if (!usedFallback && fallback && src !== fallback) {
+            setUsedFallback(true)
+            setSrc(fallback)
+          }
+        }}
+      />
+      {note && usedFallback && (
+        <span className="mt-1 block text-[8px] leading-snug text-rr-amber">
+          The catalogue file is not on this site. This is the local teaching plate for this study type.
+        </span>
+      )}
+    </span>
+  )
+}
 
 interface Props {
   studies: NucleusStudy[]
@@ -102,6 +142,22 @@ export default function NucleusCase({ studies, libraryLoaded, encounterLabel }: 
         </div>
 
         {/* Labelled slice grid */}
+        {study.images.length === 1 ? (
+          <button
+            type="button"
+            onClick={() => setZoom({ url: study.images[0].url, label: study.images[0].label })}
+            className="mt-2 block w-full text-left"
+            title={study.images[0].label}
+          >
+            <NucleusImage
+              url={study.images[0].url}
+              fallback={localTeachingPlate(study)}
+              note
+              className="h-48 w-full rounded border border-rr-line bg-black object-contain"
+            />
+            <span className="mt-1 block truncate text-[8px] text-rr-dim">{study.images[0].label}</span>
+          </button>
+        ) : (
         <div className="mt-2 grid grid-cols-5 gap-1">
           {study.images.slice(0, 10).map((im) => (
             <button
@@ -114,15 +170,15 @@ export default function NucleusCase({ studies, libraryLoaded, encounterLabel }: 
               <span className="truncate text-[7px] tracking-wider text-rr-dim uppercase">
                 {im.label}
               </span>
-              <img
-                src={im.url}
-                alt=""
-                loading="lazy"
-                className="h-12 w-full rounded border border-rr-line bg-black object-contain transition-colors group-hover:border-rr-blue-lit"
+              <NucleusImage
+                url={im.url}
+                fallback={localTeachingPlate(study)}
+                className="h-16 w-full rounded border border-rr-line bg-black object-contain transition-colors group-hover:border-rr-blue-lit"
               />
             </button>
           ))}
         </div>
+        )}
         {study.images.length > 10 && (
           <p className="mt-1 text-[8px] text-rr-dim tabular-nums">
             +{study.images.length - 10} further slices in this series
@@ -178,7 +234,11 @@ export default function NucleusCase({ studies, libraryLoaded, encounterLabel }: 
                 CLOSE
               </button>
             </div>
-            <img src={zoom.url} alt="" className="max-h-[70vh] w-full object-contain" />
+            <NucleusImage
+              url={zoom.url}
+              fallback={localTeachingPlate(study)}
+              className="max-h-[70vh] w-full bg-black object-contain"
+            />
             <p className="border-t border-rr-line px-3 py-2 text-[9px] leading-snug text-rr-dim">
               {study.source}
               {study.license ? ` · ${study.license}` : ''} · matched to {encounterLabel}

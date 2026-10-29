@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { NucleusLibrary, NucleusStudy } from '../data/nucleus'
+import { localTeachingPlate } from '../data/nucleus'
+import { NucleusImage } from './NucleusCase'
 
 /** The live Nucleus Board Academy, opened in a new tab. */
 export const NUCLEUS_URL = 'https://nucleus-board-academy.cesar-5864.chatgpt.site/'
@@ -243,9 +245,10 @@ export default function NucleusExplorer({ open, onClose, library, initial }: Pro
                 */}
                 {selected.images.length === 1 ? (
                   <figure className="flex h-full flex-col items-center justify-center gap-3">
-                    <img
-                      src={selected.images[0].url}
-                      alt=""
+                    <NucleusImage
+                      url={selected.images[0].url}
+                      fallback={localTeachingPlate(selected)}
+                      note
                       className="max-h-[78vh] max-w-full rounded border border-rr-line bg-black object-contain"
                     />
                     <figcaption className="max-w-3xl text-center text-[10px] leading-snug text-rr-dim">
@@ -259,10 +262,9 @@ export default function NucleusExplorer({ open, onClose, library, initial }: Pro
                         <figcaption className="truncate text-[10px] tracking-wider text-rr-text">
                           {im.label}
                         </figcaption>
-                        <img
-                          src={im.url}
-                          alt=""
-                          loading="lazy"
+                        <NucleusImage
+                          url={im.url}
+                          fallback={localTeachingPlate(selected)}
                           className="aspect-square w-full rounded border border-rr-line bg-black object-contain"
                         />
                       </figure>

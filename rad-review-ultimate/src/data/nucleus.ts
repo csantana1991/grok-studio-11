@@ -339,3 +339,23 @@ export function matchStudies(
     .slice(0, limit)
     .map((x) => x.s)
 }
+
+/**
+ * The export names 7,393 catalogue files that are not packed on this site.
+ * Until a file answers, show a real local plate of the same study type.
+ */
+export function localTeachingPlate(study: {
+  title?: string
+  modality?: string
+  collection?: string
+  region?: string
+}): string {
+  const hay = `${study.collection || ''} ${study.modality || ''} ${study.region || ''} ${study.title || ''}`
+  if (/mibi|myocard|perfusion|cardiac|heart/i.test(hay)) return '/studio/assets/images/cardiac-ac.jpg'
+  if (/thyroid|i-131|iodine/i.test(hay)) return '/studio/assets/images/thyroid-scan-i123.jpg'
+  if (/bone/i.test(hay)) return '/studio/assets/images/bone-scan-wb.jpg'
+  if (/breast|ultrasound/i.test(hay)) return '/studio/assets/images/case-us-1.jpg'
+  if (/dotatate|psma|lu-177|y-90|ra-223/i.test(hay)) return '/studio/assets/images/rai-therapy.jpg'
+  if (/chest|pediatr|radiograph|\bdx\b|x-ray|xray/i.test(hay)) return '/studio/assets/images/xr-chest.jpg'
+  return '/studio/assets/images/gamma-camera-patient.jpg'
+}
