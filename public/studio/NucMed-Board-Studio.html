@@ -11064,6 +11064,7 @@ const SeriesCine = {
       if (token !== this.token) return;
       const dec = decodeTciaSlice(buf);
       if (dec) this.frames[i] = dec;
+      else this.frames[i] = { fail: true };
       if (this.i === i) this.draw(document.getElementById("cineCv"), i);
       if (this.sops[i + 1] && !this.frames[i + 1]) {
         const nxt = i + 1;
@@ -11092,9 +11093,11 @@ const SeriesCine = {
       if (token !== this.token || !Array.isArray(rows) || !rows.length) return;
       this.sops = rows.map(r => r.SOPInstanceUID).filter(Boolean);
       this.n = this.sops.length;
-      this.i = Math.min(this.i, this.n - 1);
+      this.i = Math.floor(this.n / 2);
       const rng = document.getElementById("cineRange");
-      if (rng) { rng.max = String(this.n - 1); rng.value = String(this.i); }
+      if (rng) { rng.max = String(Math.max(0, this.n - 1)); rng.value = String(this.i); }
+      const head = document.querySelector("#cineHost .panel-bar b");
+      if (head) head.textContent = "TCIA CT · " + this.n + " slices";
       const frame = document.querySelector(".ra-frame");
       if (frame) frame.style.display = "none";
       this.show(this.i, false);
@@ -11103,18 +11106,49 @@ const SeriesCine = {
     }
   },
   async resolveCollection(col) {
+    this.resolving = true;
+    const lab = document.getElementById("cineLab");
+    if (lab) lab.textContent = "Loading a real " + col + " CT…";
+    this.draw(document.getElementById("cineCv"), this.i);
     try {
       const res = await fetch("https://services.cancerimagingarchive.net/nbia-api/services/v1/getSeries?Collection=" + encodeURIComponent(col));
       const rows = await res.json();
       if (!Array.isArray(rows)) return;
-      const ct = rows.find(r => /CT|MR/.test(String(r.Modality || "")) && Number(r.ImageCount) > 8);
-      if (ct && ct.SeriesInstanceUID) this.loadSeries(ct.SeriesInstanceUID);
-    } catch (e) {}
+      const cts = rows.filter(r => /CT|MR/.test(String(r.Modality || "")) && Number(r.ImageCount) >= 20 && Number(r.ImageCount) <= 160);
+      const ct = cts.find(r => /KIDNEY|ABDOMEN|CHEST|LUNG/i.test(String(r.BodyPartExamined || ""))) || cts[0];
+      if (ct && ct.SeriesInstanceUID) await this.loadSeries(ct.SeriesInstanceUID);
+      else if (lab) lab.textContent = "No CT series in " + col;
+    } catch (e) {
+      if (lab) lab.textContent = "TCIA did not answer";
+    }
+    this.resolving = false;
   },
   draw(cv, i) {
     if (!cv) return;
     const frame = this.frames && this.frames[i];
     if (frame && frame.pix) { this.paintSlice(cv, frame, i); return; }
+    if (frame && frame.fail) {
+      const w = cv.width = cv.clientWidth || 640;
+      const h = cv.height = cv.clientHeight || 420;
+      const c = cv.getContext("2d");
+      c.fillStyle = "#05070a";
+      c.fillRect(0, 0, w, h);
+      c.fillStyle = "#e8eef8";
+      c.font = "600 16px system-ui";
+      c.fillText("This slice is compressed. Move the slider to the next one.", 24, h / 2);
+      return;
+    }
+    if (this.seriesUid || this.resolving) {
+      const w = cv.width = cv.clientWidth || 640;
+      const h = cv.height = cv.clientHeight || 420;
+      const c = cv.getContext("2d");
+      c.fillStyle = "#05070a";
+      c.fillRect(0, 0, w, h);
+      c.fillStyle = "#e8eef8";
+      c.font = "600 16px system-ui";
+      c.fillText("Loading the CT from the Cancer Imaging Archive…", 24, h / 2);
+      return;
+    }
     const w = cv.width = cv.clientWidth || 640;
     const h = cv.height = cv.clientHeight || 360;
     const c = cv.getContext("2d");
@@ -11248,9 +11282,10 @@ const SeriesCine = {
       for (let k = this.i; k < this.n; k++) parts.push(this.script(k).text);
       speakQueue(parts);
     };
-    go(this.i, false);
+    go(0, false);
+    const named = String((item && (item.collection || item.title || item.subtitle)) || "").match(/TCGA-[A-Z0-9]+/);
     if (this.seriesUid) this.loadSeries(this.seriesUid);
-    else if (item && item.collection && /^TCGA-/.test(item.collection)) this.resolveCollection(item.collection);
+    else if (named) this.resolveCollection(named[0]);
   }
 };
 
