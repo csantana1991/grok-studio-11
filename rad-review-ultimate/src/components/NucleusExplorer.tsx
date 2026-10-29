@@ -171,7 +171,7 @@ export default function NucleusExplorer({ open, onClose, library, initial }: Pro
               >
                 {s.images[0] && (
                   <img
-                    src={s.images[0].url}
+                    src={localTeachingPlate(s)}
                     alt=""
                     loading="lazy"
                     className="h-10 w-10 shrink-0 rounded border border-rr-line bg-black object-contain"
@@ -249,7 +249,7 @@ export default function NucleusExplorer({ open, onClose, library, initial }: Pro
                       url={selected.images[0].url}
                       fallback={localTeachingPlate(selected)}
                       note
-                      className="max-h-[78vh] max-w-full rounded border border-rr-line bg-black object-contain"
+                      className="h-[72vh] w-full rounded border border-rr-line bg-black object-contain"
                     />
                     <figcaption className="max-w-3xl text-center text-[10px] leading-snug text-rr-dim">
                       {selected.images[0].label}

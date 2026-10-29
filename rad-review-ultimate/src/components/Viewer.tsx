@@ -12,6 +12,7 @@ import { basename } from '../data/sourceImages'
 import { CREDIT_BY_FILE, shortCredit } from '../data/credits'
 import PlateImg from './PlateImg'
 import { searchTerms } from '../data/imageSources'
+import { displayUrl } from '../data/liveMatch'
 import SourcePicker from './SourcePicker'
 
 interface Props {
@@ -438,7 +439,7 @@ export default function Viewer({
             >
               <PlateImg
                 key={`${shown?.url || caseImage?.url}-${imageIndex}`}
-                src={shown?.url || caseImage?.url || ''}
+                src={displayUrl(shown?.url || caseImage?.url || '')}
                 stationId={station.id}
                 alt={shown?.caption || caseImage?.caption || finding || ''}
                 onError={() => {
@@ -737,7 +738,7 @@ export default function Viewer({
                         (i === picked ? 'border-white' : 'border-rr-line')
                       }
                     >
-                      <img src={g.url} alt="" className="h-full w-full object-cover" />
+                      <img src={displayUrl(g.url)} alt="" className="h-full w-full object-cover" />
                     </button>
                   ))}
                 </div>

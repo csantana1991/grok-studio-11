@@ -3,7 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 /** Same-origin copy of one teaching figure so the phone can paint it. */
 
 async function streamImage(src: string) {
-  if (!/^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(src) && !/^https:\/\/europepmc\.org\/articles\/PMC\d+\/bin\//.test(src)) {
+  if (
+    !/^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(src) &&
+    !/^https:\/\/europepmc\.org\/articles\/PMC\d+\/bin\//.test(src) &&
+    !/^https:\/\/openi\.nlm\.nih\.gov\/imgs\//.test(src)
+  ) {
     return new Response("Bad host", { status: 400 });
   }
   const res = await fetch(src, {
@@ -25,6 +29,8 @@ export const Route = createFileRoute("/api/pmc/img")({
     handlers: {
       GET: async ({ request }) => {
         const url = new URL(request.url);
+        const direct = url.searchParams.get("src") || "";
+        if (direct) return streamImage(direct);
         const title = url.searchParams.get("title") || "";
         try {
           if (title) {

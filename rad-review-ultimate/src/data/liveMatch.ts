@@ -68,6 +68,14 @@ export async function fetchMatches(
   return body
 }
 
+/** Same-origin copy. Open-i figures often fail when the page loads them directly. */
+export function displayUrl(url: string): string {
+  if (url.startsWith('https://openi.nlm.nih.gov/imgs/')) {
+    return '/api/pmc/img?src=' + encodeURIComponent(url)
+  }
+  return url
+}
+
 /** Short attribution line for a matched figure. */
 export function matchCredit(m: LiveMatch): string {
   const first = m.authors.split(',')[0] || 'Unknown'

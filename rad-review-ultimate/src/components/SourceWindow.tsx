@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { searchTerms } from '../data/imageSources'
+import { displayUrl } from '../data/liveMatch'
 
 interface Props {
   finding: string
@@ -43,7 +44,7 @@ export default function SourceWindow({ finding, label, href }: Props) {
       </div>
       {label === 'Open-i' || !href ? (
         <div className="rr-scroll min-h-0 flex-1 overflow-y-scroll">
-          {shown ? <img src={shown.url} alt="" className="max-h-40 w-full object-contain" /> : null}
+          {shown ? <img src={displayUrl(shown.url)} alt="" className="max-h-40 w-full object-contain" /> : null}
           <p className="px-2 py-1 text-[12px] leading-snug text-white">
             {shown?.caption || 'Looking up figures for this case...'}
           </p>
@@ -58,7 +59,7 @@ export default function SourceWindow({ finding, label, href }: Props) {
                   (i === picked ? 'border-white' : 'border-white/30')
                 }
               >
-                <img src={g.url} alt="" className="h-full w-full object-cover" />
+                <img src={displayUrl(g.url)} alt="" className="h-full w-full object-cover" />
               </button>
             ))}
           </div>

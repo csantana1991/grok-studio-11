@@ -13,12 +13,14 @@ export function NucleusImage({
   className: string
   note?: boolean
 }) {
-  const [src, setSrc] = useState(url)
-  const [usedFallback, setUsedFallback] = useState(false)
+  const missing = url.startsWith('/nucleus/')
+  const [src, setSrc] = useState(missing ? fallback : url)
+  const [usedFallback, setUsedFallback] = useState(missing)
   useEffect(() => {
-    setSrc(url)
-    setUsedFallback(false)
-  }, [url])
+    const gone = url.startsWith('/nucleus/')
+    setSrc(gone && fallback ? fallback : url)
+    setUsedFallback(gone)
+  }, [url, fallback])
   return (
     <span className="block">
       <img

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { matchCredit, type LiveMatch } from '../data/liveMatch'
+import { displayUrl, matchCredit, type LiveMatch } from '../data/liveMatch'
 import { isNonRadiologic } from '../data/nonRadiologic'
 import type { BatchProgress, LoopStatus, MatchState } from '../hooks/useLiteratureMatches'
 import { TARGET_PER_CASE } from '../hooks/useLiteratureMatches'
@@ -216,7 +216,7 @@ export default function LiteratureMatch({
                     className="flex gap-2 rounded border border-rr-line bg-rr-raised p-1.5 text-left transition-colors hover:border-rr-blue-lit"
                   >
                     <img
-                      src={m.url}
+                      src={displayUrl(m.url)}
                       alt=""
                       loading="lazy"
                       className="h-14 w-14 shrink-0 rounded border border-rr-line bg-black object-contain"
@@ -266,7 +266,7 @@ export default function LiteratureMatch({
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
-              <img src={open.url} alt="" className="max-h-[60vh] w-full object-contain" />
+              <img src={displayUrl(open.url)} alt="" className="max-h-[60vh] w-full object-contain" />
               <div className="border-t border-rr-line px-3 py-2">
                 <p className="text-[10px] leading-snug text-rr-text">{open.caption}</p>
                 <p className="mt-2 text-[9px] leading-snug text-rr-dim">
