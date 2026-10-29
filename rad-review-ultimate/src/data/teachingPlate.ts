@@ -26,7 +26,7 @@ const POOLS: Record<string, string[]> = {
   dotatate: ['one/dota-1.jpg'],
   bone: ['one/bone-1.jpg'],
   thyroid: ['one/thyroid-1.jpg'],
-  mammo: ['one/mammo-1.jpg'],
+  mammo: ['findings/f-545a14848ba3.jpg', 'one/mammo-4.jpg'],
   ctChest: ['one/ct-chest-2.jpg', 'one/ct-chest-3.jpg'],
   ctBody: ['one/ct-body-2.jpg'],
   ctHead: ['one/mr-1.jpg'],
@@ -148,6 +148,57 @@ const NOT_MEDICAL = new Set([
   'findings/f-92d35ac8162b.jpg',
   'findings/f-54ad8f79d70c.jpg',
   'findings/f-23f4fcc9337a.jpg',
+  'findings/f-3c2c6e463f64.jpg',
+  'findings/f-d02571330cc6.jpg',
+  'findings/f-339115396360.jpg',
+  'findings/f-ed98e8a516bd.jpg',
+  'findings/f-65651c108cbb.jpg',
+  'findings/f-c95b43efaccf.jpg',
+  'findings/f-a0c926e7c42c.jpg',
+  'one/ct-chest-1.jpg',
+  'findings/f-3f28baa57252.jpg',
+  'findings/f-8ee477e3bf8c.jpg',
+  'findings/f-a971d1510ec7.jpg',
+  'findings/f-abd6f6d9eed5.jpg',
+  'findings/f-78e09cef1800.jpg',
+  'findings/f-a74a738347a8.jpg',
+  'findings/f-f90e4505b0f5.jpg',
+  'findings/f-0b9ee728f081.jpg',
+  'findings/f-e80ac187643e.jpg',
+  'findings/f-85b21a1988b8.jpg',
+  'findings/f-d32ecf121ee9.jpg',
+  'findings/f-0729bb1ed9ad.jpg',
+  'findings/f-cab61ec45f84.jpg',
+  'findings/f-6e4360fc2483.jpg',
+  'findings/f-865242483ff5.jpg',
+  'one/mammo-1.jpg',
+  'one/mammo-2.jpg',
+  'findings/f-4e7aeb18e430.jpg',
+  'findings/f-63f4c7411469.jpg',
+  'findings/f-04ac72e70e8f.jpg',
+  'findings/f-afa5de7b2673.jpg',
+  'findings/f-67edfc706f64.jpg',
+  'findings/f-664d1b56473e.jpg',
+  'findings/f-e8b1d50fc93f.jpg',
+  'findings/f-00f615628a07.jpg',
+  'findings/f-5db253593bfd.jpg',
+  'findings/f-49e0ef95b492.jpg',
+  'findings/f-16c4e1d801ce.jpg',
+  'findings/f-2311b0433752.jpg',
+  'findings/f-4210a4e8e26c.jpg',
+  'findings/f-037c646c589d.jpg',
+  'findings/f-d64201b73aba.jpg',
+  'findings/f-03b08c5b5bb4.jpg',
+  'findings/f-364ae9b17c81.jpg',
+  'findings/f-5baf32a6af09.jpg',
+  'findings/f-0db08bf86f5b.jpg',
+  'findings/f-cd5ba454105f.jpg',
+  'findings/f-8903885f7d22.jpg',
+  'findings/f-f9043a9880c9.jpg',
+  'findings/f-6a9935e2ef03.jpg',
+  'findings/f-0a9028fbddff.jpg',
+  'findings/f-24a019674475.jpg',
+  'findings/f-47fec47b2efc.jpg',
 ])
 
 /** The finding's own file when the library has a real study, otherwise the checked modality plate. */
@@ -155,7 +206,8 @@ function pick(finding: string, stationId: string, categoryId: string): string {
   void stationId
   const named = FINDING_PLATES[finding]
   if (named && !NOT_MEDICAL.has(named)) return DR + named
-  const name = (POOLS[plateKind(finding, categoryId)] ?? POOLS.ctBody)[0]
+  const pool = POOLS[plateKind(finding, categoryId)] ?? POOLS.ctBody
+  const name = pool.find((file) => !NOT_MEDICAL.has(file)) ?? 'one/ct-body-2.jpg'
   return DR + name
 }
 
