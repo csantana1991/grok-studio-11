@@ -24,7 +24,13 @@ export default function AudiobookBar({
   label,
 }: Props) {
   return (
-    <div className="flex shrink-0 items-center gap-2 border-t border-rr-line bg-rr-panel px-3 py-1.5">
+    <div className="shrink-0 border-t border-rr-line bg-black">
+      {speaking && line ? (
+        <p className="px-4 py-2 text-[20px] leading-snug font-bold text-[#ffe14a]">
+          {total ? `${index + 1} of ${total}. ` : ''}{line}
+        </p>
+      ) : null}
+      <div className="flex items-center gap-2 bg-rr-panel px-3 py-1.5">
       <button
         type="button"
         onClick={speaking ? onStop : onPlayCase}
@@ -56,11 +62,10 @@ export default function AudiobookBar({
       </label>
       <div className="min-w-0 flex-1">
         <p className="truncate text-[10px] font-bold text-white">{label}</p>
-        <p className="truncate text-[10px] text-rr-blue-lit">
-          {speaking && total
-            ? `Audiobook ${index + 1}/${total} · ${line}`
-            : 'Same audiobook as Board Studio · play this case or the worklist'}
+        <p className="text-[15px] leading-snug font-bold text-[#ffe14a]">
+          {speaking && total ? line : 'Press play. The yellow line is the sentence being spoken.'}
         </p>
+      </div>
       </div>
     </div>
   )
