@@ -123,7 +123,7 @@ function Row({
       }
     >
       <span className="relative h-24 w-28 shrink-0 overflow-hidden rounded border border-rr-line bg-black">
-        <FullThumb c={c} src={thumb} className="absolute inset-0 h-full w-full" />
+        <FullThumb c={c} src={thumb} plain className="absolute inset-0 h-full w-full" />
       </span>
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
       <div className="flex items-center gap-1.5">

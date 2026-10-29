@@ -501,7 +501,7 @@ export default function App() {
 
       <main ref={stageRef} className="flex min-h-0 flex-1 flex-col xl:flex-row">
         <div
-          className="flex min-h-0 min-w-0 flex-col overflow-hidden"
+          className="rr-list flex min-h-0 min-w-0 flex-col overflow-hidden"
           style={{ flex: `0 0 ${listShare}%` }}
         >
         <CaseList
@@ -544,7 +544,7 @@ export default function App() {
           className="z-10 h-3 shrink-0 cursor-ns-resize bg-[#1d4ed8] xl:h-auto xl:w-3 xl:cursor-ew-resize"
         />
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="rr-viewcol flex min-h-0 min-w-0 flex-1 flex-col">
           <Viewer
             slice={slice}
             onSlice={setSlice}

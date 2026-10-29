@@ -109,6 +109,21 @@ body {
   color: #fff !important;
 }
 
+@media (max-width: 1279px) {
+  .rr-list {
+    flex: 0 0 46vh !important;
+    max-height: 46vh;
+  }
+  .rr-viewcol {
+    flex: 1 1 auto;
+    min-height: 42vh;
+  }
+  .rr-side {
+    max-height: 36vh;
+    overflow: auto;
+  }
+}
+
 @media (min-width: 1280px) {
   .rr-side {
     width: var(--rr-right);
