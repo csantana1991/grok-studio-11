@@ -189,8 +189,9 @@ export function measurePlate(src: string): Promise<CSSProperties> {
 }
 
 export function useFilledPlate(src: string): CSSProperties {
-  const [style, setStyle] = useState<CSSProperties>(() => fillCache.get(src) ?? CONTAIN)
+  const [style, setStyle] = useState<CSSProperties>(() => (src ? fillCache.get(src) ?? CONTAIN : CONTAIN))
   useEffect(() => {
+    if (!src) return
     let live = true
     const known = fillCache.get(src)
     if (known) setStyle(known)

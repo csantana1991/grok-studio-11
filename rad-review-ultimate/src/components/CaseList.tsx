@@ -3,7 +3,7 @@ import type { Encounter } from '../data/generateCases'
 import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
 import { formatSlice, getStationForSlice } from '../data/stations'
 import PlateImg from './PlateImg'
-import { imageLabel } from '../data/teachingPlate'
+import { imageLabel, teachingPlateFor } from '../data/teachingPlate'
 
 export const ROW_H = 128
 const OVERSCAN = 6
@@ -32,6 +32,29 @@ interface Props {
 
 function thumbFallback(slice: number): string {
   return getStationForSlice(slice).image
+}
+
+function FilmThumb({ c, src }: { c: Encounter; src: string }) {
+  const local = teachingPlateFor(c).url
+  const station = thumbFallback(c.slice)
+  const [cur, setCur] = useState(src || local)
+  useEffect(() => setCur(src || local), [src, local])
+  return (
+    <PlateImg
+      src={cur}
+      stationId={c.stationId}
+      alt=""
+      plain
+      onError={() => {
+        setCur((now) => {
+          if (now !== local) return local
+          if (now !== station) return station
+          return now
+        })
+      }}
+      className="absolute inset-0 h-full w-full"
+    />
+  )
 }
 
 const STATUS_STYLE: Record<Encounter['status'], string> = {
@@ -323,14 +346,7 @@ export default function CaseList({
                       onClick={() => onSelect(c)}
                       className="relative h-full w-16 shrink-0 overflow-hidden rounded border border-rr-line bg-black"
                     >
-                      {src ? (
-                        <PlateImg
-                          src={src}
-                          stationId={c.stationId}
-                          alt={imageLabel(c)}
-                          className="absolute inset-0 h-full w-full"
-                        />
-                      ) : null}
+                      {src ? <FilmThumb c={c} src={src} /> : null}
                     </button>
                   )
                 })}

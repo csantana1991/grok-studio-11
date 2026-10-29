@@ -6,17 +6,22 @@ export default function PlateImg({
   alt,
   className,
   onError,
+  plain = false,
 }: {
   src: string
   stationId: string
   alt?: string
   className?: string
   onError?: () => void
+  /** Small thumbs: show the whole picture, don't crop it out of the box. */
+  plain?: boolean
 }) {
-  const fill = useFilledPlate(src)
-  const style: CSSProperties = {
-    objectFit: 'contain',
-    ...fill,
-  }
+  const fill = useFilledPlate(plain ? '' : src)
+  const style: CSSProperties = plain
+    ? { objectFit: 'contain', width: '100%', height: '100%', left: 0, top: 0 }
+    : {
+        objectFit: 'contain',
+        ...fill,
+      }
   return <img src={src} alt={alt ?? ''} draggable={false} className={className} style={style} onError={onError} />
 }
