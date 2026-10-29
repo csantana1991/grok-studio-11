@@ -235,6 +235,13 @@ td code, .mono { font-family: var(--mono); color: var(--gold); }
 .widget-play {
   border: 0; border-radius: 999px; background: var(--accent); color: #06201a; font-weight: 800; padding: 10px 16px; font-size: 13px; cursor: pointer; white-space: nowrap;
 }
+.rr-playrow { display: flex; align-items: flex-start; gap: 10px; flex: 1 1 100%; min-width: 0; margin-top: 8px; }
+.rr-cc {
+  margin: 0; flex: 1 1 auto; min-width: 0;
+  color: #facc15; font-weight: 700; font-size: 16px; line-height: 1.35;
+  background: #111827; border-radius: 12px; padding: 8px 12px;
+}
+.rr-cc[hidden] { display: none; }
 .player .info { min-width: 0; flex: 1; }
 .player .info b { display: block; font-size: 13px; }
 .player .info span { color: var(--muted); font-size: 12px; }
@@ -1032,6 +1039,7 @@ body.player-max { --player-h: 70vh; }
 #radRoot .rr-top, #nbaRoot .rr-top,
 #radRoot .rr-stats, #nbaRoot .rr-stats,
 #radRoot > p, #nbaRoot > p { flex: 0 0 auto; }
+#radRoot .rr-top, #nbaRoot .rr-top { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 16px; }
 #radRoot .rr-grid, #nbaRoot .rr-grid {
   flex: 1 1 auto;
   min-height: 0 !important;
@@ -4792,11 +4800,24 @@ let speakGen = 0;
 function stopSpeech() {
   speakGen += 1;
   state.speaking = false;
+  state.spokenLine = "";
   if (window.speechSynthesis) speechSynthesis.cancel();
   const btn = $("#playBtn");
   if (btn) btn.textContent = "▶";
   const w = $("#widgetPlay");
   if (w) w.textContent = "▶ Play narration";
+  paintCc();
+}
+function paintCc() {
+  document.querySelectorAll(".rr-cc").forEach((el) => {
+    if (state.speaking && state.spokenLine) {
+      el.hidden = false;
+      el.textContent = state.spokenLine;
+    } else {
+      el.hidden = true;
+      el.textContent = "";
+    }
+  });
 }
 
 function lessonsWithAudio() {
@@ -9986,11 +10007,15 @@ function speakQueue(parts){
   const next = () => {
     if (!state.speaking || state.para >= queue.length) {
       state.speaking = false;
+      state.spokenLine = "";
       const b = $("#playBtn"); if (b) b.textContent = "▶";
       const w = $("#widgetPlay"); if (w) w.textContent = "▶ Play narration";
+      paintCc();
       return;
     }
     if (typeof depictParagraph === "function") depictParagraph(queue[state.para]);
+    state.spokenLine = queue[state.para];
+    paintCc();
     const label = document.getElementById("wordLabel");
     if (label) label.textContent = queue[state.para];
     if ($("#playerInfo")) {
@@ -10245,7 +10270,10 @@ function renderRadReview() {
           <h2>RAD REVIEW</h2>
           <p class="rr-sub">Click a case on the left. Click VERTEX…TOES on the right to show only that station on the left.</p>
         </div>
-        <button type="button" class="widget-play" id="widgetPlay">Play this case</button>
+        <div class="rr-playrow">
+          <button type="button" class="widget-play" id="widgetPlay">Play this case</button>
+          <p class="rr-cc" id="rrCaption" hidden></p>
+        </div>
       </div>
       <div class="rr-stats">${tiles}<button type="button" class="rr-tile ${state.rrCat==="All"?"on":""}" data-cat="All"><b>33,000</b><span>All</span></button></div>
       <p><input id="rrSearch" placeholder="Search finding / station / accession"></p>
@@ -10343,6 +10371,7 @@ function renderRadReview() {
   window.addEventListener("keydown", onKey);
   if ($("#playerInfo")) $("#playerInfo").innerHTML = "<b>RAD REVIEW</b><span>" + (enc ? (enc.finding + " · " + enc.accession) : "Select a case") + " · Play reads this row</span>";
   if ($("#playerScript")) $("#playerScript").textContent = enc ? ("Selected: " + enc.finding + " at " + enc.stationName + ".") : "";
+  paintCc();
   } catch (err) {
     $("#stage").innerHTML = `<div class="widget-fail"><h2>RAD REVIEW failed</h2><p>${(err && err.message) || err}</p></div>`;
   }
