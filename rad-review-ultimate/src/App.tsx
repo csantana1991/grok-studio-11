@@ -202,7 +202,7 @@ export default function App() {
     e.preventDefault()
     const rect = stage.getBoundingClientRect()
     const move = (ev: PointerEvent) => {
-      setRightW(Math.min(560, Math.max(180, rect.right - ev.clientX)))
+      setRightW(Math.min(rect.width - 280, Math.max(220, rect.right - ev.clientX)))
     }
     const up = () => {
       window.removeEventListener('pointermove', move)
@@ -605,9 +605,9 @@ export default function App() {
         </div>
 
         <div
-          title="Drag to widen the image"
+          title="Drag sideways to open the reading panel"
           onPointerDown={dragRight}
-          className="z-10 hidden h-auto w-3 shrink-0 cursor-ew-resize bg-[#1d4ed8] xl:block"
+          className="z-10 h-3 w-full shrink-0 cursor-ew-resize bg-[#1d4ed8] xl:h-auto xl:w-3"
         />
         <div
           className="rr-side flex min-h-0 w-full shrink-0 flex-col overflow-hidden xl:h-full"
