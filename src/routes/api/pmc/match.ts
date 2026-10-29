@@ -45,7 +45,14 @@ export const Route = createFileRoute("/api/pmc/match")({
               .map((row) => ({
                 url: "https://openi.nlm.nih.gov" + row.imgLarge,
                 caption: row.title || q,
+                relevance: 2,
+                pmcid: "",
+                title: row.title || q,
+                authors: "Open-i",
                 journal: row.journal || "Open-i",
+                year: "",
+                doi: "",
+                license: "CC BY",
               }));
             return Response.json({ query: q, results });
           } catch {

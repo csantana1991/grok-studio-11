@@ -55,7 +55,7 @@ export async function fetchMatches(
   const hit = cache.get(query)
   if (hit && !force) return hit
 
-  const url = `/api/pmc/match?q=${encodeURIComponent(query)}&limit=${limit}`
+  const url = `/api/pmc/match?source=openi&q=${encodeURIComponent(query)}&limit=${limit}`
   const r = await fetch(url, { signal })
   if (r.status === 429) {
     const body = (await r.json().catch(() => ({}))) as MatchResponse

@@ -90,6 +90,8 @@ export function useLiteratureMatches(enabled: boolean, allFindings: string[] = [
       const merged = [...existing]
       for (const m of incoming) {
         if (seen.has(m.url)) continue
+        if (!m.url.startsWith('https://')) continue
+        if (/wikipedia/i.test(m.journal || '')) continue
         if (isNonRadiologic(`${m.title} ${m.caption}`)) continue
         seen.add(m.url)
         merged.push(m)
@@ -113,7 +115,12 @@ export function useLiteratureMatches(enabled: boolean, allFindings: string[] = [
         if (cancelled || !Object.keys(saved).length) return
         const clean: Record<string, LiveMatch[]> = {}
         for (const [finding, list] of Object.entries(saved)) {
-          const kept = list.filter((m) => !isNonRadiologic(`${m.title} ${m.caption}`))
+          const kept = list.filter(
+            (m) =>
+              m.url.startsWith('https://') &&
+              !/wikipedia/i.test(m.journal || '') &&
+              !isNonRadiologic(`${m.title} ${m.caption}`),
+          )
           if (kept.length !== list.length) void saveMatches(finding, kept)
           if (kept.length) clean[finding] = kept
         }

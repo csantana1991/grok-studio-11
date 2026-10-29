@@ -207,7 +207,7 @@ export default function LiteratureMatch({
             {matches && matches.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 {matches
-                  .filter((m) => !isNonRadiologic(`${m.title} ${m.caption}`))
+                  .filter((m) => m.url.startsWith('https://') && !/wikipedia/i.test(m.journal || '') && !isNonRadiologic(`${m.title} ${m.caption}`))
                   .map((m) => (
                   <button
                     key={m.url}
