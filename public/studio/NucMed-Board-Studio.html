@@ -913,7 +913,7 @@ body.rru-full .work { position:fixed; inset:44px 0 0 0; }
 html, body { width:100%; max-width:100%; overflow:hidden; }
 .app {
   display: grid;
-  grid-template-columns: var(--side-w) 10px minmax(0,1fr);
+  grid-template-columns: var(--side-w) 14px minmax(0,1fr);
   height: 100dvh;
   max-width: 100vw;
   min-width: 0;
@@ -946,7 +946,21 @@ body.sheet-open .main {
   -webkit-user-select: none;
 }
 .split-v, #colSplit, #atlasSplit, .vid-split {
-  width: 12px; cursor: ew-resize; align-self: stretch;
+  width: 14px; cursor: ew-resize; align-self: stretch;
+  background: #b7c8dc;
+  position: relative;
+  z-index: 6;
+}
+#colSplit::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 56px;
+  transform: translate(-50%, -50%);
+  border-radius: 4px;
+  background: #1d4ed8;
 }
 .split-h, .player-handle { height: 14px; cursor: ns-resize; width: 100%; }
 .split-v:hover, .split-h:hover, .vid-split:hover, .player-handle:hover, #colSplit:hover, #atlasSplit:hover { background: var(--accent); }
@@ -1001,7 +1015,7 @@ body.atlas-open .work { grid-template-columns: minmax(0,1fr) 10px minmax(240px, 
 body.nav-min { --side-w: 56px; }
 body.nav-max { --side-w: 420px; }
 body.nav-min .app, body.nav-max .app, body.player-min .app, body.player-max .app {
-  grid-template-columns: var(--side-w) 10px minmax(0,1fr);
+  grid-template-columns: var(--side-w) 14px minmax(0,1fr);
 }
 body.player-min { --player-h: 56px; }
 body.player-max { --player-h: 70vh; }
@@ -1810,6 +1824,46 @@ body:not(.lesson-audio) #playerDock {
   max-height: 0 !important;
   overflow: hidden !important;
   border: 0 !important;
+}
+.sidebar { resize: none !important; }
+body.nav-min .brand h1,
+body.nav-min .brand p,
+body.nav-min .progress-wrap,
+body.nav-min .nav-sec,
+body.nav-min .nav-item .meta { display: none !important; }
+body.nav-min .nav-item { justify-content: center; padding: 8px 4px; }
+body.nav-min .sidebar { overflow: hidden; }
+body.view-rru #playerDock,
+body.view-rru #winBar,
+body.view-rru #dockHandle { display: none !important; }
+body.view-rru .main { grid-template-rows: auto minmax(0,1fr) !important; }
+body.view-rru .work,
+body.view-rru .stage {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+body.view-rru .topbar-scroll { flex-wrap: nowrap !important; overflow-x: auto !important; }
+body.view-rru .rru-host {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  resize: none !important;
+}
+body.view-rru .rru-host > .panel-bar { display: none !important; }
+body.view-rru #rruFrame {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
 }
 </style></head>
 <body>
@@ -6505,11 +6559,28 @@ const Layout = {
     this.load();
     document.body.classList.remove("dock-min", "player-min", "player-max");
     this.pointerDrag(document.getElementById("colSplit"), (e) => {
-      const x = Math.min(window.innerWidth * 0.55, Math.max(160, e.clientX));
-      document.documentElement.style.setProperty("--side-w", x + "px");
-      document.body.classList.remove("nav-min", "nav-max");
+      const wide = window.innerWidth * 0.55;
+      const x = Math.min(wide, Math.max(48, e.clientX));
+      if (x < 96) {
+        document.body.classList.add("nav-min");
+        document.body.classList.remove("nav-max");
+        document.documentElement.style.setProperty("--side-w", "56px");
+      } else {
+        document.body.classList.remove("nav-min", "nav-max");
+        document.documentElement.style.setProperty("--side-w", Math.round(x) + "px");
+      }
       this.save();
     });
+    const colSplit = document.getElementById("colSplit");
+    if (colSplit && !colSplit.dataset.dbl) {
+      colSplit.dataset.dbl = "1";
+      colSplit.addEventListener("dblclick", () => {
+        const min = document.body.classList.toggle("nav-min");
+        document.body.classList.remove("nav-max");
+        document.documentElement.style.setProperty("--side-w", min ? "56px" : "280px");
+        this.save();
+      });
+    }
     this.pointerDrag(document.getElementById("atlasSplit"), (e) => {
       const narrow = window.innerWidth <= 980;
       if (narrow) {
@@ -10927,7 +10998,7 @@ function renderRadUltimate(){
   const stage = $("#stage");
   stage.classList.add("rru-stage");
   stage.innerHTML = `
-    <section class="panel-wrap rru-host" data-panel-body="rru" style="min-height:72vh;display:flex;flex-direction:column;background:#0a0a0b;color:#e8fffa;border:1px solid var(--line);border-radius:12px;overflow:hidden">
+    <section class="panel-wrap rru-host" data-panel-body="rru" style="display:flex;flex-direction:column;background:#0a0a0b;color:#e8fffa;overflow:hidden;flex:1;min-height:0;height:100%">
       <div class="panel-bar" data-panel="rru">
         <b>RAD REVIEW Ultimate · 33,000 encounters</b>
         <span>
@@ -10937,7 +11008,7 @@ function renderRadUltimate(){
           <button type="button" data-act="max">□</button>
         </span>
       </div>
-      <iframe id="rruFrame" title="RAD REVIEW Ultimate" src="/rru/index.html" allow="autoplay" style="flex:1;width:100%;min-height:68vh;border:0;background:#0a0a0b"></iframe>
+      <iframe id="rruFrame" title="RAD REVIEW Ultimate" src="/rru/index.html" allow="autoplay" style="flex:1;width:100%;height:100%;min-height:0;border:0;background:#0a0a0b"></iframe>
     </section>`;
   if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>RAD REVIEW Ultimate</b><span>Worklist · the phone opens the full page</span>`;
   bindPanelChrome(stage);
