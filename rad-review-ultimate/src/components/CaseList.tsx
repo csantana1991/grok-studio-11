@@ -288,7 +288,7 @@ export default function CaseList({
           <div className="mb-1 text-[9px] tracking-[0.14em] text-rr-dim uppercase">
             {cases.length.toLocaleString()} images
           </div>
-          <div className="flex gap-1 overflow-x-auto pb-1">
+          <div className="rr-scroll flex gap-1 overflow-x-scroll pb-3">
             {plates.map((p) => (
               <button
                 key={p.encounter.idx}
@@ -309,7 +309,7 @@ export default function CaseList({
         </div>
       )}
 
-      <div ref={scrollRef} onScroll={onScroll} className="min-h-[18rem] flex-1 overflow-y-auto xl:min-h-0">
+      <div ref={scrollRef} onScroll={onScroll} className="rr-scroll min-h-[18rem] flex-1 overflow-y-scroll xl:min-h-0">
         {indexing ? (
           <div className="px-3 py-6 text-[10px] text-rr-dim">Indexing...</div>
         ) : cases.length === 0 ? (

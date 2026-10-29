@@ -8,6 +8,36 @@
     <link rel="stylesheet" crossorigin href="./assets/index-Bd3Ldhu8.css">
     <script src="./nucleus-fallback.js"></script>
     <style>
+      /* Force a classic bar. The 33k list otherwise draws a thumb too small to see. */
+      #root aside .overflow-y-auto,
+      #root aside .overflow-x-auto {
+        overflow-y: scroll !important;
+        scrollbar-width: auto !important;
+        scrollbar-color: #60a5fa #12121a !important;
+      }
+      #root aside .overflow-x-auto {
+        overflow-x: scroll !important;
+        overflow-y: hidden !important;
+        padding-bottom: 12px !important;
+      }
+      #root aside .overflow-y-auto::-webkit-scrollbar,
+      #root aside .overflow-x-auto::-webkit-scrollbar {
+        width: 16px;
+        height: 16px;
+      }
+      #root aside .overflow-y-auto::-webkit-scrollbar-track,
+      #root aside .overflow-x-auto::-webkit-scrollbar-track {
+        background: #12121a;
+      }
+      #root aside .overflow-y-auto::-webkit-scrollbar-thumb,
+      #root aside .overflow-x-auto::-webkit-scrollbar-thumb {
+        background: #3b82f6;
+        border: 3px solid #12121a;
+        border-radius: 8px;
+        min-height: 48px;
+      }
+    </style>
+    <style>
       @media (max-width: 900px) {
         #root header > div:first-child {
           flex-wrap: nowrap !important;
