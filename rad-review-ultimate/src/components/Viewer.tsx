@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   IMAGES,
   MAX_SLICE,
@@ -10,7 +10,7 @@ import {
 } from '../data/stations'
 import { basename } from '../data/sourceImages'
 import { CREDIT_BY_FILE, shortCredit } from '../data/credits'
-import { encounterFrame, wholeBodyLayout } from '../data/plateCrop'
+import PlateImg from './PlateImg'
 import SourcePicker from './SourcePicker'
 
 interface Props {
@@ -75,22 +75,6 @@ const UNIQUE_IMAGES = Array.from(new Set(Object.values(IMAGES) as string[]))
 
 /** Width of the station scale gutter, kept clear of overlaying content. */
 const SCALE_W = '7.5rem'
-
-/** Open a whole-body composite on this station. Regional studies stay uncropped. */
-function caseFrameStyle(url: string, stationId: string, idx: number): CSSProperties {
-  const lay = wholeBodyLayout(url, stationId)
-  const frame = encounterFrame(idx)
-  if (!lay) return frame
-  return {
-    objectFit: 'fill',
-    bottom: 'auto',
-    right: 'auto',
-    maxWidth: 'none',
-    maxHeight: 'none',
-    ...lay,
-    top: `calc(${lay.top} + ${frame.top})`,
-  }
-}
 
 export default function Viewer({
   slice,
@@ -406,15 +390,13 @@ export default function Viewer({
                   : { opacity: 0, inset: 0 }
               }
             >
-              <img
+              <PlateImg
                 key={`${caseImage.url}-${imageIndex}`}
-                data-rru-case="1"
                 src={caseImage.url}
+                stationId={station.id}
                 alt={caseImage.caption || finding || ''}
-                draggable={false}
                 onError={() => setCaseFailed(true)}
                 className="absolute"
-                style={caseFrameStyle(caseImage.url, station.id, imageIndex)}
               />
             </div>
           )}

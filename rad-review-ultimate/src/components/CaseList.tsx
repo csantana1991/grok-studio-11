@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Encounter } from '../data/generateCases'
 import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
 import { formatSlice, getStationForSlice } from '../data/stations'
-import { encounterFrame, wholeBodyLayout } from '../data/plateCrop'
+import PlateImg from './PlateImg'
 import { imageLabel } from '../data/teachingPlate'
 
 export const ROW_H = 128
@@ -28,18 +28,8 @@ interface Props {
   atlasPanel?: ReactNode
 }
 
-function thumbStyle(src: string, stationId: string, idx: number): CSSProperties {
-  const frame = encounterFrame(idx)
-  const lay = wholeBodyLayout(src, stationId)
-  if (!lay) return frame
-  return {
-    objectFit: 'fill',
-    bottom: 'auto',
-    right: 'auto',
-    maxWidth: 'none',
-    ...lay,
-    top: `calc(${lay.top} + ${frame.top})`,
-  }
+function thumbFallback(slice: number): string {
+  return getStationForSlice(slice).image
 }
 
 const STATUS_STYLE: Record<Encounter['status'], string> = {
@@ -62,6 +52,7 @@ function Row({
   thumb?: string
 }) {
   const cat = CATEGORY_BY_ID[c.categoryId]
+  const [src, setSrc] = useState(thumb)
   return (
     <button
       type="button"
@@ -75,24 +66,16 @@ function Row({
         (selected ? 'bg-rr-blue/20' : 'hover:bg-[#141419]')
       }
     >
-      {thumb && (
+      {src && (
         <span className="relative h-24 w-28 shrink-0 overflow-hidden rounded border border-rr-line bg-black">
-          <img
-            src={thumb}
-            alt=""
-            loading="lazy"
-            onError={(e) => {
-              const img = e.currentTarget
-              const fallback = getStationForSlice(c.slice).image
-              if (img.dataset.fell) {
-                img.style.display = 'none'
-                return
-              }
-              img.dataset.fell = '1'
-              img.src = fallback
+          <PlateImg
+            src={src}
+            stationId={c.stationId}
+            onError={() => {
+              const fallback = thumbFallback(c.slice)
+              setSrc((cur) => (cur === fallback ? cur : fallback))
             }}
             className="absolute inset-0 h-full w-full"
-            style={thumbStyle(thumb, c.stationId, c.idx)}
           />
         </span>
       )}
@@ -314,11 +297,11 @@ export default function CaseList({
                 onClick={() => onSelect(p.encounter)}
                 className="relative h-14 w-16 shrink-0 overflow-hidden rounded border border-rr-line bg-black"
               >
-                <img
+                <PlateImg
                   src={p.src}
+                  stationId={p.encounter.stationId}
                   alt={imageLabel(p.encounter)}
-                  className="absolute"
-                  style={thumbStyle(p.src, p.encounter.stationId, p.encounter.idx)}
+                  className="absolute inset-0 h-full w-full"
                 />
               </button>
             ))}
