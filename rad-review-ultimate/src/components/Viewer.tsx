@@ -10,7 +10,7 @@ import {
 } from '../data/stations'
 import { basename } from '../data/sourceImages'
 import { CREDIT_BY_FILE, shortCredit } from '../data/credits'
-import { wholeBodyLayout } from '../data/plateCrop'
+import { encounterFrame, wholeBodyLayout } from '../data/plateCrop'
 import SourcePicker from './SourcePicker'
 
 interface Props {
@@ -39,6 +39,8 @@ interface Props {
     license: string
   }
   caseLabel?: string
+  /** Encounter index. Each of the 33,000 opens a different frame of its plate. */
+  imageIndex?: number
   /** True while a live search for this encounter is running. */
   caseSearching?: boolean
   /** Explicit user-triggered live search for the selected encounter. */
@@ -75,11 +77,10 @@ const UNIQUE_IMAGES = Array.from(new Set(Object.values(IMAGES) as string[]))
 const SCALE_W = '7.5rem'
 
 /** Open a whole-body composite on this station. Regional studies stay uncropped. */
-function caseFrameStyle(url: string, stationId: string): CSSProperties {
+function caseFrameStyle(url: string, stationId: string, idx: number): CSSProperties {
   const lay = wholeBodyLayout(url, stationId)
-  if (!lay) {
-    return { objectFit: 'contain', inset: 0, width: '100%', height: '100%' }
-  }
+  const frame = encounterFrame(idx)
+  if (!lay) return frame
   return {
     objectFit: 'fill',
     bottom: 'auto',
@@ -87,6 +88,7 @@ function caseFrameStyle(url: string, stationId: string): CSSProperties {
     maxWidth: 'none',
     maxHeight: 'none',
     ...lay,
+    top: `calc(${lay.top} + ${frame.top})`,
   }
 }
 
@@ -101,6 +103,7 @@ export default function Viewer({
   onMountBatch,
   caseImage,
   caseLabel,
+  imageIndex = 0,
   caseSearching,
   onSearchCase,
   caseSearchEmpty,
@@ -404,14 +407,14 @@ export default function Viewer({
               }
             >
               <img
-                key={caseImage.url}
+                key={`${caseImage.url}-${imageIndex}`}
                 data-rru-case="1"
                 src={caseImage.url}
                 alt={caseImage.caption || finding || ''}
                 draggable={false}
                 onError={() => setCaseFailed(true)}
                 className="absolute"
-                style={caseFrameStyle(caseImage.url, station.id)}
+                style={caseFrameStyle(caseImage.url, station.id, imageIndex)}
               />
             </div>
           )}

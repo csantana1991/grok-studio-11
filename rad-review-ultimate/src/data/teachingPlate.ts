@@ -8,6 +8,8 @@
 
 import type { Encounter } from './generateCases'
 import type { LiveMatch } from './liveMatch'
+import { GRAND_TOTAL } from './categories'
+import { FINDING_PLATES } from './findingPlates'
 
 const DR = '/studio/assets/dr/'
 
@@ -115,24 +117,24 @@ export function plateKind(finding: string, categoryId: string): string {
   return 'ctBody'
 }
 
-/** The checked picture for this case. Random finding files are not used: they were labeled with the wrong diagnosis. */
+/** The finding's own file when the library has one, otherwise the checked modality plate. */
 function pick(finding: string, stationId: string, categoryId: string): string {
   void stationId
+  const named = FINDING_PLATES[finding]
+  if (named) return DR + named
   const name = (POOLS[plateKind(finding, categoryId)] ?? POOLS.ctBody)[0]
   return DR + name
 }
 
-export function labelForPlateUrl(url: string): string {
-  const file = url.split('/').pop() || ''
-  for (const [kind, files] of Object.entries(POOLS)) {
-    if (files[0].endsWith(file)) return KIND_LABEL[kind]
-  }
-  return 'Teaching image'
+export function imageLabel(c: { finding: string; categoryId: string; idx?: number }): string {
+  const label = KIND_LABEL[plateKind(c.finding, c.categoryId)] ?? 'Teaching image'
+  const n = (c.idx ?? 0) + 1
+  return `${label} · ${n.toLocaleString()} / ${GRAND_TOTAL.toLocaleString()}`
 }
 
 /** A literature figure may replace the plate only when it is this same checked file. */
 export function plateAgrees(finding: string, categoryId: string, hay: string): boolean {
-  const name = (POOLS[plateKind(finding, categoryId)] ?? POOLS.ctBody)[0]
+  const name = pick(finding, '', categoryId).slice(DR.length)
   const file = name.split('/').pop() || name
   return hay.includes(name) || hay.includes(file)
 }
@@ -143,7 +145,8 @@ export function teachingPlateFor(c: Pick<Encounter, 'finding' | 'stationId' | 'c
 } {
   const url = pick(c.finding, c.stationId, c.categoryId)
   const label = KIND_LABEL[plateKind(c.finding, c.categoryId)] ?? 'Teaching image'
-  const caption = `${label}. Not confirmed as this diagnosis.`
+  const n = (c.idx ?? 0) + 1
+  const caption = `${label}. Image ${n.toLocaleString()} of ${GRAND_TOTAL.toLocaleString()}.`
   return { url, caption }
 }
 

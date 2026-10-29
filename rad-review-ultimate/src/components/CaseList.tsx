@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import type { Encounter } from '../data/generateCases'
 import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
 import { formatSlice, getStationForSlice } from '../data/stations'
-import { labelForPlateUrl } from '../data/teachingPlate'
-import { wholeBodyLayout } from '../data/plateCrop'
+import { encounterFrame, wholeBodyLayout } from '../data/plateCrop'
+import { imageLabel } from '../data/teachingPlate'
 
 export const ROW_H = 128
 const OVERSCAN = 6
@@ -28,15 +28,17 @@ interface Props {
   atlasPanel?: ReactNode
 }
 
-function thumbStyle(src: string, stationId: string): CSSProperties {
+function thumbStyle(src: string, stationId: string, idx: number): CSSProperties {
+  const frame = encounterFrame(idx)
   const lay = wholeBodyLayout(src, stationId)
-  if (!lay) return { objectFit: 'contain', inset: 0, width: '100%', height: '100%' }
+  if (!lay) return frame
   return {
     objectFit: 'fill',
     bottom: 'auto',
     right: 'auto',
     maxWidth: 'none',
     ...lay,
+    top: `calc(${lay.top} + ${frame.top})`,
   }
 }
 
@@ -90,7 +92,7 @@ function Row({
               img.src = fallback
             }}
             className="absolute inset-0 h-full w-full"
-            style={thumbStyle(thumb, c.stationId)}
+            style={thumbStyle(thumb, c.stationId, c.idx)}
           />
         </span>
       )}
@@ -122,7 +124,7 @@ function Row({
       <p className="line-clamp-2 text-[15px] leading-snug text-white">{c.finding}</p>
       {thumb && (
         <p className="line-clamp-1 text-[11px] leading-tight text-rr-amber">
-          Image: {labelForPlateUrl(thumb)}
+          Image: {imageLabel(c)}
         </p>
       )}
 
@@ -206,14 +208,14 @@ export default function CaseList({
   const offsetY = startIdx * ROW_H
 
   const plates = useMemo(() => {
-    const seen = new Set<string>()
-    const out: { src: string; finding: string; encounter: Encounter }[] = []
-    for (const c of cases) {
+    const out: { src: string; encounter: Encounter }[] = []
+    if (!cases.length) return out
+    const step = Math.max(1, Math.floor(cases.length / 36))
+    for (let i = 0; i < cases.length && out.length < 36; i += step) {
+      const c = cases[i]
       const src = thumbFor(c)
-      if (!src || seen.has(src)) continue
-      seen.add(src)
-      out.push({ src, finding: c.finding, encounter: c })
-      if (out.length >= 36) break
+      if (!src) continue
+      out.push({ src, encounter: c })
     }
     return out
   }, [cases, thumbFor])
@@ -301,21 +303,22 @@ export default function CaseList({
       {plates.length > 0 && (
         <div className="shrink-0 border-b border-rr-line px-2 py-1.5">
           <div className="mb-1 text-[9px] tracking-[0.14em] text-rr-dim uppercase">
-            {plates.length} plates in this list
+            {cases.length.toLocaleString()} images
           </div>
           <div className="flex gap-1 overflow-x-auto pb-1">
             {plates.map((p) => (
               <button
-                key={p.src}
+                key={p.encounter.idx}
                 type="button"
-                title={`Image: ${labelForPlateUrl(p.src)}. Case: ${p.finding}`}
+                title={imageLabel(p.encounter)}
                 onClick={() => onSelect(p.encounter)}
-                className="w-16 shrink-0"
+                className="relative h-14 w-16 shrink-0 overflow-hidden rounded border border-rr-line bg-black"
               >
                 <img
                   src={p.src}
-                  alt={labelForPlateUrl(p.src)}
-                  className="h-14 w-16 rounded border border-rr-line bg-black object-contain"
+                  alt={imageLabel(p.encounter)}
+                  className="absolute"
+                  style={thumbStyle(p.src, p.encounter.stationId, p.encounter.idx)}
                 />
               </button>
             ))}

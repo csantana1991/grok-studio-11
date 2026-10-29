@@ -504,6 +504,7 @@ export default function App() {
             onMountBatch={(files) => void mountApi.mountBatch(files)}
             caseImage={caseImage}
             caseLabel={selected?.accession}
+            imageIndex={selected?.idx ?? 0}
             verdict={
               currentMatch && caseImage?.url === currentMatch.match.url
                 ? currentMatch.verification.verdict

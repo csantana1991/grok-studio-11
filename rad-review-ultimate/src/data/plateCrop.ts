@@ -68,3 +68,35 @@ export function wholeBodyLayout(
     height: `${height}%`,
   }
 }
+
+/**
+ * A stable window into the teaching plate. The same encounter always opens
+ * the same frame, and a different encounter never opens the same one.
+ */
+export function encounterFrame(idx: number): {
+  left: string
+  top: string
+  width: string
+  height: string
+  objectFit: 'cover'
+  maxWidth: 'none'
+  maxHeight: 'none'
+  bottom: 'auto'
+  right: 'auto'
+} {
+  const n = ((idx % 33000) + 33000) % 33000
+  const zoom = 175 + (n % 8) * 6
+  const x = Math.floor(n / 8) % 65
+  const y = Math.floor(n / 520) % 65
+  return {
+    objectFit: 'cover',
+    width: `${zoom}%`,
+    height: `${zoom}%`,
+    maxWidth: 'none',
+    maxHeight: 'none',
+    left: `${-x}%`,
+    top: `${-y}%`,
+    bottom: 'auto',
+    right: 'auto',
+  }
+}
