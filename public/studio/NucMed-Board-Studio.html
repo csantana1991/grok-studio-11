@@ -1893,6 +1893,21 @@ body.view-rru #rruFrame {
   height: 100% !important;
   min-height: 0 !important;
 }
+body.tabs-up .app-tabs,
+body.tabs-up #homeBtn,
+body.tabs-up #layoutBtn,
+body.tabs-up #dlZip,
+body.tabs-up .iqa-pill,
+body.tabs-up #topbarTools > label.pill { display: none !important; }
+#tabsUp, #tabsDown {
+  width: 26px;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 !important;
+  font-size: 14px !important;
+  font-weight: 800;
+  line-height: 1;
+}
 </style></head>
 <body>
 <div id="bootSplash" style="position:fixed;inset:0;z-index:99999;background:#fff;color:#12315c;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,sans-serif;padding:24px;text-align:center">
@@ -1951,6 +1966,8 @@ body.view-rru #rruFrame {
             <button type="button" id="boldBtn">Bold</button>
             <button type="button" id="fsDown">A−</button>
             <button type="button" id="fsUp">A+</button>
+            <button type="button" id="tabsUp" title="Hide Board Studio, RAD REVIEW, and the other tabs">▴</button>
+            <button type="button" id="tabsDown" title="Show Board Studio, RAD REVIEW, and the other tabs">▾</button>
           </div></div>
     </div>
   </header>
@@ -11165,6 +11182,17 @@ $("#menuBtn").onclick = () => document.body.classList.toggle("nav-open");
   if (stage) stage.addEventListener("pointerdown", () => {
     if (document.body.classList.contains("chrome-open")) setChromeOpen(false);
   });
+})();
+(function bindTabArrows(){
+  const up = document.getElementById("tabsUp");
+  const down = document.getElementById("tabsDown");
+  function setHidden(hide) {
+    document.body.classList.toggle("tabs-up", !!hide);
+    try { localStorage.setItem("studio-tabs-up", hide ? "1" : "0"); } catch (e) {}
+  }
+  try { if (localStorage.getItem("studio-tabs-up") === "1") setHidden(true); } catch (e) {}
+  if (up) up.onclick = () => setHidden(true);
+  if (down) down.onclick = () => setHidden(false);
 })();
 $("#backdrop").onclick = closeNav;
 (function bindClickImagePlay(){

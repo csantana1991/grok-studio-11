@@ -113,7 +113,7 @@ export default function ControlPanel({
   return (
     <aside
       id="rru-sidebar"
-      className="flex max-h-[42vh] w-full shrink-0 flex-col overflow-y-auto border-l border-rr-line bg-rr-panel xl:max-h-none xl:w-[22rem]"
+      className="flex h-full max-h-[32vh] w-full shrink-0 flex-col overflow-y-auto border-l border-rr-line bg-rr-panel xl:max-h-none"
     >
       {/* CONTROL -- blue panel */}
       <section className="border-b border-rr-line bg-rr-blue/15">

@@ -100,6 +100,13 @@ body {
   animation: rr-scan 2.4s linear infinite;
 }
 
+@media (min-width: 1280px) {
+  .rr-side {
+    width: var(--rr-right);
+    flex: 0 0 auto;
+  }
+}
+
 /*
  * Hardcopy is disabled by design: this is a teaching log containing
  * simulated PHI-shaped identifiers and must not leave the workstation.

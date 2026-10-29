@@ -170,7 +170,8 @@ export default function App() {
   /** Manual rematch cursor, advanced by clicking the image or NEXT MATCH. */
   const [matchOffset, setMatchOffset] = useState(0)
   /** Share of the screen given to the worklist. Drag the blue bar or the viewer title. */
-  const [listShare, setListShare] = useState(32)
+  const [listShare, setListShare] = useState(28)
+  const [rightW, setRightW] = useState(300)
   const stageRef = useRef<HTMLElement>(null)
 
   const dragSplit = useCallback((e: React.PointerEvent) => {
@@ -184,6 +185,22 @@ export default function App() {
         ? ((ev.clientX - rect.left) / rect.width) * 100
         : ((ev.clientY - rect.top) / rect.height) * 100
       setListShare(Math.min(68, Math.max(14, pct)))
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }, [])
+
+  const dragRight = useCallback((e: React.PointerEvent) => {
+    const stage = stageRef.current
+    if (!stage) return
+    e.preventDefault()
+    const rect = stage.getBoundingClientRect()
+    const move = (ev: PointerEvent) => {
+      setRightW(Math.min(560, Math.max(180, rect.right - ev.clientX)))
     }
     const up = () => {
       window.removeEventListener('pointermove', move)
@@ -588,6 +605,15 @@ export default function App() {
           <InfoBar station={station} slice={slice} />
         </div>
 
+        <div
+          title="Drag to widen the image"
+          onPointerDown={dragRight}
+          className="z-10 hidden h-auto w-3 shrink-0 cursor-ew-resize bg-[#1d4ed8] xl:block"
+        />
+        <div
+          className="rr-side flex min-h-0 w-full shrink-0 flex-col overflow-hidden xl:h-full"
+          style={{ ['--rr-right' as string]: `${rightW}px` }}
+        >
         <ControlPanel
           active={selected}
           slice={slice}
@@ -631,6 +657,7 @@ export default function App() {
             </>
           }
         />
+        </div>
       </main>
 
       <AudiobookBar
