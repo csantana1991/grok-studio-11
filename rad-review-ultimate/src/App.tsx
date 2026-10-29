@@ -504,8 +504,16 @@ export default function App() {
             onMountBatch={(files) => void mountApi.mountBatch(files)}
             caseImage={caseImage}
             caseLabel={selected?.accession}
-            verdict={currentMatch?.verification.verdict}
-            verdictReasons={currentMatch?.verification.reasons}
+            verdict={
+              currentMatch && caseImage?.url === currentMatch.match.url
+                ? currentMatch.verification.verdict
+                : undefined
+            }
+            verdictReasons={
+              currentMatch && caseImage?.url === currentMatch.match.url
+                ? currentMatch.verification.reasons
+                : ['modality example only — not confirmed as this diagnosis']
+            }
             agentStatus={liveCheck.status}
             agentReasons={liveCheck.reasons}
             agentBusy={liveCheck.busy}

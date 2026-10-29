@@ -18,6 +18,8 @@ export interface LiveMatch {
   year: string
   doi: string
   license: string
+  /** How tightly this figure depicts the finding. Teaching plates are anatomy examples. */
+  tier?: 'finding' | 'broad' | 'anatomy'
 }
 
 export interface MatchResponse {

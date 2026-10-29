@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import type { Encounter } from '../data/generateCases'
 import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
 import { formatSlice, getStationForSlice } from '../data/stations'
@@ -199,6 +199,19 @@ export default function CaseList({
   const window = cases.slice(startIdx, endIdx)
   const offsetY = startIdx * ROW_H
 
+  const plates = useMemo(() => {
+    const seen = new Set<string>()
+    const out: { src: string; finding: string; encounter: Encounter }[] = []
+    for (const c of cases) {
+      const src = thumbFor(c)
+      if (!src || seen.has(src)) continue
+      seen.add(src)
+      out.push({ src, finding: c.finding, encounter: c })
+      if (out.length >= 36) break
+    }
+    return out
+  }, [cases, thumbFor])
+
   return (
     <aside className="flex h-[62vh] min-h-[28rem] w-full shrink-0 flex-col border-r border-rr-line bg-rr-panel xl:h-auto xl:min-h-0 xl:w-[34rem] xl:max-h-none">
       <div className="shrink-0 border-b border-rr-line px-3 py-2">
@@ -278,6 +291,31 @@ export default function CaseList({
           </button>
         ))}
       </div>
+
+      {plates.length > 0 && (
+        <div className="shrink-0 border-b border-rr-line px-2 py-1.5">
+          <div className="mb-1 text-[9px] tracking-[0.14em] text-rr-dim uppercase">
+            {plates.length} plates in this list
+          </div>
+          <div className="flex gap-1 overflow-x-auto pb-1">
+            {plates.map((p) => (
+              <button
+                key={p.src}
+                type="button"
+                title={p.finding}
+                onClick={() => onSelect(p.encounter)}
+                className="w-16 shrink-0"
+              >
+                <img
+                  src={p.src}
+                  alt={p.finding}
+                  className="h-14 w-16 rounded border border-rr-line bg-black object-contain"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div ref={scrollRef} onScroll={onScroll} className="min-h-[18rem] flex-1 overflow-y-auto xl:min-h-0">
         {indexing ? (

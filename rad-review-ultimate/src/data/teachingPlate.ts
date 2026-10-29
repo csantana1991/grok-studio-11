@@ -1,30 +1,13 @@
 /**
- * One single-frame teaching image per finding.
+ * One teaching image per finding.
  *
- * Each of the 366 findings has its own image file. Cases that repeat a
- * finding open that same file. A different finding never shares it.
+ * Most findings have their own file. A few confirmed mismatches share a
+ * same-modality plate instead of a picture of the wrong body part.
  */
 
 import type { Encounter } from './generateCases'
 import type { LiveMatch } from './liveMatch'
-import { stationIdForFinding } from './anatomyMap'
-import { modalitiesIn } from './qa/modality'
 import { FINDING_PLATES } from './findingPlates'
-
-/** Words that stationIdForFinding maps back to the station the case was filed at. */
-const STATION_WORD: Record<string, string> = {
-  VERTEX: 'brain',
-  SKULL_BASE: 'skull base',
-  NECK: 'neck',
-  CHEST: 'chest',
-  UPPER_ABDOMEN: 'liver',
-  MID_ABDOMEN: 'lumbar spine',
-  PELVIS: 'pelvis',
-  THIGH: 'thigh',
-  KNEE: 'knee',
-  ANKLE: 'ankle',
-  TOES: 'forefoot',
-}
 
 const DR = '/studio/assets/dr/'
 
@@ -163,14 +146,11 @@ export function teachingPlateFor(c: Pick<Encounter, 'finding' | 'stationId' | 'c
 } {
   const url = pick(c.finding, c.stationId, c.categoryId)
   const file = url.split('/').pop() || url
-  // A mammogram is a breast study even when the sentence never says breast,
-  // and a finding that names no level still has to say which station it was
-  // filed at or the checker treats the plate as unlocated.
-  const named = stationIdForFinding(c.finding)
-  const where = named ? '' : c.categoryId === 'MAMMO' ? 'breast' : STATION_WORD[c.stationId] || ''
-  const modality =
-    c.categoryId === 'MAMMO' && !modalitiesIn(c.finding).has('MAMMO') ? 'mammogram' : ''
-  const caption = [modality, where, c.finding, `one teaching image (${file})`].filter(Boolean).join(' · ')
+  const kind = plateKind(c.finding, c.categoryId)
+  // Do not copy the diagnosis into the caption. The checker treats shared
+  // wording as proof the file depicts that disease, and most plates are only
+  // a same-modality example.
+  const caption = `Teaching plate (${file}). ${kind} example only. Not confirmed as the case diagnosis.`
   return { url, caption }
 }
 
@@ -187,5 +167,6 @@ export function teachingMatch(c: Encounter): LiveMatch {
     year: '2026',
     doi: '',
     license: 'educational analogue',
+    tier: 'anatomy',
   }
 }
