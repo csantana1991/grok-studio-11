@@ -77,7 +77,7 @@ interface Props {
 const UNIQUE_IMAGES = Array.from(new Set(Object.values(IMAGES) as string[]))
 
 /** Width of the station scale gutter, kept clear of overlaying content. */
-const SCALE_W = '7.5rem'
+const SCALE_W = '11rem'
 
 export default function Viewer({
   slice,
@@ -718,8 +718,8 @@ export default function Viewer({
                     onSlice(t.slice)
                   }}
                   className={
-                    'relative flex min-h-0 w-full flex-1 items-center gap-1 overflow-hidden px-1 text-left text-[9px] leading-none transition-colors ' +
-                    (on ? 'bg-white/10 text-white' : 'text-rr-dim hover:text-rr-text')
+                    'relative flex min-h-0 w-full flex-1 items-center gap-1 overflow-hidden px-1.5 text-left text-[14px] font-bold leading-none transition-colors ' +
+                    (on ? 'bg-white/15 text-white' : 'text-white hover:bg-white/10')
                   }
                 >
                   <span

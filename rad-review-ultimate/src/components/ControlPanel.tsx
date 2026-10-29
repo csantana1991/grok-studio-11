@@ -40,7 +40,7 @@ function Block({
   return (
     <section className="border-b border-rr-line">
       <h3
-        className="px-3 py-1.5 text-[9px] font-bold tracking-[0.18em] uppercase"
+        className="px-3 py-1.5 text-[13px] font-bold tracking-[0.12em] uppercase"
         style={{ color: tone }}
       >
         {title}
@@ -53,11 +53,11 @@ function Block({
 function Field({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="flex items-baseline justify-between gap-2 border-b border-rr-blue-lit/20 py-1 last:border-b-0">
-      <span className="text-[9px] tracking-[0.14em] text-rr-blue-lit/80 uppercase">
+      <span className="text-[13px] tracking-[0.08em] text-white uppercase">
         {label}
       </span>
       <span
-        className="truncate text-[11px] font-bold tabular-nums"
+        className="truncate text-[15px] font-bold tabular-nums"
         style={{ color: tone ?? '#fff' }}
       >
         {value}

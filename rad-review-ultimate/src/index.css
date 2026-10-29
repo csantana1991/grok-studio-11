@@ -5,8 +5,8 @@
   --color-rr-panel: #101013;
   --color-rr-raised: #16161b;
   --color-rr-line: #23232b;
-  --color-rr-text: #d8d8de;
-  --color-rr-dim: #6e6e7a;
+  --color-rr-text: #ffffff;
+  --color-rr-dim: #ffffff;
   --color-rr-blue: #2563eb;
   --color-rr-blue-lit: #3b82f6;
   --color-rr-red: #ef4444;
@@ -98,6 +98,16 @@ body {
 }
 .rr-scan {
   animation: rr-scan 2.4s linear infinite;
+}
+
+#rru-sidebar {
+  zoom: 1.34;
+  color: #fff;
+}
+#rru-sidebar [class*="text-rr-dim"],
+#rru-sidebar [class*="text-rr-text"],
+#rru-sidebar [class*="text-rr-blue"] {
+  color: #fff !important;
 }
 
 @media (min-width: 1280px) {
