@@ -109,16 +109,43 @@ export function measurePlate(src: string): Promise<CSSProperties> {
       let miny = c.height
       let maxx = 0
       let maxy = 0
+      let ix0 = c.width
+      let iy0 = c.height
+      let ix1 = 0
+      let iy1 = 0
+      let paper = 0
+      let ink = 0
+      const n = c.width * c.height
       for (let y = 0; y < c.height; y++) {
         for (let x = 0; x < c.width; x++) {
           const i = (y * c.width + x) * 4
-          if (data[i] + data[i + 1] + data[i + 2] > 48) {
+          const r = data[i]
+          const g = data[i + 1]
+          const b = data[i + 2]
+          const isPaper = r > 232 && g > 232 && b > 232
+          const isDark = r + g + b < 48
+          if (isPaper) paper++
+          else if (!isDark) {
+            ink++
+            if (x < ix0) ix0 = x
+            if (y < iy0) iy0 = y
+            if (x > ix1) ix1 = x
+            if (y > iy1) iy1 = y
+          }
+          if (!isDark) {
             if (x < minx) minx = x
             if (y < miny) miny = y
             if (x > maxx) maxx = x
             if (y > maxy) maxy = y
           }
         }
+      }
+      // A paper-white panel beside the scan is not anatomy. Crop to the scan.
+      if (paper > n * 0.22 && ink > n * 0.02 && ix1 > ix0 && iy1 > iy0) {
+        minx = ix0
+        miny = iy0
+        maxx = ix1
+        maxy = iy1
       }
       if (maxx <= minx || maxy <= miny) {
         fillCache.set(src, CONTAIN)

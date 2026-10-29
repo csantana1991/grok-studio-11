@@ -1,9 +1,8 @@
 import type { CSSProperties } from 'react'
-import { useFilledPlate, wholeBodyLayout } from '../data/plateCrop'
+import { useFilledPlate } from '../data/plateCrop'
 
 export default function PlateImg({
   src,
-  stationId,
   alt,
   className,
   onError,
@@ -15,16 +14,9 @@ export default function PlateImg({
   onError?: () => void
 }) {
   const fill = useFilledPlate(src)
-  const lay = wholeBodyLayout(src, stationId)
-  const style: CSSProperties = lay
-    ? {
-        objectFit: 'fill',
-        bottom: 'auto',
-        right: 'auto',
-        maxWidth: 'none',
-        maxHeight: 'none',
-        ...lay,
-      }
-    : fill
+  const style: CSSProperties = {
+    objectFit: 'contain',
+    ...fill,
+  }
   return <img src={src} alt={alt ?? ''} draggable={false} className={className} style={style} onError={onError} />
 }

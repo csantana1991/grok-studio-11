@@ -511,22 +511,9 @@ export default function Viewer({
           {/* Hover readout while the pointer is over the frame */}
           {hover && (
             <div
-              className="pointer-events-none absolute z-20 max-w-md rounded border border-rr-blue-lit bg-rr-panel/95 px-2 py-1.5 text-[10px] shadow-lg"
-              style={{
-                left: Math.min(hover.x + 14, (frameRef.current?.clientWidth ?? 800) - 380),
-                top: Math.min(hover.y + 14, (frameRef.current?.clientHeight ?? 600) - 96),
-              }}
+              className="pointer-events-none absolute right-[7.5rem] bottom-7 left-1 z-20 truncate rounded bg-black/80 px-2 py-0.5 text-[10px] text-white"
             >
-              <p className="font-bold text-white">
-                &#128205; {hoverStation.name} &bull; Slice {formatSlice(hover.slice)}
-              </p>
-              <p className="mt-0.5 leading-snug text-rr-text">{hoverStation.anatomy}</p>
-              <p className="mt-1 leading-snug text-rr-dim">
-                <span className="text-rr-amber">
-                  {modalityLabel === 'PET/Hybrid' ? 'PET' : modalityLabel}:
-                </span>{' '}
-                {finding}
-              </p>
+              {hoverStation.name} · Slice {formatSlice(hover.slice)} — {hoverStation.anatomy}
             </div>
           )}
 
@@ -714,7 +701,7 @@ export default function Viewer({
                     onSlice(t.slice)
                   }}
                   className={
-                    'relative flex min-h-0 w-full flex-1 items-center gap-1 overflow-hidden px-1 text-left text-[8px] leading-none tracking-wider transition-colors ' +
+                    'relative flex min-h-0 w-full flex-1 items-center gap-1 overflow-hidden px-1 text-left text-[9px] leading-none transition-colors ' +
                     (on ? 'bg-white/10 text-white' : 'text-rr-dim hover:text-rr-text')
                   }
                 >
