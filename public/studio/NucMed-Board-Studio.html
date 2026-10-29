@@ -227,6 +227,11 @@ td code, .mono { font-family: var(--mono); color: var(--gold); }
 .play-btn {
   width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--accent); color: #06201a; font-size: 18px; font-weight: 800;
 }
+.play-all-btn {
+  height: 44px; min-width: 44px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line);
+  background: #132735; color: var(--text); font-size: 13px; font-weight: 800; white-space: nowrap; cursor: pointer;
+}
+.play-all-btn.on { background: var(--accent); color: #06201a; border-color: var(--accent); }
 .widget-play {
   border: 0; border-radius: 999px; background: var(--accent); color: #06201a; font-weight: 800; padding: 10px 16px; font-size: 13px; cursor: pointer; white-space: nowrap;
 }
@@ -1850,6 +1855,8 @@ body:not(.lesson-audio) #playerDock {
               <option value="1" selected>1.0×</option>
               <option value="1.15">1.15×</option>
               <option value="1.3">1.3×</option>
+              <option value="1.6">1.6×</option>
+              <option value="2">2.0×</option>
             </select>
           </label>
           <div class="type-tools" id="typeTools">
@@ -1906,7 +1913,7 @@ body:not(.lesson-audio) #playerDock {
   <footer class='player panel-wrap' id='playerDock' data-panel-body='player'>
     <div class='player-handle' id='playerHandle' title="Drag to resize audiobook"></div>
     <div class='player-row'>
-      <button type='button' class='play-btn' id='playBtn'>▶</button><span class='panel-bar' data-panel='player' style='background:transparent'><button type='button' data-act='min'>–</button><button type='button' data-act='max'>□</button></span>
+      <button type='button' class='play-btn' id='playBtn'>▶</button><button type='button' class='play-all-btn' id='playAllBtn' title='Speak every lesson from here, then the next module, until the course ends'>All</button><span class='panel-bar' data-panel='player' style='background:transparent'><button type='button' data-act='min'>–</button><button type='button' data-act='max'>□</button></span>
       <div class='info' id='playerInfo'><b>NucMed Board Studio</b><span>White layout</span></div>
     </div>
     <div id="atlasFilm" aria-label="Atlas images — scroll and click"></div>
@@ -4036,6 +4043,7 @@ const state = {
   quizScore: 0,
   answered: false,
   speaking: false,
+  playAll: false,
   para: 0,
   rate: 1,
   progress: (function(){ try { return JSON.parse(localStorage.getItem("nmb_progress") || "{}"); } catch (e) { return {}; } })()
@@ -4610,7 +4618,12 @@ function speakLesson(lesson) {
   state.atlasTourStop = true;
   state.atlasTour = false;
   stopSpeech();
+  if (!lesson || !lesson.audio || !lesson.audio.length) {
+    if (state.playAll) continuePlayAll();
+    return;
+  }
   if (!window.speechSynthesis) return;
+  const gen = speakGen;
   state.speaking = true;
   state.para = 0;
   state.seenWiki = state.seenWiki || new Set();
@@ -4618,9 +4631,13 @@ function speakLesson(lesson) {
   depictParagraph(lesson.audio[0] || "");
   const queue = lesson.audio.slice();
   const speakNext = () => {
-    if (!state.speaking || state.para >= queue.length) {
-      state.speaking = false;
-      $("#playBtn").textContent = "▶";
+    if (gen !== speakGen || !state.speaking || state.para >= queue.length) {
+      if (gen === speakGen && state.speaking && state.para >= queue.length) {
+        state.speaking = false;
+        const btn = $("#playBtn");
+        if (btn) btn.textContent = "▶";
+        if (state.playAll) continuePlayAll();
+      }
       return;
     }
     depictParagraph(queue[state.para]);
@@ -4631,35 +4648,124 @@ function speakLesson(lesson) {
     const stepMs = Math.max(260, 520 / (state.rate || 1));
     let wi = 0;
     const tick = setInterval(() => {
-      if (!state.speaking) { clearInterval(tick); return; }
+      if (!state.speaking || gen !== speakGen) { clearInterval(tick); return; }
       wi += 1;
       if (wi >= words.length) { clearInterval(tick); return; }
       const idx = words.slice(0, wi).join(" ").length + 1;
       if (typeof Theater !== "undefined") Theater.setSpoken(queue[state.para], idx);
     }, stepMs);
     u.onboundary = (ev) => {
+      if (gen !== speakGen) return;
       if (ev.name && ev.name !== "word") return;
       if (typeof Theater !== "undefined") Theater.setSpoken(queue[state.para], ev.charIndex || 0);
     };
-    u.onend = () => {
+    u.onend = () => finishPara();
+    u.onerror = () => finishPara();
+    const ms = Math.min(120000, Math.max(4000, words.length * (700 / (state.rate || 1)) + 2000));
+    const watch = setTimeout(finishPara, ms);
+    let settled = false;
+    function finishPara() {
+      if (settled || gen !== speakGen || !state.speaking) return;
+      settled = true;
       clearInterval(tick);
+      clearTimeout(watch);
       state.para += 1;
+      if (state.para >= queue.length) {
+        state.speaking = false;
+        const done = $("#playBtn");
+        if (done) done.textContent = "▶";
+        if (state.playAll) continuePlayAll();
+        return;
+      }
       highlightPara();
       speakNext();
-    };
-    speechSynthesis.speak(u);
+    }
+    try { speechSynthesis.speak(u); }
+    catch (e) { finishPara(); }
   };
-  $("#playBtn").textContent = "❚❚";
+  const btn = $("#playBtn");
+  if (btn) btn.textContent = "❚❚";
+  paintPlayAll();
   speakNext();
 }
 
+let speakGen = 0;
 function stopSpeech() {
+  speakGen += 1;
   state.speaking = false;
   if (window.speechSynthesis) speechSynthesis.cancel();
   const btn = $("#playBtn");
   if (btn) btn.textContent = "▶";
   const w = $("#widgetPlay");
   if (w) w.textContent = "▶ Play narration";
+}
+
+function lessonsWithAudio() {
+  return (COURSE.modules || []).filter(m => m && m.lessons && m.lessons.length);
+}
+function playAllPlace() {
+  const mods = lessonsWithAudio();
+  const mi = mods.findIndex(m => m.id === state.moduleId);
+  const mod = mi >= 0 ? mods[mi] : null;
+  const lesson = mod ? (state.lesson || 0) + 1 : 0;
+  const total = mods.reduce((n, m) => n + m.lessons.length, 0);
+  let seen = 0;
+  for (let i = 0; i < mi; i++) seen += mods[i].lessons.length;
+  if (mi >= 0) seen += state.lesson || 0;
+  return { mi, mods: mods.length, lesson, inMod: mod ? mod.lessons.length : 0, seen, total };
+}
+function paintPlayAll() {
+  const b = document.getElementById("playAllBtn");
+  if (!b) return;
+  b.classList.toggle("on", !!state.playAll);
+  b.textContent = state.playAll ? "Stop" : "All";
+  const place = playAllPlace();
+  b.title = state.playAll
+    ? `Speaking the course · lesson ${place.seen + 1} of ${place.total}`
+    : "Speak every lesson from here, then the next module, until the course ends";
+}
+function continuePlayAll() {
+  if (!state.playAll) return;
+  const mods = lessonsWithAudio();
+  let mi = mods.findIndex(m => m.id === state.moduleId);
+  if (mi < 0) mi = 0;
+  const mod = mods[mi];
+  let next = null;
+  if (mod && state.lesson < mod.lessons.length - 1) next = { id: mod.id, lesson: state.lesson + 1 };
+  else if (mi >= 0 && mi < mods.length - 1) next = { id: mods[mi + 1].id, lesson: 0 };
+  if (!next) {
+    state.playAll = false;
+    paintPlayAll();
+    const info = $("#playerInfo");
+    if (info) info.innerHTML = `<b>Play all finished</b><span>${playAllPlace().total} lessons spoken</span>`;
+    return;
+  }
+  state.view = "module";
+  state.moduleId = next.id;
+  state.lesson = next.lesson;
+  render();
+  const lesson = currentModule() && currentModule().lessons[state.lesson];
+  speakLesson(lesson);
+}
+function startPlayAll() {
+  if (state.playAll) {
+    state.playAll = false;
+    stopSpeech();
+    paintPlayAll();
+    return;
+  }
+  const mods = lessonsWithAudio();
+  if (!mods.length) return;
+  state.playAll = true;
+  if (state.view !== "module" || !currentModule()) {
+    state.view = "module";
+    state.moduleId = mods[0].id;
+    state.lesson = 0;
+    render();
+  }
+  paintPlayAll();
+  const lesson = currentModule().lessons[state.lesson];
+  speakLesson(lesson);
 }
 
 function highlightPara() {
@@ -6661,7 +6767,7 @@ function renderLesson() {
     } else state.lesson += 1;
     render();
   };
-  $("#playerInfo").innerHTML = `<b>${lesson.title}</b><span>Audiobook narration · ${lesson.audio.length} segments</span>`;
+  $("#playerInfo").innerHTML = `<b>${lesson.title}</b><span>Audiobook narration · ${lesson.audio.length} segments${state.playAll ? " · play all on" : ""}</span>`;
   $("#playBtn").onclick = () => {
     if (state.speaking) stopSpeech();
     else speakLesson(lesson);
@@ -11021,6 +11127,17 @@ $("#homeBtn").onclick = () => { stopSpeech(); closeNav(); state.view = "home"; s
 const rruExit = document.getElementById("rruExit");
 if (rruExit) rruExit.onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("rru-full"); render(); };
 $("#rate").onchange = e => { state.rate = parseFloat(e.target.value); };
+(function bindPlayAll(){
+  const b = document.getElementById("playAllBtn");
+  if (!b) return;
+  b.onclick = () => startPlayAll();
+  paintPlayAll();
+  setInterval(() => {
+    try {
+      if (state.speaking && window.speechSynthesis && speechSynthesis.paused) speechSynthesis.resume();
+    } catch (e) {}
+  }, 8000);
+})();
 (function bindWidgetSheet(){
   const sheet = document.getElementById("widgetSheet");
   if (!sheet) return;
