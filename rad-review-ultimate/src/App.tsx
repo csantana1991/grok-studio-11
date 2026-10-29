@@ -621,6 +621,7 @@ export default function App() {
           finding={selected?.finding ?? ''}
           label={sourcePick.label}
           href={sourcePick.href}
+          onPick={(label, href) => setSourcePick({ label, href })}
         />
         <ControlPanel
           active={selected}

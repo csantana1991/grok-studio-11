@@ -177,5 +177,29 @@ export const IMAGE_SOURCES: ImageSource[] = [
   },
 ]
 
-export const FETCHABLE = IMAGE_SOURCES.filter((s) => s.kind === 'fetch')
+/** Every teaching library the case window can open. Search terms are appended when the site has a search. */
+export function caseSources(finding: string): { label: string; href: string }[] {
+  const e = encodeURIComponent(finding)
+  return [
+    { label: 'PubMed', href: `https://pubmed.ncbi.nlm.nih.gov/?term=${e}` },
+    { label: 'Open-i', href: `https://openi.nlm.nih.gov/search?query=${e}` },
+    { label: 'Radiopaedia', href: `https://radiopaedia.org/search?lang=us&q=${e}&scope=cases` },
+    { label: 'MedPix', href: `https://medpix.nlm.nih.gov/search?q=${e}` },
+    { label: 'Eurorad', href: `https://www.eurorad.org/search?search=${e}` },
+    { label: 'OE login', href: `https://www.openevidence.com/ask?query=${e}` },
+    { label: 'TCIA', href: `https://www.cancerimagingarchive.net/?s=${e}` },
+    { label: 'NIH chest X-ray', href: 'https://nihcc.app.box.com/v/ChestXray-NIHCC' },
+    { label: 'PhysioNet', href: `https://physionet.org/search/?q=${e}` },
+    { label: 'DICOM Library', href: 'https://www.dicomlibrary.com' },
+    { label: 'OsiriX library', href: 'https://www.osirix-viewer.com/resources/dicom-image-library/' },
+    { label: '3Dicom library', href: 'https://www.3dicomviewer.com/dicom-library' },
+    { label: 'Stanford AIMI', href: 'https://aimi.stanford.edu/datasets' },
+    { label: 'WashU gamma', href: 'http://gamma.wustl.edu/home.html' },
+    { label: 'SNMMI', href: 'https://www.snmmi.org' },
+    { label: 'Deep Blue', href: 'https://deepblue.lib.umich.edu/data/concern/data_sets/0r967394d' },
+    { label: 'IAEA', href: 'https://humanhealth.iaea.org' },
+    { label: 'PEIR', href: 'https://peir.path.uab.edu/library' },
+    { label: 'Learning Radiology', href: 'https://learningradiology.com' },
+  ]
+}
 export const LINK_ONLY = IMAGE_SOURCES.filter((s) => s.kind === 'link')

@@ -11,7 +11,7 @@ import {
 import { basename } from '../data/sourceImages'
 import { CREDIT_BY_FILE, shortCredit } from '../data/credits'
 import PlateImg from './PlateImg'
-import { searchTerms } from '../data/imageSources'
+import { caseSources, searchTerms } from '../data/imageSources'
 import { displayUrl } from '../data/liveMatch'
 import SourcePicker from './SourcePicker'
 
@@ -679,16 +679,7 @@ export default function Viewer({
                   >
                     +
                   </button>
-                  {(
-                    [
-                      ['PubMed', `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(searchTerms(finding))}`],
-                      ['Open-i', `https://openi.nlm.nih.gov/search?query=${encodeURIComponent(searchTerms(finding))}`],
-                      ['Radiopaedia', `https://radiopaedia.org/search?lang=us&q=${encodeURIComponent(searchTerms(finding))}&scope=cases`],
-                      ['MedPix', `https://medpix.nlm.nih.gov/search?q=${encodeURIComponent(searchTerms(finding))}`],
-                      ['Eurorad', `https://www.eurorad.org/search?search=${encodeURIComponent(searchTerms(finding))}`],
-                      ['OE login', `https://www.openevidence.com/ask?query=${encodeURIComponent(searchTerms(finding))}`],
-                    ] as const
-                  ).map(([label, href]) => (
+                  {caseSources(searchTerms(finding)).map(({ label, href }) => (
                     <button
                       key={label}
                       type="button"
