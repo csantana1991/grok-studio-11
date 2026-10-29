@@ -9988,30 +9988,55 @@ function nbaQuestion(row){
       pearl: "Authored therapy simulation — safety sequence is the scored behavior."
     };
   }
-  if (row.basis === "source-label") {
+  const blob = [row.finding, row.stationName, row.stationId, row.modality, row.categoryId].join(" ");
+  const desk = (typeof ANATOMY_DESKS !== "undefined" && ANATOMY_DESKS.find(d => d.test.test(blob))) || null;
+  const finding = row.finding || "this case";
+  const variants = [];
+  if (desk) {
+    variants.push({ prompt: finding + " — " + desk.q, choices: desk.choices.slice(), a: desk.a, pearl: desk.why });
+    (desk.see || []).forEach((line, i) => {
+      if (i > 2) return;
+      variants.push({
+        prompt: "On the image for " + finding + ", which statement is true?",
+        choices: [line, "This finding belongs at the toes.", "Read it as a cervical-neck node.", "The filename is the diagnosis."],
+        a: 0,
+        pearl: desk.why
+      });
+    });
+  }
+  if (st && st.lesions && st.lesions[0]) {
+    variants.push({
+      prompt: "The plate for " + finding + " is marked at which station?",
+      choices: [st.name + " · " + st.lesions[0].label, "Cervical neck", "Toes", "Vertex"],
+      a: 0,
+      pearl: st.teaching || (desk && desk.why) || ""
+    });
+  }
+  if (st && st.interpretation) {
+    variants.push({
+      prompt: "What should you say about the image at " + st.name + " for " + finding + "?",
+      choices: [st.interpretation, "This slice is the forefoot.", "This is the opposite breast.", "Ignore the picture and trust the filename."],
+      a: 0,
+      pearl: st.anatomy || ""
+    });
+  }
+  if (!variants.length) {
     return {
-      prompt: "Curriculum source-label encounter · " + row.finding,
+      prompt: "Where does " + finding + " belong?",
       choices: [
-        "Finish a " + row.modality + " search pattern at " + row.stationName + " before committing a diagnosis.",
-        "Diagnose from the series description alone.",
-        "Treat filename laterality as ground truth.",
-        "Skip adjacent-slice confirmation."
+        (row.stationName || "The named station") + " — name the anatomy before the diagnosis.",
+        "File it at the toes because the list is long.",
+        "Treat the filename as the diagnosis.",
+        "Call it cervical neck because the title has a familiar word."
       ],
       a: 0,
-      pearl: st.teaching
+      pearl: (st && st.teaching) || "Name the station the picture actually shows."
     };
   }
-  return {
-    prompt: "Metadata-grounded encounter — no pathology claim. Technique at " + row.stationName + ".",
-    choices: [
-      "Name modality, station anatomy, and the next dedicated view.",
-      "Invent a diagnosis because the worklist is long.",
-      "Assume the pixels match an unrelated atlas plate.",
-      "Ignore the station map and click the toes."
-    ],
-    a: 0,
-    pearl: "Exact pixel pathology is shown only when provenance supports it. This row teaches search and anatomy."
-  };
+  let h = 0;
+  const seed = String(row.accession || "") + "|" + finding;
+  for (let i = 0; i < seed.length; i++) h = (h + seed.charCodeAt(i) * (i + 1)) % variants.length;
+  return variants[h];
 }
 
 
