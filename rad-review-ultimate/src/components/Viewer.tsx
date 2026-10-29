@@ -70,6 +70,8 @@ interface Props {
   imageVerdict?: 'approved' | 'rejected'
   /** Record a verdict; clicking the same one again clears it. */
   onJudgeImage?: (v: 'approved' | 'rejected') => void
+  /** Drag the title bar to resize this pane against the worklist. */
+  onDragEdge?: (e: React.PointerEvent) => void
 }
 
 const UNIQUE_IMAGES = Array.from(new Set(Object.values(IMAGES) as string[]))
@@ -106,6 +108,7 @@ export default function Viewer({
   categoryId,
   imageVerdict,
   onJudgeImage,
+  onDragEdge,
 }: Props) {
   const frameRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -252,9 +255,20 @@ export default function Viewer({
       }
       style={!panel.max && !panel.min && panel.h ? { flex: 'none', height: panel.h } : undefined}
     >
-      <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-rr-line bg-rr-panel px-3 py-1.5">
+      <div
+        title="Drag to resize the image. Double-click to fill the screen."
+        onDoubleClick={(e) => {
+          if ((e.target as HTMLElement).closest('button')) return
+          setPanel((p) => ({ ...p, max: !p.max, min: false }))
+        }}
+        onPointerDown={(e) => {
+          if (e.button !== 0 || (e.target as HTMLElement).closest('button')) return
+          onDragEdge?.(e)
+        }}
+        className="flex shrink-0 cursor-ns-resize flex-wrap items-center gap-x-2 gap-y-1 border-b border-rr-line bg-rr-panel px-3 py-1.5"
+      >
         <h2 className="text-[11px] font-bold tracking-[0.16em] whitespace-nowrap text-white">
-          HEAD-TO-TOE VIEWER
+          HEAD-TO-TOE VIEWER · DRAG
         </h2>
         <span className="ml-auto flex items-center gap-1">
           <button

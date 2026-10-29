@@ -169,6 +169,29 @@ export default function App() {
 
   /** Manual rematch cursor, advanced by clicking the image or NEXT MATCH. */
   const [matchOffset, setMatchOffset] = useState(0)
+  /** Share of the screen given to the worklist. Drag the blue bar or the viewer title. */
+  const [listShare, setListShare] = useState(32)
+  const stageRef = useRef<HTMLElement>(null)
+
+  const dragSplit = useCallback((e: React.PointerEvent) => {
+    const stage = stageRef.current
+    if (!stage) return
+    e.preventDefault()
+    const rect = stage.getBoundingClientRect()
+    const wide = rect.width >= 1180
+    const move = (ev: PointerEvent) => {
+      const pct = wide
+        ? ((ev.clientX - rect.left) / rect.width) * 100
+        : ((ev.clientY - rect.top) / rect.height) * 100
+      setListShare(Math.min(68, Math.max(14, pct)))
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }, [])
 
   /** Reset the rematch cursor whenever the selected encounter changes. */
   useEffect(() => {
@@ -458,7 +481,11 @@ export default function App() {
         onOpenReview={() => setReviewOpen(true)}
       />
 
-      <main className="flex min-h-0 flex-1 flex-col xl:flex-row">
+      <main ref={stageRef} className="flex min-h-0 flex-1 flex-col xl:flex-row">
+        <div
+          className="flex min-h-0 min-w-0 flex-col overflow-hidden"
+          style={{ flex: `0 0 ${listShare}%` }}
+        >
         <CaseList
           cases={filtered}
           selectedIdx={selected?.idx ?? null}
@@ -491,8 +518,14 @@ export default function App() {
             />
           }
         />
+        </div>
+        <div
+          title="Drag to give more room to the images"
+          onPointerDown={dragSplit}
+          className="z-10 h-3 shrink-0 cursor-ns-resize bg-[#1d4ed8] xl:h-auto xl:w-3 xl:cursor-ew-resize"
+        />
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <Viewer
             slice={slice}
             onSlice={setSlice}
@@ -550,6 +583,7 @@ export default function App() {
             onSearchCase={
               selectedFinding ? () => void lit.ensure(selectedFinding, true) : undefined
             }
+            onDragEdge={dragSplit}
           />
           <InfoBar station={station} slice={slice} />
         </div>

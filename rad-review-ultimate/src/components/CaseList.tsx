@@ -153,6 +153,7 @@ export default function CaseList({
   const scrollRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportH, setViewportH] = useState(720)
+  const [filmH, setFilmH] = useState(72)
 
   const onScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(e.currentTarget.scrollTop)
@@ -204,7 +205,7 @@ export default function CaseList({
   }, [cases, thumbFor])
 
   return (
-    <aside className="flex h-[62vh] min-h-[28rem] w-full shrink-0 flex-col border-r border-rr-line bg-rr-panel xl:h-auto xl:min-h-0 xl:w-[34rem] xl:max-h-none">
+    <aside className="flex h-full min-h-0 w-full flex-col border-r border-rr-line bg-rr-panel">
       <div className="shrink-0 border-b border-rr-line px-3 py-2">
         <div className="flex items-baseline gap-2">
           <h2 className="text-[11px] font-bold tracking-[0.16em] text-white">
@@ -283,19 +284,16 @@ export default function CaseList({
         ))}
       </div>
 
-      {plates.length > 0 && (
-        <div className="shrink-0 border-b border-rr-line px-2 py-1.5">
-          <div className="mb-1 text-[9px] tracking-[0.14em] text-rr-dim uppercase">
-            {cases.length.toLocaleString()} images
-          </div>
-          <div className="rr-scroll flex gap-1 overflow-x-scroll pb-3">
+      {filmH > 0 && plates.length > 0 && (
+        <div className="shrink-0 border-b border-rr-line px-2 pt-1" style={{ height: filmH }}>
+          <div className="rr-scroll flex h-[calc(100%-10px)] gap-1 overflow-x-scroll">
             {plates.map((p) => (
               <button
                 key={p.encounter.idx}
                 type="button"
                 title={imageLabel(p.encounter)}
                 onClick={() => onSelect(p.encounter)}
-                className="relative h-14 w-16 shrink-0 overflow-hidden rounded border border-rr-line bg-black"
+                className="relative h-full w-16 shrink-0 overflow-hidden rounded border border-rr-line bg-black"
               >
                 <PlateImg
                   src={p.src}
@@ -308,8 +306,27 @@ export default function CaseList({
           </div>
         </div>
       )}
+      <div
+        title="Drag to resize the image strip. Double-click to hide it."
+        onDoubleClick={() => setFilmH((h) => (h < 24 ? 72 : 0))}
+        onPointerDown={(e) => {
+          if (e.button !== 0) return
+          const startY = e.clientY
+          const startH = filmH
+          const move = (ev: PointerEvent) => {
+            setFilmH(Math.min(220, Math.max(0, startH + (ev.clientY - startY))))
+          }
+          const up = () => {
+            window.removeEventListener('pointermove', move)
+            window.removeEventListener('pointerup', up)
+          }
+          window.addEventListener('pointermove', move)
+          window.addEventListener('pointerup', up)
+        }}
+        className="h-3 shrink-0 cursor-ns-resize border-b border-rr-line bg-[#1d4ed8]"
+      />
 
-      <div ref={scrollRef} onScroll={onScroll} className="rr-scroll min-h-[18rem] flex-1 overflow-y-scroll xl:min-h-0">
+      <div ref={scrollRef} onScroll={onScroll} className="rr-scroll min-h-0 flex-1 overflow-y-scroll">
         {indexing ? (
           <div className="px-3 py-6 text-[10px] text-rr-dim">Indexing...</div>
         ) : cases.length === 0 ? (
