@@ -647,7 +647,10 @@ export default function Viewer({
                   {(
                     [
                       ['PubMed', `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(searchTerms(finding))}`],
+                      ['Open-i', `https://openi.nlm.nih.gov/search?query=${encodeURIComponent(searchTerms(finding))}`],
                       ['Radiopaedia', `https://radiopaedia.org/search?lang=us&q=${encodeURIComponent(searchTerms(finding))}&scope=cases`],
+                      ['MedPix', `https://medpix.nlm.nih.gov/search?q=${encodeURIComponent(searchTerms(finding))}`],
+                      ['Eurorad', `https://www.eurorad.org/search?search=${encodeURIComponent(searchTerms(finding))}`],
                       ['OE login', `https://www.openevidence.com/ask?query=${encodeURIComponent(searchTerms(finding))}`],
                     ] as const
                   ).map(([label, href]) => (

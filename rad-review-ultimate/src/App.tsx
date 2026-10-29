@@ -23,6 +23,7 @@ import { matchStudies } from './data/nucleus'
 import { useDebounced, useNoPrint } from './hooks/useDebounced'
 import { useMountedImages } from './hooks/useMountedImages'
 import { useLiteratureMatches } from './hooks/useLiteratureMatches'
+import { oaFor, useOaCatalog } from './hooks/useOaCatalog'
 import { useFeedback } from './hooks/useFeedback'
 import { caseScript, figureScript, useAudiobook } from './hooks/useAudiobook'
 import { applyFeedback } from './data/feedback'
@@ -95,6 +96,7 @@ export default function App() {
     return [...set]
   }, [])
   const lit = useLiteratureMatches(liveEnabled, allFindings)
+  const oa = useOaCatalog()
 
   // Nucleus case library (optional export at public/nucleus-export.json).
   const nucleus = useNucleusLibrary()
@@ -234,12 +236,13 @@ export default function App() {
 
   const thumbFor = useCallback(
     (c: Encounter) => {
-      const lit = selectThumb(c, figureIndex)
-      // A published figure (PubMed Central, Commons) outranks the local plate.
-      if (lit && /^https?:\/\//i.test(lit)) return lit
+      const published = oaFor(c.finding, c.idx, oa)
+      if (published) return published.url
+      const litUrl = selectThumb(c, figureIndex)
+      if (litUrl && /^https?:\/\//i.test(litUrl)) return litUrl
       return teachingPlateFor(c).url
     },
-    [figureIndex],
+    [figureIndex, oa],
   )
 
   /**
@@ -378,14 +381,15 @@ export default function App() {
   /** Everything actually rendered: broken frames, collapsed layouts, thumbnails. */
   const pageAudit = usePageImageAudit()
 
-  /** Figures the reader can cycle through, best first. */
-  const matchPoolSize = orderedMatches.length
+  const oaList = selected ? oa.byFinding[selected.finding] : undefined
+  const matchPoolSize = oaList?.length ? oaList.length : orderedMatches.length
 
   const caseImage = (() => {
     if (!selected) return undefined
+    const fromOpenI = oaFor(selected.finding, selected.idx + matchOffset, oa)
+    if (fromOpenI) return fromOpenI
     const teaching = teachingMatch(selected)
     const published = currentMatch?.match
-    // Real open-access figures only. The local plate is the stand-in until one arrives.
     if (published && /^https?:\/\//i.test(published.url)) return published
     return teaching
   })()
