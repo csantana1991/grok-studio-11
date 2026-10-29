@@ -1825,7 +1825,35 @@ body:not(.lesson-audio) #playerDock {
   overflow: hidden !important;
   border: 0 !important;
 }
-.sidebar { resize: none !important; }
+.sidebar { min-width: 0; max-width: none; width: 100%; }
+body.nav-min .sidebar,
+.sidebar.is-min {
+  width: 56px !important;
+  min-width: 0 !important;
+  max-width: 56px !important;
+  height: 100% !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+.sidebar.panel-wrap.is-min {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  display: flex !important;
+}
+body.nav-min .app { grid-template-columns: 56px 14px minmax(0,1fr) !important; }
+body.nav-max .app { grid-template-columns: min(420px, 46vw) 14px minmax(0,1fr) !important; }
+body.view-rru .main,
+body.view-rru .work,
+body.view-rru .stage,
+body.view-rru .stage.rru-stage,
+body.view-rru .rru-host,
+body.view-rru #rruFrame {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  align-self: stretch !important;
+}
 body.nav-min .brand h1,
 body.nav-min .brand p,
 body.nav-min .progress-wrap,
@@ -6300,7 +6328,9 @@ const WinMgr = {
     document.body.classList.toggle("live-max", !!(live && live.classList.contains("is-max") && document.body.classList.contains("live-open")));
     if (wrap && (wrap.classList.contains("sidebar") || wrap.id === "sidebar" || wrap.dataset.panelBody === "nav")) {
       document.body.classList.toggle("nav-min", wrap.classList.contains("is-min"));
-      document.body.classList.toggle("nav-max", wrap.classList.contains("is-max"));
+      document.body.classList.toggle("nav-max", wrap.classList.contains("is-max") && !wrap.classList.contains("is-min"));
+      document.documentElement.style.setProperty("--side-w", wrap.classList.contains("is-min") ? "56px" : wrap.classList.contains("is-max") ? "420px" : "280px");
+      wrap.style.width = wrap.style.height = wrap.style.maxWidth = wrap.style.maxHeight = "";
     }
     if (wrap && (wrap.classList.contains("player") || wrap.id === "playerDock" || wrap.dataset.panelBody === "player")) {
       document.body.classList.toggle("player-min", wrap.classList.contains("is-min"));
