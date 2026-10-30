@@ -32,6 +32,24 @@ const BRIDGE = `(function(){
     args[1] = localApi(String(url || ""));
     return origOpen.apply(this, args);
   };
+  function localHist(url){
+    if (typeof url !== "string" || !url) return url;
+    try {
+      var u = new URL(url, location.href);
+      if (u.origin === location.origin) return u.href;
+      var n = new URL(url, OWN + "/");
+      if (n.origin === OWN) return location.origin + n.pathname + n.search + n.hash;
+    } catch (e) {}
+    return url;
+  }
+  var push = history.pushState;
+  var replace = history.replaceState;
+  history.pushState = function(state, title, url){
+    return push.call(this, state, title, url === undefined ? url : localHist(url));
+  };
+  history.replaceState = function(state, title, url){
+    return replace.call(this, state, title, url === undefined ? url : localHist(url));
+  };
   var videoId = "";
   var cues = [];
   var last = "";
