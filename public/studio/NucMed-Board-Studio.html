@@ -2368,7 +2368,7 @@ body.medb-full #mbWidgets button.on { background: #2ee6c8; color: #082027; }
 body.medb-full .work { top: 96px !important; }
 #capRail .cap-tag { flex: 0 0 auto; color: #9fc8c0; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
 #atlasMute { flex: 0 0 auto; height: 28px; border: 0; border-radius: 999px; background: #1a1408; color: #f7f4ee; font-size: 12px; font-weight: 700; padding: 0 10px; cursor: pointer; }
-#capRow { display: flex; gap: 8px; align-items: center; }
+#capRow { display: flex; gap: 8px; align-items: center; flex: 1 1 auto; min-width: 0; overflow-x: auto; overflow-y: hidden; }
 #capRow button { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; height: 64px; padding: 0 8px 0 0; border: 0; border-radius: 10px; background: #123044; color: #e8f2f7; cursor: pointer; }
 #capRow img { width: 96px; height: 64px; object-fit: cover; border-radius: 10px 0 0 10px; background: #07141f; }
 #capRow span { display: block; max-width: 140px; font-size: 11px; line-height: 1.25; white-space: normal; overflow: hidden; }
@@ -5705,15 +5705,12 @@ const CapRail = {
     if (tag) tag.textContent = ("1 Slide · " + q).slice(0, 48);
     let pages = [];
     try {
-      const data = await fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(q) + "&n=6").then((r) => r.json());
-      pages = (data.results || []).filter((r) => r && r.url).map((r) => ({ title: r.caption || r.title || q, thumbnail: { source: r.url } }));
+      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q + " scintigraphy PET scan") + "&gsrlimit=8&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*").then((r) => r.json());
+      pages = Object.values((data.query && data.query.pages) || {});
     } catch (e) {}
-    if (pages.length < 2) {
-      try {
-        const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=6&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*").then((r) => r.json());
-        pages = pages.concat(Object.values((data.query && data.query.pages) || {}));
-      } catch (e) {}
-    }
+    const drop = /reactor|fuel|weapon|power plant|painting|portrait|diploma|degree of|simulator|anesthesia|wellcome|coat of arms|flag of|logo/i;
+    const keep = /nuclear medicine|scintigraph|perfusion|spect|pet\b|gamma|radiotracer|radiopharm|scan|camera|isotope|uptake|thyroid|cardiac|bone|photon|emission|tomograph/i;
+    pages = pages.filter((p) => p && p.thumbnail && p.thumbnail.source && p.title && keep.test(p.title) && !drop.test(p.title));
     if (!pages.length) return;
     const shown = pages.filter((p) => p && p.thumbnail && p.thumbnail.source).slice(0, 4);
     if (!shown.length) return;
