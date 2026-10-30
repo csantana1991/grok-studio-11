@@ -5190,7 +5190,8 @@ const CapRail = {
       [/mammogra/, "mammo"],
       [/echocardiogra|\becho\b/, "echo"],
       [/ultrasound|sonogra/, "us"],
-      [/positron|\bpet\b|\bfdg\b|nuclear medicine|molecular imaging/, "pet"],
+      [/positron|\bpet\b|\bfdg\b|nuclear medicine|molecular imaging|annihilation/, "pet"],
+      [/shock|sepsis|hypotension|perfusion/, "ct"],
       [/magnetic|mri|brain/, "mri"],
       [/radiograph|x-ray|chest film/, "xray"],
       [/computed|tomography|\bct\b/, "ct"]
@@ -5212,16 +5213,21 @@ const CapRail = {
   },
   async pull(text, seq) {
     const modality = this.modality(text);
-    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|after|before|their|there|they|them|then|also|only|most|more|some|such|been|being|which|while|where|will|would|could|should)$/i;
-    const words = String(text).toLowerCase().replace(/[^a-z0-9+ ]/g, " ").split(/\s+/).filter(w => w.length > 3 && !stop.test(w)).slice(0, 4);
-    const it = words.join(" ") || modality;
+    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|after|before|their|there|they|them|then|also|only|most|more|some|such|been|being|which|while|where|will|would|could|should|follows|meets|used|basic|webinar|lecture|monday|short|travels)$/i;
+    const clinical = /positron|annihilation|fluorine|fdg|photon|detector|coincidence|shock|hypotension|cardiogenic|septic|perfusion|lactate|vasodilat|thyroid|iodine|myocardial|ischemia|embolism|nodule|pneumonia|tracer|radioisotope/;
+    const words = String(text).toLowerCase().replace(/[^a-z0-9+ ]/g, " ").split(/\s+/).filter(w => w.length > 3 && !stop.test(w));
+    const picked = words.filter(w => clinical.test(w));
+    const it = (picked.length ? picked : words).slice(0, 3).join(" ") || modality;
     try {
       const res = await fetch("/api/pmc/match?source=openi-page&modality=" + modality + "&it=" + encodeURIComponent(it) + "&m=1&n=4");
       if (!res.ok || seq !== this.seq) return;
       const data = await res.json();
       if (seq !== this.seq) return;
-      (data.list || []).slice(0, 4).forEach(row => {
-        if (row && row.url) this.add(row.url, row.caption || row.label || text);
+      const keys = it.split(" ").filter(w => w.length > 3);
+      const rows = (data.list || []).filter(row => row && row.url);
+      const matched = rows.filter(row => keys.some(k => String(row.caption || row.label || "").toLowerCase().indexOf(k) >= 0));
+      (matched.length ? matched : rows).slice(0, 4).forEach(row => {
+        this.add(row.url, row.caption || row.label || text);
       });
     } catch (e) {}
   },
@@ -5264,7 +5270,14 @@ const CapRail = {
 const VidLift = {
   kind: "",
   box: null,
-  esc(s) { return String(s || "").replace(/[&<>"]/g, (c) => ({ "&": "&", "<": "<", ">": ">", "\"": """ }[c])); },
+  esc(s) {
+    return String(s || "").replace(/[&<>"]/g, (c) => {
+      if (c === "&") return "&" + "amp;";
+      if (c === "<") return "&" + "lt;";
+      if (c === ">") return "&" + "gt;";
+      return "&" + "quot;";
+    });
+  },
   query() {
     const raw = [CapRail.topic, CapRail.tail, CapRail.last].filter(Boolean).join(" ");
     return raw.replace(/\s+/g, " ").trim().slice(0, 180);
