@@ -2189,8 +2189,9 @@ body.hj-full #hjSaid { flex:1; min-width:0; height:32px; margin:0; border:0; bor
 #wikiTop { display:none; }
 #wikiTop.on {
   display:flex; gap:6px; align-items:center; position:fixed; top:36px; left:0; right:0; height:52px;
-  z-index:40; overflow-x:auto; overflow-y:hidden; background:rgba(12,18,16,.92); padding:4px 8px;
-  scrollbar-width: none; pointer-events: auto;
+  z-index:40; overflow-x:scroll; overflow-y:hidden; background:rgba(12,18,16,.92); padding:4px 8px;
+  -webkit-overflow-scrolling: touch; touch-action: pan-x; cursor: grab;
+  scrollbar-width: thin; pointer-events: auto;
 }
 #wikiTop.on:empty { display:none; }
 body.wiki-top #hjBar {
@@ -2368,7 +2369,12 @@ body.medb-full #mbWidgets button.on { background: #2ee6c8; color: #082027; }
 body.medb-full .work { top: 96px !important; }
 #capRail .cap-tag { flex: 0 0 auto; color: #9fc8c0; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
 #atlasMute { flex: 0 0 auto; height: 28px; border: 0; border-radius: 999px; background: #1a1408; color: #f7f4ee; font-size: 12px; font-weight: 700; padding: 0 10px; cursor: pointer; }
-#capRow { display: flex; gap: 8px; align-items: center; flex: 1 1 auto; min-width: 0; overflow-x: auto; overflow-y: hidden; }
+#capRow {
+  display: flex; gap: 8px; align-items: center; flex: 1 1 auto; min-width: 0;
+  overflow-x: scroll !important; overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch; touch-action: pan-x; cursor: grab;
+  scrollbar-width: thin;
+}
 #capRow button { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; height: 64px; padding: 0 8px 0 0; border: 0; border-radius: 10px; background: #123044; color: #e8f2f7; cursor: pointer; }
 #capRow img { width: 96px; height: 64px; object-fit: cover; border-radius: 10px 0 0 10px; background: #07141f; }
 #capRow span { display: block; max-width: 140px; font-size: 11px; line-height: 1.25; white-space: normal; overflow: hidden; }
@@ -5601,6 +5607,33 @@ const CapRail = {
     this.screenWords = this.screenWords || [];
     this._follow = setInterval(() => { this.readScreen(); }, 1000);
     this.readScreen();
+    ["capRow", "wikiTop"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el || el.dataset.drag) return;
+      el.dataset.drag = "1";
+      let startX = 0;
+      let startLeft = 0;
+      let dragged = false;
+      el.addEventListener("pointerdown", (e) => {
+        if (e.button != null && e.button !== 0) return;
+        dragged = false;
+        startX = e.clientX;
+        startLeft = el.scrollLeft;
+        try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      });
+      el.addEventListener("pointermove", (e) => {
+        if (!el.hasPointerCapture(e.pointerId)) return;
+        const dx = e.clientX - startX;
+        if (Math.abs(dx) > 4) dragged = true;
+        el.scrollLeft = startLeft - dx;
+      });
+      el.addEventListener("click", (e) => {
+        if (!dragged) return;
+        e.preventDefault();
+        e.stopPropagation();
+        dragged = false;
+      }, true);
+    });
   },
   nextScreenPhrase() {
     const anchor = this.anchor();
