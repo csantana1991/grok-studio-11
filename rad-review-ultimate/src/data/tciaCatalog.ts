@@ -9919,15 +9919,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00085.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial. UPENN-GBM-00085. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00086.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -10360,15 +10351,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00134.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial. UPENN-GBM-00134. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00135.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -10441,28 +10423,10 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00143.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial. UPENN-GBM-00143. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00144.jpg",
     "modality": "mri",
     "anatomy": "brain",
     "shows": "t2_Flair_axial. UPENN-GBM-00144. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00145.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial. UPENN-GBM-00145. UPENN-GBM brain MRI.",
     "license": "CC BY 4.0",
     "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
@@ -10603,15 +10567,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00161.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "T2 AXIAL FLAIR. UPENN-GBM-00161. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00162.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -10715,15 +10670,6 @@ export const TCIA: TciaRow[] = [
     "modality": "mri",
     "anatomy": "brain",
     "shows": "t2_Flair_axial. UPENN-GBM-00173. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00174.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial. UPENN-GBM-00174. UPENN-GBM brain MRI.",
     "license": "CC BY 4.0",
     "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
@@ -10846,15 +10792,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00188.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial. UPENN-GBM-00188. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00189.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -10913,15 +10850,6 @@ export const TCIA: TciaRow[] = [
     "modality": "mri",
     "anatomy": "brain",
     "shows": "t2_Flair_axial. UPENN-GBM-00195. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00196.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial. UPENN-GBM-00196. UPENN-GBM brain MRI.",
     "license": "CC BY 4.0",
     "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
@@ -11242,24 +11170,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00232.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial. UPENN-GBM-00232. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00233.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial. UPENN-GBM-00233. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00234.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -11291,15 +11201,6 @@ export const TCIA: TciaRow[] = [
     "modality": "mri",
     "anatomy": "brain",
     "shows": "T2 AXIAL FLAIR. UPENN-GBM-00237. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00238.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "T2 AXIAL FLAIR. UPENN-GBM-00238. UPENN-GBM brain MRI.",
     "license": "CC BY 4.0",
     "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
@@ -11354,15 +11255,6 @@ export const TCIA: TciaRow[] = [
     "modality": "mri",
     "anatomy": "brain",
     "shows": "T2 AXIAL FLAIR. UPENN-GBM-00244. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00245.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial. UPENN-GBM-00245. UPENN-GBM brain MRI.",
     "license": "CC BY 4.0",
     "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
@@ -11593,15 +11485,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00271.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial. UPENN-GBM-00271. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00272.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -11615,15 +11498,6 @@ export const TCIA: TciaRow[] = [
     "modality": "mri",
     "anatomy": "brain",
     "shows": "AXIAL FLAIR. UPENN-GBM-00273. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00274.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial. UPENN-GBM-00274. UPENN-GBM brain MRI.",
     "license": "CC BY 4.0",
     "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
@@ -12205,15 +12079,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00339.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "AXIAL FLAIR. UPENN-GBM-00339. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00341.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -12322,15 +12187,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00353.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "AX FLAIR. UPENN-GBM-00353. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00354.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -12349,15 +12205,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00356.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial_T. UPENN-GBM-00356. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00357.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -12371,15 +12218,6 @@ export const TCIA: TciaRow[] = [
     "modality": "mri",
     "anatomy": "brain",
     "shows": "t2_Flair_axial. UPENN-GBM-00358. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00359.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial_T. UPENN-GBM-00359. UPENN-GBM brain MRI.",
     "license": "CC BY 4.0",
     "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
@@ -12898,15 +12736,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00417.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "T2 AXIAL FLAIR. UPENN-GBM-00417. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00418.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -13312,15 +13141,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00463.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial_TERA. UPENN-GBM-00463. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00465.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -13577,15 +13397,6 @@ export const TCIA: TciaRow[] = [
     "modality": "mri",
     "anatomy": "brain",
     "shows": "AXIAL FLAIR. UPENN-GBM-00493. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00494.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "AXIAL FLAIR. UPENN-GBM-00494. UPENN-GBM brain MRI.",
     "license": "CC BY 4.0",
     "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
@@ -14239,15 +14050,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00568.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial_TERA. UPENN-GBM-00568. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00569.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -14437,15 +14239,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00590.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "AXIAL T2 FLAIR. UPENN-GBM-00590. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00591.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -14504,15 +14297,6 @@ export const TCIA: TciaRow[] = [
     "modality": "mri",
     "anatomy": "brain",
     "shows": "t2_Flair_axial. UPENN-GBM-00597. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00598.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "AX FLAIR. UPENN-GBM-00598. UPENN-GBM brain MRI.",
     "license": "CC BY 4.0",
     "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
@@ -14716,15 +14500,6 @@ export const TCIA: TciaRow[] = [
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
   },
   {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00621.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial_T. UPENN-GBM-00621. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
     "src": "/meta-image/tcia/mri/UPENN-GBM-00622.jpg",
     "modality": "mri",
     "anatomy": "brain",
@@ -14756,15 +14531,6 @@ export const TCIA: TciaRow[] = [
     "modality": "mri",
     "anatomy": "brain",
     "shows": "T2 AXIAL FLAIR. UPENN-GBM-00625. UPENN-GBM brain MRI.",
-    "license": "CC BY 4.0",
-    "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
-    "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
-  },
-  {
-    "src": "/meta-image/tcia/mri/UPENN-GBM-00626.jpg",
-    "modality": "mri",
-    "anatomy": "brain",
-    "shows": "t2_Flair_axial_T. UPENN-GBM-00626. UPENN-GBM brain MRI.",
     "license": "CC BY 4.0",
     "credit": "UPENN-GBM, The Cancer Imaging Archive. CC BY 4.0.",
     "page": "https://www.cancerimagingarchive.net/collection/upenn-gbm/"
