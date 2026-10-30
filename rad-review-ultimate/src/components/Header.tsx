@@ -86,7 +86,7 @@ export default function Header({
         <h1 className="shrink-0 text-[12px] font-bold tracking-[0.08em] whitespace-nowrap text-white">
           RAD REVIEW ULTIMATE
           <span className="mx-1.5 text-rr-dim">|</span>
-          <span className="text-rr-text">Demo log</span>
+          <span className="text-rr-text">Image library</span>
         </h1>
         <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto py-0.5">
           <Chip

@@ -130,9 +130,9 @@ function Row({
             'rounded border px-1 py-px text-[8px] font-bold tracking-wider ' +
             STATUS_STYLE[c.status]
           }
-          title="Demo status. Not a signed report."
+          title="Teaching-row status. Not a signed report."
         >
-          demo {c.status}
+          {c.status}
         </span>
         {c.priority === 'STAT' && (
           <span className="rounded border border-rr-red/50 bg-rr-red/15 px-1 py-px text-[8px] font-bold tracking-wider text-rr-red">
@@ -277,7 +277,7 @@ export default function CaseList({
             {cases.length.toLocaleString()}
           </span>
           <span className="text-[9px] tracking-[0.14em] text-rr-dim uppercase">
-            {query.trim() ? 'unique stems' : 'demo rows'}
+            {query.trim() ? 'unique stems' : 'library rows'}
           </span>
           <span className="ml-auto text-[9px] text-rr-dim tabular-nums">
             of {GRAND_TOTAL.toLocaleString()}

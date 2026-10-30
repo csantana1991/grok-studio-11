@@ -10,8 +10,22 @@ import type { Encounter } from './generateCases'
 import type { LiveMatch } from './liveMatch'
 import type { StudyKind } from './caseDossier'
 import { US_PLATES } from './us-plates'
+import NIH_FILES from './nih-files.json'
 
-/** Cardiac pictures checked by looking at the file. Not 800 copies of one slide. */
+const META = '/meta-image/films/'
+const META_CT = [
+  'ct-th-axi-10.webp','ct-th-axi-20.webp','ct-th-axi-30.webp','ct-th-axi-40.webp','ct-th-axi-50.webp',
+  'ct-th-axi-60.webp','ct-th-axi-70.webp','ct-th-axi-80.webp','ct-th-axi-85.webp','ct-th-axi-90.webp','ct-th-axi-100.webp',
+  'ct-th-cor-20.webp','ct-th-cor-40.webp','ct-th-cor-60.webp',
+  'ct-abd-00.webp','ct-abd-01.webp','ct-abd-02.webp','ct-lung-10.webp','ct-lung-11.webp',
+].map((f) => META + f)
+const META_MRI = [
+  'mri-ax-09.webp','mri-ax-09-c.webp','mri-ax-11b.webp','mri-ax-11d.webp','mri-ax-7l.webp','mri-ax-7r.webp',
+  'mri-cor-12.webp','mri-cor-13.webp','mri-sag-06.webp','mri-sag-11c.webp',
+].map((f) => META + f)
+const META_PET = [
+  'pet-ax.webp','pet-mip.webp','pet-mip-chest.webp','pet-p4a.webp','pet-p4b.webp','pet-p5d.webp',
+].map((f) => META + f)
 const CARDIAC_MRI = [
   'https://openi.nlm.nih.gov/imgs/512/248/11060229/PMC11060229_ms9-86-3042-g002.png',
   '/studio/assets/dr/ct-396.jpg',
@@ -178,6 +192,10 @@ const FILE_KIND: [string, StudyKind][] = [
 /** Kind of a checked local file, or null when the file is not an allow-listed plate. */
 export function knownPlateKind(url: string): StudyKind | null {
   const u = url.toLowerCase()
+  if (u.includes('/library/nih/')) return 'radiograph'
+  if (u.includes('/meta-image/films/ct-')) return 'ct'
+  if (u.includes('/meta-image/films/mri-')) return 'mri'
+  if (u.includes('/meta-image/films/pet-')) return 'pet-fdg'
   if (u.includes('ultrasound_scan_nd') || u.includes('case-us-')) return 'us'
   if (CARDIAC_MRI.some((file) => u.includes((file.split('/').pop() || file).toLowerCase()))) return 'mri'
   if (CARDIAC_CT.some((file) => u.includes((file.split('/').pop() || file).toLowerCase()))) return 'ct'
@@ -194,11 +212,14 @@ function pick(finding: string, _stationId: string, categoryId: string, idx = 0):
   if (key === 'mpi') return '/studio/assets/images/cardiac-ac.jpg'
   if (key === 'cardiacMri') return CARDIAC_MRI[Math.abs(idx) % CARDIAC_MRI.length]
   if (key === 'cardiacCt') return CARDIAC_CT[Math.abs(idx) % CARDIAC_CT.length]
+  if (key === 'xrChest' && NIH_FILES.length) return `/library/nih/${NIH_FILES[Math.abs(idx) % NIH_FILES.length]}`
+  if (key === 'ctChest' || key === 'ctBody') return META_CT[Math.abs(idx) % META_CT.length]
+  if (key === 'mriBrain') return META_MRI[Math.abs(idx) % META_MRI.length]
+  if (key === 'pet' || key === 'petBrain') return META_PET[Math.abs(idx) % META_PET.length]
   if (key === 'us') {
     const pool = US_PLATES
     if (!pool.length) return ''
-    const n = pool[Math.abs(idx) % pool.length]
-    return n
+    return pool[Math.abs(idx) % pool.length]
   }
   const pool = POOLS[key]
   if (!pool) return ''
@@ -210,8 +231,17 @@ function pick(finding: string, _stationId: string, categoryId: string, idx = 0):
 export function imageLabel(c: { finding: string; categoryId: string; idx?: number }): string {
   const key = plateKind(c.finding, c.categoryId)
   if (!key) return 'No matched case image'
-  const label = KIND_LABEL[key] ?? (key === 'cardiacMri' ? 'Cardiac MRI example' : key === 'mpi' ? 'Myocardial perfusion example' : 'Teaching image')
-  return `${label}. Not this row’s own scan.`
+  const label =
+    key === 'xrChest'
+      ? 'NIH ChestX-ray14. Credit the NIH Clinical Center. Not this row’s own film'
+      : key === 'ctChest' || key === 'ctBody'
+        ? 'CT reference film. Not a downloaded TCIA series'
+        : key === 'mriBrain'
+          ? 'Brain MRI reference film. Not an OpenNeuro download'
+          : key === 'pet' || key === 'petBrain'
+            ? 'FDG PET reference film. Not a downloaded TCIA series'
+            : (KIND_LABEL[key] ?? (key === 'cardiacMri' ? 'Cardiac MRI example' : key === 'mpi' ? 'Myocardial perfusion example' : 'Teaching image')) + '. Not this row’s own scan.'
+  return label
 }
 
 /** Files that are not medical images. Checked by looking at the plates. */
