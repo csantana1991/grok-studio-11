@@ -5376,7 +5376,8 @@ const CapRail = {
     b.appendChild(img);
     b.appendChild(label);
     b.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); this.pop(src, cap); };
-    row.appendChild(b);
+    row.insertBefore(b, row.firstChild);
+    while (row.children.length > 10) row.removeChild(row.lastChild);
     rail.classList.add("on");
     rail.scrollLeft = rail.scrollWidth;
     if (typeof SideFilm !== "undefined") SideFilm.add(src, cap);
@@ -14226,14 +14227,28 @@ window.addEventListener("message", (e) => {
       .catch(() => { if (data.videoId === CapRail.videoId) CapRail.scrub([], CapRail.topic); });
   }
   if (data.cc && data.text) {
-    const tag = document.querySelector("#capRail .cap-tag");
-    if (tag) tag.textContent = String(data.text).replace(/\s+/g, " ").trim().slice(0, 48);
-    CapRail.note(data.text);
-    CapRail.live(data.text);
-    CapRail.keepFollowing();
-    CapRail.atlas(data.text);
-    SideFilm.pull(data.text);
-    if (!CapRail.cues.length) CapRail.scrub([], data.text);
+    if (!data.follow) {
+      const next = CapRail.queryOf(data.text);
+      if (next && next !== CapRail.shownQ) {
+        CapRail.shownQ = next;
+        CapRail.line = "";
+        CapRail.liveKey = "";
+        const row = document.getElementById("capRow");
+        if (row) row.innerHTML = "";
+      }
+      const tag = document.querySelector("#capRail .cap-tag");
+      if (tag) tag.textContent = String(data.text).replace(/\s+/g, " ").trim().slice(0, 48);
+      CapRail.note(data.text);
+      CapRail.live(data.text);
+      CapRail.keepFollowing();
+      CapRail.atlas(data.text);
+      SideFilm.pull(data.text);
+      if (!CapRail.cues.length) CapRail.scrub([], data.text);
+    } else {
+      CapRail.liveKey = "";
+      CapRail.wikiOff = ((CapRail.wikiOff || 0) + 4) % 32;
+      CapRail.live(data.text, CapRail.wikiOff);
+    }
   } else if (data.cc && typeof data.t === "number") CapRail.cueAt(data.t);
 });
 window.addEventListener("message", (e) => {

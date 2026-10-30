@@ -53,11 +53,14 @@ const BRIDGE = `(function(){
   var videoId = "";
   var cues = [];
   var last = "";
-  var titleSent = "";
+  var spoken = "";
+  var lessonSent = "";
+  var spin = 0;
   function post(text){
     text = String(text || "").replace(/\\s+/g, " ").trim();
     if (text.length < 8 || text === last) return;
     last = text;
+    spoken = text;
     try { parent.postMessage({ source: "hj-caption", cc: true, text: text, videoId: videoId }, "*"); } catch (e) {}
   }
   function loadCues(id){
@@ -183,10 +186,20 @@ const BRIDGE = `(function(){
         win.postMessage(JSON.stringify({ event: "command", func: "getCurrentTime", args: [], id: fr.id, channel: "widget" }), "*");
       } catch (e) {}
     }
-    var heads = document.querySelectorAll("h1,h2,h3");
-    for (var h = 0; h < heads.length; h++) {
-      var s = (heads[h].textContent || "").replace(/\\s+/g, " ").trim();
-      if (s.length > 18 && s !== titleSent && !/board studio|independent specialty|harvard:john|catalogue/i.test(s)) { titleSent = s; post(s); break; }
+    var capEl = document.querySelector(".player-caption strong");
+    var lesson = capEl ? (capEl.textContent || "").replace(/\\s+/g, " ").trim() : "";
+    if (lesson && lesson !== lessonSent) { lessonSent = lesson; post(lesson); }
+    var base = spoken || lesson;
+    if (base && spin % 3 === 0) {
+      spin += 1;
+      var bits = base.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\\s+/).filter(function(w){
+        return w.length > 3 && !/^(that|this|with|from|what|when|your|have|they|them|then|about|there|their|which|would|could|should|really|made|into|over|lecture|monday)$/.test(w);
+      });
+      if (bits.length) {
+        var pick = bits[spin % bits.length];
+        var q = pick + " " + bits[(spin + 1) % bits.length];
+        try { parent.postMessage({ source: "hj-caption", cc: true, follow: true, text: q, videoId: videoId }, "*"); } catch (e) {}
+      }
     }
   }
   function postBox(){
