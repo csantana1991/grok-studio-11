@@ -16,7 +16,24 @@
         try { parent.postMessage({ type: "studio-image", q: q }, location.origin); } catch (err) {}
       }, true);
     </script>
-    <script src="./nucleus-fallback.js"></script>
+    <script>
+      window.addEventListener("message", function (e) {
+        if (!e.data || e.data.type !== "rru-search") return;
+        var term = String(e.data.q || "").trim();
+        if (term.length < 3) return;
+        var tries = 0;
+        var timer = setInterval(function () {
+          var box = document.querySelector("input[placeholder*='Search finding']");
+          tries += 1;
+          if (!box && tries < 20) return;
+          clearInterval(timer);
+          if (!box) return;
+          var set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+          set.call(box, term);
+          box.dispatchEvent(new Event("input", { bubbles: true }));
+        }, 300);
+      });
+    </script>
     <style>
       /* Force a classic bar. The 33k list otherwise draws a thumb too small to see. */
       #root aside .overflow-y-auto,

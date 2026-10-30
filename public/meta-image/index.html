@@ -676,17 +676,19 @@ function applyMetaQuery(term){
   const named = NAMES.find(n => low.includes(n.toLowerCase()) || low.includes(pretty(n).toLowerCase()));
   view = next;
   finding = named || "all";
-  q = raw;
+  q = named ? pretty(named) : "";
   const box = document.getElementById("q");
-  if (box) box.value = raw;
+  if (box) box.value = named ? pretty(named) : raw;
   cursor = 0;
   page = 1;
   results = null;
   if (view === "nih") rebuild();
   if (typeof syncChips === "function") syncChips();
   const sub = document.getElementById("sub");
-  if (sub) sub.textContent = "From this page: " + raw;
+  if (sub) sub.textContent = "Matched to the lecture: " + (named ? pretty(named) : raw);
   drawAll();
+  const hero = document.getElementById("hero");
+  if (hero) hero.scrollIntoView({ block: "center" });
 }
 window.addEventListener("message", (e) => {
   if (e.origin !== location.origin) return;

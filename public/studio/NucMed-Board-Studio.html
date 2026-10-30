@@ -13975,6 +13975,18 @@ try {
 })();
 
 (function bootFromQuery(){
+  function lectureFocus(raw){
+    const t = String(raw || "").toLowerCase();
+    if (/heart failure|congestive|\bchf\b|cardiomyopath|cardiomegaly/.test(t)) return "cardiomegaly";
+    if (/pulmonary edema|\bedema\b/.test(t)) return "edema";
+    if (/effusion/.test(t)) return "effusion";
+    if (/pneumonia/.test(t)) return "pneumonia";
+    if (/pneumothorax/.test(t)) return "pneumothorax";
+    if (/embolism/.test(t)) return "embolism";
+    if (/nodule/.test(t)) return "nodule";
+    if (/atelectasis/.test(t)) return "atelectasis";
+    return String(raw || "").split("|")[0].replace(/clinical medicine/ig, "").replace(/\s+/g, " ").trim();
+  }
   function applyStudioQuery(raw){
     const term = String(raw || "").replace(/\s+/g, " ").trim().slice(0, 140);
     if (term.length < 2) return;
@@ -13990,8 +14002,20 @@ try {
       renderRadReview();
     } else if (state.view === "metaimage") {
       const frame = document.getElementById("miFrame");
-      const send = () => { try { frame.contentWindow.postMessage({ type: "meta-search", q: term }, location.origin); } catch (e) {} };
-      if (frame) { frame.addEventListener("load", send); setTimeout(send, 600); }
+      const send = () => { try { frame.contentWindow.postMessage({ type: "meta-search", q: lectureFocus(term) }, location.origin); } catch (e) {} };
+      if (frame) { frame.addEventListener("load", send); setTimeout(send, 400); setTimeout(send, 1200); }
+    } else if (state.view === "academy") {
+      const focus = lectureFocus(term);
+      state.nbaQuery = focus === "cardiomegaly" || focus === "edema" ? "heart" : focus;
+      state.nbaSel = 0;
+      state.nbaMod = "ALL";
+      renderAcademy();
+      const box = document.getElementById("nbaSearch");
+      if (box) box.value = state.nbaQuery;
+    } else if (state.view === "rrultimate") {
+      const frame = document.getElementById("rruFrame");
+      const send = () => { try { frame.contentWindow.postMessage({ type: "rru-search", q: lectureFocus(term) === "cardiomegaly" ? "heart failure" : lectureFocus(term) }, location.origin); } catch (e) {} };
+      if (frame) { frame.addEventListener("load", send); setTimeout(send, 800); setTimeout(send, 1800); }
     }
   }
   window.addEventListener("message", (e) => {
