@@ -39,8 +39,10 @@ const BRIDGE = `(function(){
     try { u = new URL(raw, OWN + "/"); } catch (err) { return; }
     if (u.origin !== OWN && u.origin !== location.origin) return;
     if (/\.(mp4|webm|jpg|jpeg|png|svg|pdf|css|js|vtt)$/i.test(u.pathname)) return;
+    var next = u.pathname + u.search + u.hash;
+    if (a.getAttribute("href") !== next) a.setAttribute("href", location.origin + next);
     e.preventDefault();
-    e.stopPropagation();
+    e.stopImmediatePropagation();
     history.pushState(null, "", u.pathname + u.search + u.hash);
     window.dispatchEvent(new PopStateEvent("popstate"));
   }, true);
