@@ -8127,7 +8127,18 @@ function renderHjMed(){
   document.body.classList.remove("medb-full");
   document.body.classList.remove("atlas-open");
   const stage = $("#stage");
-  stage.innerHTML = `<iframe id="hjFrame" title="HJ Med" src="https://hj-med.vercel.app/" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" style="width:100%;height:100%;border:0;display:block;background:#0c1210"></iframe>`;
+  stage.innerHTML = `<iframe id="hjFrame" title="HJ Med" src="/hj" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" style="width:100%;height:100%;border:0;display:block;background:#0c1210"></iframe>`;
+  const row = document.getElementById("capRow");
+  if (row) row.innerHTML = "";
+  if (typeof CapRail !== "undefined") {
+    CapRail.last = "";
+    CapRail.topic = "";
+    CapRail.tail = "";
+  }
+  const rail = document.getElementById("capRail");
+  if (rail) rail.classList.remove("on");
+  const tag = rail && rail.querySelector(".cap-tag");
+  if (tag) tag.textContent = "Images";
   if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>HJ Med</b><span>Whole site inside Grok 11</span>`;
   if (typeof VidLift !== "undefined") { VidLift.box = null; VidLift.place(null); }
 }
