@@ -123,7 +123,141 @@
     return true;
   }
 
+  var META_HAND = {
+    ct: [
+      "/meta-image/films/ct-th-axi-10.webp", "/meta-image/films/ct-th-axi-20.webp",
+      "/meta-image/films/ct-th-axi-40.webp", "/meta-image/films/ct-th-axi-70.webp",
+      "/meta-image/films/ct-th-axi-100.webp", "/meta-image/films/ct-th-cor-40.webp",
+      "/meta-image/films/ct-lung-10.webp", "/meta-image/films/ct-lung-11.webp"
+    ],
+    mri: [
+      "/meta-image/films/mri-sag-06.webp", "/meta-image/films/mri-ax-09.webp",
+      "/meta-image/films/mri-ax-11b.webp", "/meta-image/films/mri-ax-11d.webp",
+      "/meta-image/films/mri-ax-7l.webp", "/meta-image/films/mri-cor-13.webp"
+    ],
+    pet: [
+      "/meta-image/films/pet-ax.webp", "/meta-image/films/pet-mip.webp",
+      "/meta-image/films/pet-p4a.webp", "/meta-image/films/pet-p5d.webp",
+      "/meta-image/films/pet-mip-chest.webp"
+    ],
+    abd: [
+      "/meta-image/films/ct-abd-00.webp",
+      "/meta-image/films/ct-abd-01.webp",
+      "/meta-image/films/ct-abd-02.webp"
+    ],
+    xr: [
+      "/meta-image/films/xpa-a.webp", "/meta-image/films/xpa-b.webp", "/meta-image/films/xpa-c.webp",
+      "/meta-image/films/x10-a.webp", "/meta-image/films/x10-b.webp", "/meta-image/films/x10-c.webp",
+      "/meta-image/films/xpna-a.webp", "/meta-image/films/xpna-b.webp", "/meta-image/films/xpna-c.webp",
+      "/meta-image/films/xlat-a.webp", "/meta-image/films/xlat-b.webp",
+      "/meta-image/films/xjh-a.webp", "/meta-image/films/xjh-b.webp"
+    ]
+  };
+
+  function metaPool(which) {
+    var tcia = root.META_TCIA || [];
+    var picked = [];
+    for (var i = 0; i < tcia.length; i++) {
+      var row = tcia[i];
+      if (!row || !row.src) continue;
+      var src = "/meta-image/" + String(row.src).replace(/^\//, "");
+      if (which === "ct" && row.modality === "ct" && row.anatomy === "chest") picked.push(src);
+      else if (which === "mri" && row.modality === "mri" && row.anatomy === "brain") picked.push(src);
+      else if (which === "pet" && row.modality === "pet") picked.push(src);
+    }
+    return picked.length ? picked : (META_HAND[which] || []);
+  }
+
+  function isHeadCt(f) {
+    return /head|brain|subdural|intracranial|convexity|skull|calvar|aneurysm|sinus|odontoid|facial|meningioma/.test(f);
+  }
+  function isChestCtText(f) {
+    return /chest|lung|pulmonary|mediastin|\bpe\b|nodule|pneumo|pneumonia|embolism/.test(f) && !isHeadCt(f);
+  }
+  function isAbdCtText(f) {
+    return /abdomen|liver|hepatic|kidney|renal|pancrea|bowel|spleen|adrenal|mesenter|\baorta\b|stone|\bhcc\b|lacerat|wilms/.test(f)
+      && !/acetabul|bladder|prostate|uterus|femoral|\bhip\b|knee|ankle|talus|toe|lisfranc|patella/.test(f);
+  }
+  function isBrainPetText(f) {
+    return /brain|skull|pituit|scalp|temporoparietal|cerebral|vertex|datscan|striatum/.test(f)
+      && !/node|neck|thyroid|chest|lung|liver|adrenal|pulmonary|mediastin/.test(f);
+  }
+
+  function metaFamily(finding, categoryId, kindOpt) {
+    var kind = kindOpt || studyKind(finding, categoryId);
+    var f = String(finding || "").toLowerCase();
+    if (kind === "muga" || kind === "pyp" || kind === "bone" || kind === "thyroid" || kind === "vq" || kind === "hida" || kind === "renal" || kind === "mpi" || kind === "us" || kind === "mammo" || kind === "pet-psma" || kind === "pet-dota") return "";
+    if (kind === "ct") {
+      if (isHeadCt(f)) return "";
+      if (/knee|ankle|talus|calcaneus|toe|lisfranc|patella|femoral|thigh|\bhip\b/.test(f) && !isAbdCtText(f) && !isChestCtText(f)) return "";
+      if (isChestCtText(f) && !isAbdCtText(f)) return "tcia:ct";
+      if (isAbdCtText(f) && !isChestCtText(f)) return "films:ct-abd";
+      if (isChestCtText(f)) return "tcia:ct";
+      if (isAbdCtText(f)) return "films:ct-abd";
+      return "";
+    }
+    if (kind === "mri") {
+      if (/knee|menisc|\bacl\b|patella|spine|lumbar|disc|shoulder|breast|cardiac|myocard|mrcp|choledocho|biliary/.test(f)) return "";
+      if (/brain|vertex|skull|pituit|orbit|convexity|seizure|meningioma|perineural|cerebral|glioblast/.test(f)) return "tcia:mri";
+      return "";
+    }
+    if (kind === "pet-fdg") {
+      if (isBrainPetText(f)) return "";
+      return "tcia:pet";
+    }
+    if (kind === "radiograph" || kind === "other") {
+      var chestXr = /chest|lung|pneumonia|\bcxr\b|portable|\brib\b/.test(f)
+        && !/\bct\b|\bmri\b|ultrasound|\bpet\b|\bfdg\b/.test(f)
+        && !/knee|ankle|patella|calcaneus|pelvis|\bhip\b|skull|spine|abdominal|abdomen|foot|toe|wrist|elbow/.test(f);
+      if (chestXr && (kind === "radiograph" || /pneumonia|\bcxr\b|radiograph|portable/.test(f))) return "films:xr";
+    }
+    return "";
+  }
+
+  function metaPlateFor(finding, stationId, categoryId, salt) {
+    var family = metaFamily(finding, categoryId, null);
+    if (!family) return "";
+    return family + ":" + Math.abs(Number(salt) || 0);
+  }
+
+  function metaTokenFits(kind, finding, file) {
+    var family = metaFamily(finding, "", kind);
+    if (!family) return false;
+    var raw = String(file || "").toLowerCase();
+    var got = raw.replace(/:\d+$/, "");
+    if (got === family) return true;
+    if (family === "tcia:ct" && (raw.indexOf("/meta-image/tcia/ct/") >= 0 || raw.indexOf("/meta-image/films/ct-th") >= 0 || raw.indexOf("/meta-image/films/ct-lung") >= 0)) return true;
+    if (family === "tcia:mri" && (raw.indexOf("/meta-image/tcia/mri/") >= 0 || raw.indexOf("/meta-image/films/mri-") >= 0)) return true;
+    if (family === "tcia:pet" && (raw.indexOf("/meta-image/tcia/pet/") >= 0 || raw.indexOf("/meta-image/films/pet-") >= 0)) return true;
+    if (family === "films:ct-abd" && raw.indexOf("/meta-image/films/ct-abd") >= 0) return true;
+    if (family === "films:xr" && /\/meta-image\/films\/x(pa|10|pna|lat|jh)/.test(raw)) return true;
+    return false;
+  }
+
+  function resolveMetaToken(token) {
+    var m = String(token || "").match(/^(tcia:ct|tcia:mri|tcia:pet|films:ct-abd|films:xr):(\d+)$/);
+    if (!m) return "";
+    var list = m[1] === "tcia:ct" ? metaPool("ct")
+      : m[1] === "tcia:mri" ? metaPool("mri")
+      : m[1] === "tcia:pet" ? metaPool("pet")
+      : m[1] === "films:ct-abd" ? META_HAND.abd
+      : META_HAND.xr;
+    if (!list.length) return "";
+    return list[Number(m[2]) % list.length];
+  }
+
+  function metaCaption(token) {
+    var t = String(token || "");
+    if (t.indexOf("tcia:ct:") === 0) return "Axial chest CT, lung window. LIDC-IDRI. CC BY 3.0. Not this row's scan.";
+    if (t.indexOf("tcia:mri:") === 0) return "Axial brain MRI. UPENN-GBM. CC BY 4.0. Not this row's scan.";
+    if (t.indexOf("tcia:pet:") === 0) return "Axial FDG PET, one slice from a whole-body series. FDG-PET-CT-Lesions. CC BY 4.0. Not this row's scan.";
+    if (t.indexOf("films:ct-abd:") === 0) return "Axial abdomen CT. Not this row's scan.";
+    if (t.indexOf("films:xr:") === 0) return "Chest radiograph from the Meta Image library. Not this row's scan.";
+    return "";
+  }
+
   function fileFits(kind, finding, file) {
+    if (metaTokenFits(kind, finding, file)) return true;
     if (kind === "muga" || kind === "other" || !kind) return false;
     var name = fileName(file);
     if (kind === "pyp") return name === "pyp-1.jpg";
@@ -287,10 +421,25 @@
     statedSuv: statedSuv,
     fileFits: fileFits,
     plateFor: plateFor,
+    metaPlateFor: metaPlateFor,
+    metaCaption: metaCaption,
+    resolveMetaToken: resolveMetaToken,
     publicQuery: publicQuery,
     modalityLabel: modalityLabel,
     buildDossier: buildDossier,
     attach: attach,
     STATUS: STATUS
   };
+
+  if (typeof window !== "undefined" && typeof fetch === "function" && !root.META_TCIA) {
+    root.__metaTciaP = fetch("/meta-image/tcia/catalog.json").then(function (res) {
+      return res.ok ? res.json() : [];
+    }).then(function (rows) {
+      root.META_TCIA = Array.isArray(rows) ? rows : [];
+      return root.META_TCIA;
+    }).catch(function () {
+      root.META_TCIA = [];
+      return [];
+    });
+  }
 })(typeof window !== "undefined" ? window : globalThis);

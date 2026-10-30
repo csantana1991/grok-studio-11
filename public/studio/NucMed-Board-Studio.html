@@ -2277,7 +2277,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
   </div>
 </div>
 <script src="stem-plates.js"></script>
-<script src="shared-case.js"></script>
+<script src="shared-case.js?v=metafill1"></script>
 <script>
 const COURSE = {
   title: "NucMed Board Studio",
@@ -3700,6 +3700,8 @@ function plateForRow(finding, stationId, categoryId, salt){
     const gated = SharedCase.plateFor(finding, categoryId, salt);
     if (kind === "muga") return "";
     if (kind === "pyp") return gated || "";
+    const meta = SharedCase.metaPlateFor ? SharedCase.metaPlateFor(finding, stationId, categoryId, salt) : "";
+    if (meta) return meta;
     if (gated) return gated;
     if (kind === "bone") return "bone-scan-wb.jpg";
     if (kind) return "";
@@ -3795,7 +3797,7 @@ function rrVerifyPlates(rows){
   return {ok, n:(rows||[]).length, missing: missing.slice(0,12)};
 }
 function rrGenerate(seed){
-  if (RR_CACHE.seed===seed&&RR_CACHE.rows&&RR_CACHE.v===14) return RR_CACHE.rows;
+  if (RR_CACHE.seed===seed&&RR_CACHE.rows&&RR_CACHE.v===15) return RR_CACHE.rows;
   const rng=rrMulberry(seed);const rows=[];let acc=100000;
   RR_CATS.forEach(cat=>{
     const pool=RR_POOLS[cat.id];
@@ -3820,7 +3822,7 @@ function rrGenerate(seed){
       rows.push({idx:rows.length,accession,mrn,age,sex,categoryId:cat.id,finding,stationId:st.id,stationName:st.name,slice,suv,status,priority,acgme:cat.acgme,date,search,plate});
     }
   });
-  RR_CACHE={seed,rows,v:14}; rrFixStations(rows); return rows;
+  RR_CACHE={seed,rows,v:15}; rrFixStations(rows); return rows;
 }
 function rrRunAssertions(rows){
   const out=[]; const hits=Array(101).fill(null); let contig=true;
@@ -3869,6 +3871,10 @@ Object.assign(window.DRIMG, {
   "distal_limb_bone.jpg": "/resource/distal_limb_bone.jpg"
 });
 function plateLabel(name){
+  if (window.SharedCase && SharedCase.metaCaption) {
+    const metaCap = SharedCase.metaCaption(name);
+    if (metaCap) return metaCap;
+  }
   const labels = {
     "nm-mag3.jpg":"MAG3 renogram — kidneys and bladder over time",
     "mri-brain-t2.jpg":"T2-weighted brain MRI",
@@ -8559,7 +8565,13 @@ const ATLAS10 = {
 };
 
 function plateSrc(name) {
-  return resolveAsset("assets/dr/" + name) || resolveAsset("assets/thumbs/" + name) || ("assets/thumbs/" + name);
+  const n = String(name || "");
+  if (!n) return "";
+  if (/^(https?:|\/|data:|nih:)/i.test(n)) return n;
+  if ((n.indexOf("tcia:") === 0 || n.indexOf("films:") === 0) && window.SharedCase && SharedCase.resolveMetaToken) {
+    return SharedCase.resolveMetaToken(n) || "";
+  }
+  return resolveAsset("assets/dr/" + n) || resolveAsset("assets/thumbs/" + n) || ("assets/thumbs/" + n);
 }
 
 function atlasScanOk(key, cap, src) {
@@ -9333,6 +9345,10 @@ function applyPlateCrop(img, enc) {
 }
 
 function scoreLocalName(name, enc){
+  if (window.SharedCase && /^(tcia:|films:)/.test(String(name || ""))) {
+    const kind = SharedCase.studyKind(enc && enc.finding, enc && enc.categoryId);
+    if (SharedCase.fileFits(kind, enc && enc.finding, name)) return 48;
+  }
   const a = anatomyOf(enc);
   const hay = String(name || "").toLowerCase();
   const finding = String((enc && enc.finding) || "").toLowerCase();
@@ -11789,6 +11805,7 @@ function raMetaPack(query){
   const chest = /chest|thorax|lung|pulmonary|pneumonia/.test(q);
   const abd = /abdom|liver|pelvis/.test(q);
   const xr = /x-ray|xray|radiograph/.test(q);
+  const knee = /knee|menisc|\bacl\b|spine|lumbar/.test(q);
   const ranked = RA_META_FILMS.slice().sort((a,b) => raMetaScore(q, b) - raMetaScore(q, a) || a.src.localeCompare(b.src));
   const used = {};
   const picked = [];
@@ -11802,17 +11819,28 @@ function raMetaPack(query){
       got++;
     });
   }
-  if (head || mri) take(f => f.anatomy === "brain" && /sagittal/i.test(f.caption), 1);
-  if (head || mri) take(f => f.anatomy === "brain" && /axial/i.test(f.caption), 2);
-  if (nm) take(f => f.modality === "pet" && /mip|whole-body/i.test(f.caption), 1);
-  if (nm) take(f => f.modality === "pet" && /fused/i.test(f.caption), 1);
-  if (nm) take(f => f.modality === "pet", 1);
-  if (ct && head) take(f => f.modality === "ct" && (f.anatomy === "lung" || f.anatomy === "chest"), 2);
-  else if (ct) take(f => f.modality === "ct", 2);
-  if (chest) take(f => f.modality === "xray" || f.anatomy === "lung" || f.anatomy === "chest", 2);
-  if (abd) take(f => f.anatomy === "abdomen" || f.anatomy === "liver", 2);
-  if (xr) take(f => f.modality === "xray", 3);
-  ranked.forEach(film => { if (picked.length < 6 && !used[film.src]) { used[film.src] = 1; picked.push(film); } });
+  if ((head || mri) && !knee) take(f => f.anatomy === "brain" && /sagittal/i.test(f.caption), 1);
+  if ((head || mri) && !knee) take(f => f.anatomy === "brain" && /axial/i.test(f.caption), 2);
+  if (nm && !(/brain|head|cerebr/.test(q) && /\bpet\b|\bfdg\b/.test(q) && !/chest|lung|liver|node|body/.test(q))) {
+    take(f => f.modality === "pet" && /mip|whole-body/i.test(f.caption), 1);
+    take(f => f.modality === "pet" && /fused/i.test(f.caption), 1);
+    take(f => f.modality === "pet", 1);
+  }
+  if (ct && !head) take(f => f.modality === "ct", 2);
+  if (chest && !head) take(f => f.modality === "xray" || f.anatomy === "lung" || f.anatomy === "chest", 2);
+  if (abd && !head) take(f => f.anatomy === "abdomen" || f.anatomy === "liver", 2);
+  if (xr && !head) take(f => f.modality === "xray", 3);
+  ranked.forEach(film => {
+    if (picked.length >= 6 || used[film.src]) return;
+    if (head && ct && !mri) return;
+    if (knee && mri) return;
+    if (ct && film.modality !== "ct") return;
+    if (mri && film.modality !== "mri") return;
+    if (xr && film.modality !== "xray") return;
+    if (nm && film.modality !== "pet" && film.modality !== "xray") return;
+    used[film.src] = 1;
+    picked.push(film);
+  });
   const top = picked.slice(0, 8);
   const figures = top.map((film, i) => ({
     id: "meta-"+i,
@@ -11902,6 +11930,58 @@ async function raNihFigures(query){
   }));
   return figures.filter(Boolean);
 }
+function raTciaPack(query){
+  const rows = (typeof window !== "undefined" && window.META_TCIA) || [];
+  if (!rows.length) return { figures: [], previews: [] };
+  const q = String(query || "").toLowerCase();
+  const head = /head|brain|cerebr|subdural|hematoma|intracran|skull|meningioma|glioblast|\bgbm\b/.test(q);
+  const knee = /knee|menisc|\bacl\b|spine|lumbar/.test(q);
+  const ct = /\bct\b|computed/.test(q) && !/\bmri\b/.test(q);
+  const mri = /\bmri\b|magnetic|flair/.test(q);
+  const pet = /\bpet\b|\bfdg\b/.test(q);
+  const brainPet = pet && head && !/chest|lung|liver|node|body/.test(q);
+  const abdOnly = /abdom|liver|pelvis|kidney|spleen|pancrea/.test(q) && !/chest|lung|pulmon|nodule/.test(q);
+  let pool = [];
+  if (mri && head && !knee) pool = rows.filter(r => r.modality === "mri" && r.anatomy === "brain");
+  else if (ct && !head && !abdOnly) pool = rows.filter(r => r.modality === "ct" && r.anatomy === "chest");
+  else if (pet && !brainPet && !/psma|dotatate|prostate/.test(q)) pool = rows.filter(r => r.modality === "pet");
+  if (!pool.length) return { figures: [], previews: [] };
+  let h = 0;
+  for (let i = 0; i < q.length; i++) h = (h * 33 + q.charCodeAt(i)) >>> 0;
+  const step = Math.max(1, Math.floor(pool.length / 6));
+  const picks = [];
+  for (let n = 0; n < 6; n++) picks.push(pool[(h + n * step) % pool.length]);
+  const srcOf = film => "/meta-image/" + String(film.src || "").replace(/^\//, "");
+  const capOf = film => (film.shows || "Meta Image film") + " " + (film.license || "") + ". Not this search's scan.";
+  return {
+    figures: picks.map((film, i) => ({
+      id: "tcia-up-" + i,
+      title: film.shows || "Meta Image",
+      caption: capOf(film),
+      imageUrl: srcOf(film),
+      articleUrl: film.page || srcOf(film),
+      pmcid: film.credit || "TCIA",
+      modality: film.modality,
+      badge: "Meta Image · " + String(film.modality || "").toUpperCase(),
+      meta: true
+    })),
+    previews: picks.map((film, i) => ({
+      id: "tcia-prev-" + i,
+      title: film.shows || "Meta Image",
+      collection: "Meta Image",
+      modality: String(film.modality || "").toUpperCase(),
+      modalities: [String(film.modality || "").toUpperCase()],
+      bodyPart: capOf(film),
+      imageCount: 1,
+      previewUrl: srcOf(film),
+      fullStudyUrl: film.page || srcOf(film),
+      seriesUid: "",
+      studyUid: film.src,
+      meta: true,
+      credit: (film.license || "") + " · " + (film.credit || "")
+    }))
+  };
+}
 async function raSearch(query, withOn){
   const t0 = Date.now();
   const [pmc, tcia, on] = await Promise.all([
@@ -11909,21 +11989,25 @@ async function raSearch(query, withOn){
     raTimeout(raSearchTcia(query), 8000, { previews: [], studies: [], status: { source:"tcia", state:"error", count:0, latencyMs:8000, message:"timeout" } }),
     withOn ? raTimeout(raSearchOpenNeuro(query), 6000, { studies: [], status: { source:"openneuro", state:"error", count:0, latencyMs:6000 } }) : Promise.resolve({ studies: [], status: { source:"openneuro", state:"disabled", count:0, latencyMs:0, message:"Off" } })
   ]);
+  if (!window.META_TCIA && window.__metaTciaP) {
+    try { await raTimeout(window.__metaTciaP, 4000, []); } catch (e) {}
+  }
   const packed = raMetaPack(query);
+  const uploaded = raTciaPack(query);
   const nihFigs = await raNihFigures(query);
-  const baseFigs = (pmc.figures && pmc.figures.length) ? pmc.figures : packed.figures;
-  const liveFigs = nihFigs.concat(baseFigs).slice(0, 12);
-  const livePrev = (tcia.previews && tcia.previews.length) ? tcia.previews : packed.previews;
+  const liveFigs = uploaded.figures.concat(nihFigs).concat(packed.figures).concat(pmc.figures || []).slice(0, 12);
+  const livePrev = uploaded.previews.concat(packed.previews).concat((tcia.previews) || []).slice(0, 12);
   const providers = [pmc.status, tcia.status, on.status];
-  if (nihFigs.length || !(pmc.figures && pmc.figures.length) || !(tcia.previews && tcia.previews.length)) {
-    providers.push({ source:"meta", state:"ok", count: nihFigs.length || packed.figures.length, message: nihFigs.length ? "NIH ChestX-ray14 via Meta Image" : "Meta Image library" });
+  const metaCount = uploaded.figures.length + nihFigs.length + packed.figures.length;
+  if (metaCount) {
+    providers.push({ source:"meta", state:"ok", count: metaCount, message: uploaded.figures.length ? "Uploaded Meta Image films" : (nihFigs.length ? "NIH ChestX-ray14 via Meta Image" : "Meta Image library") });
   }
   return {
     query,
     groups: {
       articleFigures: liveFigs,
       studyPreviews: livePrev,
-      fullStudies: tcia.studies.concat(on.studies)
+      fullStudies: (tcia.studies || []).concat(on.studies || [])
     },
     providers,
     meta: { durationMs: Date.now()-t0 }
