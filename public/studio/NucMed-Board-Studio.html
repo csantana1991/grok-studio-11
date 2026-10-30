@@ -5417,11 +5417,7 @@ const CapRail = {
     const key = "live|" + q + "|" + off;
     if (this.liveKey === key) return;
     this.liveKey = key;
-    this.line = String(text || "");
     const rail = document.getElementById("capRail");
-    if (rail) rail.classList.add("on");
-    const said = document.getElementById("hjSaid");
-    if (said && document.activeElement !== said) said.value = this.line.replace(/\s+/g, " ").trim().slice(0, 90);
     const add = (src, cap) => { if (src) this.add(src, cap); };
     const paintTop = (pages) => {
       const host = document.getElementById("wikiTop");
@@ -5470,13 +5466,21 @@ const CapRail = {
   keepFollowing() {
     if (this._follow) return;
     this.wikiOff = 0;
+    this._spin = 0;
     this._follow = setInterval(() => {
-      const line = this.line || this.topic;
-      if (!line) return;
-      this.wikiOff = (this.wikiOff || 0) + 6;
+      if (this._busy) return;
+      const box = document.getElementById("hjSaid");
+      const base = this.line || this.topic || (box && box.value) || "";
+      if (!base || base.length < 3) return;
+      const words = this.queryOf(base).split(/\s+/).filter(Boolean);
+      this._spin = (this._spin || 0) + 1;
+      const word = words.length ? words[this._spin % words.length] : base;
+      const q = this._spin % 2 === 0 ? base : word;
+      this.wikiOff = ((this.wikiOff || 0) + 4) % 48;
       this.liveKey = "";
-      this.live(line, this.wikiOff);
-    }, 5000);
+      this._busy = true;
+      Promise.resolve(this.live(q, this.wikiOff)).finally(() => { this._busy = false; });
+    }, 2200);
   },
   scrub(lines, title) {
     const count = lines && lines.length ? lines.length : 0;
@@ -14184,6 +14188,7 @@ window.addEventListener("message", (e) => {
     if (tag) tag.textContent = String(data.text).replace(/\s+/g, " ").trim().slice(0, 48);
     CapRail.note(data.text);
     CapRail.live(data.text);
+    CapRail.keepFollowing();
     CapRail.atlas(data.text);
     SideFilm.pull(data.text);
     if (!CapRail.cues.length) CapRail.scrub([], data.text);
@@ -14210,7 +14215,7 @@ window.addEventListener("message", (e) => {
     ["wikiTop", "capRail"].forEach((id) => {
       const el = document.getElementById(id);
       if (!el || el.scrollWidth <= el.clientWidth + 12) return;
-      el.scrollLeft += 0.7;
+      el.scrollLeft += 1.4;
       if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) el.scrollLeft = 0;
     });
     requestAnimationFrame(step);
