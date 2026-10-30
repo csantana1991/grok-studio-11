@@ -2182,14 +2182,20 @@ body.hj-full #liveLabel {
 body.hj-full #hjSaid { flex:1; min-width:0; height:32px; margin:0; border:0; border-radius:999px; background:#f7f4ee; color:#1a1408; padding:0 12px; font:inherit; }
 #wikiTop { display:none; }
 #wikiTop.on {
-  display:flex; gap:8px; align-items:center; position:fixed; top:48px; left:0; right:0; height:104px;
-  z-index:790; overflow-x:auto; background:#0c1210; padding:8px 10px;
+  display:flex; gap:8px; align-items:center; position:fixed; top:48px; left:0; right:0; height:78px;
+  z-index:790; overflow-x:auto; overflow-y:hidden; background:#0c1210; padding:6px 10px;
+  scrollbar-width: none;
 }
-#wikiTop button { flex:0 0 auto; display:flex; flex-direction:column; gap:4px; width:132px; border:0; background:transparent; color:#e8f2f7; cursor:pointer; padding:0; text-align:left; }
-#wikiTop img { width:132px; height:72px; object-fit:cover; border-radius:6px; background:#07141f; }
-#wikiTop span { font-size:11px; line-height:1.2; max-height:2.4em; overflow:hidden; }
+#wikiTop button { flex:0 0 auto; width:120px; border:0; background:transparent; padding:0; }
+#wikiTop img { width:120px; height:66px; object-fit:cover; border-radius:6px; background:#07141f; }
+#wikiTop span, #wikiTop b[data-q] { display:none; }
 body.hj-full.wiki-top .work,
-body.medb-full.wiki-top .work { top:152px !important; }
+body.medb-full.wiki-top .work { top:126px !important; bottom:92px !important; }
+body.hj-full #capRail,
+body.medb-full #capRail { height:84px !important; z-index:400; pointer-events:auto; }
+body.hj-full .work,
+body.hj-full.film-widget .work,
+body.medb-full .work { bottom:92px !important; }
 body.hj-full .hj-exitbar button { padding:6px 10px; font-size:13px; white-space:nowrap; }
 @media (max-width: 700px) {
   body.hj-full .hj-exitbar span { display:none !important; }
@@ -2243,7 +2249,7 @@ body.medb-full .stage {
 body.hj-full #capRail,
 body.medb-full #capRail {
   display: flex !important;
-  bottom: 0; z-index: 400; height: 118px;
+  bottom: 0; z-index: 400; height: 96px !important; overflow: hidden !important;
   background: #f7f4ee; border-top: 1px solid #e4dcc8;
 }
 body.hj-full #capRail .cap-tag,
@@ -2253,7 +2259,7 @@ body.medb-full #capRow button { background: transparent; color: #1a1408; border:
 body.hj-full #capRow img,
 body.medb-full #capRow img { border: 0; border-radius: 6px; background: transparent; }
 body.hj-full .work,
-body.hj-full.film-widget .work { bottom: 118px !important; }
+body.hj-full.film-widget .work { bottom: 92px !important; }
 body.medb-full #capPop { bottom: 84px; }
 #capRail {
   display: none; position: fixed; left: 0; right: 0; bottom: 52px; z-index: 86;
@@ -2278,13 +2284,13 @@ body.hj-full .work { left: 210px !important; right: 210px !important; bottom: 86
 body.hj-full #filmLeft,
 body.hj-full #filmRight { display: none !important; }
 body.hj-full .work,
-body.hj-full.film-widget .work { left: 0 !important; right: 0 !important; bottom: 118px !important; }
+body.hj-full.film-widget .work { left: 0 !important; right: 0 !important; bottom: 104px !important; }
 body.hj-full .stage,
 body.hj-full #hjFrame { width: 100% !important; max-width: none !important; }
 body.medb-full #filmLeft,
 body.medb-full #filmRight { display: none !important; }
 body.medb-full .work,
-body.medb-full.film-widget .work { left: 0 !important; right: 0 !important; bottom: 118px !important; }
+body.medb-full.film-widget .work { left: 0 !important; right: 0 !important; bottom: 104px !important; }
 #filmLeft button { display: block; width: 100%; padding: 0 0 6px; border: 0; border-radius: 10px; background: #123044; color: #e8f2f7; text-align: left; cursor: pointer; }
 #filmLeft img { width: 100%; height: 120px; object-fit: cover; border-radius: 10px 10px 0 0; display: block; background: #000; }
 #filmLeft span { display: block; max-height: 2.6em; overflow: hidden; padding: 4px 6px 0; font-size: 11px; line-height: 1.3; }
@@ -14175,6 +14181,18 @@ window.addEventListener("message", (e) => {
   document.body.classList.toggle("rru-open", down);
   if (frame) frame.style.height = down ? Math.max(1700, Number(e.data.height) || 1700) + "px" : "";
 });
+(function keepRailsMoving() {
+  const step = () => {
+    ["wikiTop", "capRail"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el || el.scrollWidth <= el.clientWidth + 12) return;
+      el.scrollLeft += 0.7;
+      if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) el.scrollLeft = 0;
+    });
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+})();
 document.getElementById("capPopX").onclick = () => document.getElementById("capPop").classList.remove("on");
 window.addEventListener("message", (e) => {
   if (e.origin !== location.origin || !e.data) return;
