@@ -1226,6 +1226,22 @@ body.dock-min #atlasFilm { display: none !important; }
 body.dock-min { --player-h: 52px; }
 body.dock-min #playerDock { height: 52px !important; max-height: 52px !important; overflow: hidden; }
 body.dock-min #dockHandle { background: #0f766e; }
+#miDockBtn {
+  border: 0; border-radius: 999px; background: #1d4ed8; color: #fff;
+  font-weight: 800; font-size: 12px; padding: 6px 12px; cursor: pointer; white-space: nowrap;
+}
+#miDockBtn.on { outline: 2px solid #d7b56d; }
+#miRestore {
+  border: 0; border-radius: 999px; background: #d7b56d; color: #1a1408;
+  font-weight: 800; font-size: 12px; padding: 4px 10px; cursor: pointer; white-space: nowrap;
+}
+#metaSide { display: none; min-height: 0; }
+body.meta-side .sidebar { display: flex; flex-direction: column; overflow: hidden; }
+body.meta-side .brand,
+body.meta-side .progress-wrap,
+body.meta-side #nav { display: none !important; }
+body.meta-side #metaSide { display: flex; flex: 1; min-height: 0; }
+#metaSide iframe { width: 100%; height: 100%; border: 0; background: #0a0a0a; flex: 1; }
 #winBar {
   display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
   padding: 4px 8px; background: #0b1c2c; color: #fff;
@@ -2086,9 +2102,9 @@ body.nav-min .nav-item .meta { display: none !important; }
 body.nav-min .nav-item { justify-content: center; padding: 8px 4px; }
 body.nav-min .sidebar { overflow: hidden; }
 body.view-rru #playerDock,
-body.view-rru #winBar,
 body.view-rru #dockHandle { display: none !important; }
-body.view-rru .main { grid-template-rows: auto minmax(0,1fr) !important; }
+body.view-rru #winBar { display: flex !important; }
+body.view-rru .main { grid-template-rows: auto minmax(0,1fr) auto !important; }
 body.view-rru .work,
 body.view-rru .stage {
   height: 100% !important;
@@ -2145,6 +2161,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
   <div class='brand'><div class='panel-bar' data-panel='nav'><b>Course map</b><span><button type='button' data-act='min'>–</button><button type='button' data-act='max'>□</button></span></div><h1>GROK <span>studio 11</span></h1><p>Main app · Academy, RAD REVIEW, and Meta Image are widgets</p></div>
   <div class='progress-wrap'><div class='progress-label'><span>Progress</span><span id='barLabel'>0 / 0</span></div><div class='bar'><i id='barFill'></i></div></div>
   <nav class='nav' id='nav'></nav>
+  <div id="metaSide"><iframe id="metaSideFrame" title="Meta Image" src="about:blank"></iframe></div>
 </aside>
 <div class="split-v" id="colSplit" title="Drag to resize course map"></div>
 <section class='main'>
@@ -2205,7 +2222,9 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
   <div id="dockHandle" title="New layout: click to hide Windows">▾ hide bottom · click</div>
   <div id="winBar" aria-label="Open windows">
     <b id="winHide" title="Click to hide this bar and the image strip">Windows · hide</b>
+    <button type="button" id="miRestore" hidden title="Put the widget names back in the left column">Widgets</button>
     <div id="winDock"></div>
+    <button type="button" id="miDockBtn" title="Open Meta Image in the left column. A click on this page searches that library.">Meta Image</button>
     <button type="button" id="tbGear" title="Taskbar customization">⚙</button>
     <div id="tbPanel" hidden>
       <strong>Taskbar customization</strong>
@@ -12602,7 +12621,7 @@ function goRadUltimate() {
 
 
 function goMetaImage() {
-  window.location.assign("/meta-image/index.html?v=tcia2517");
+  window.location.assign("/meta-image/index.html?v=112120");
 }
 function renderMetaImage(){
   const phone = window.matchMedia("(max-width: 980px)").matches || /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
@@ -12624,13 +12643,13 @@ function renderMetaImage(){
           <button type="button" data-act="max">□</button>
         </span>
       </div>
-      <iframe id="miFrame" title="Meta Image" src="/meta-image/index.html?v=tcia2517" style="flex:1;width:100%;height:100%;min-height:0;border:0;background:#0a0a0a"></iframe>
+      <iframe id="miFrame" title="Meta Image" src="/meta-image/index.html?v=112120" style="flex:1;width:100%;height:100%;min-height:0;border:0;background:#0a0a0a"></iframe>
     </section>`;
   if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>Meta Image</b><span>Named films under each card</span>`;
   bindPanelChrome(stage);
   const frame = document.getElementById("miFrame");
   const reload = document.getElementById("miReload");
-  if (reload && frame) reload.onclick = () => { frame.src = "/meta-image/index.html?v=tcia2517"; };
+  if (reload && frame) reload.onclick = () => { frame.src = "/meta-image/index.html?v=112120"; };
   const full = document.getElementById("miOpenFull");
   if (full) full.onclick = (e) => { e.preventDefault(); goMetaImage(); };
 }
@@ -13006,4 +13025,75 @@ window.NMBState = state;
 try { if (typeof renderNav === "function") renderNav(); if (typeof updateBar === "function") updateBar(); } catch (e) {}
 </script>
 <script src="/library/ui.js" defer></script>
+<script>
+const MetaSide = {
+  pending: "",
+  on: false,
+  term(text) {
+    const t = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+    if (t.length < 3) return "";
+    const named = ["pneumonia","atelectasis","cardiomegaly","consolidation","edema","effusion","emphysema","fibrosis","hernia","infiltration","mass","nodule","pneumothorax","pleural"];
+    const hit = named.find(n => t.indexOf(n) >= 0);
+    let kind = "";
+    if (/\bmri\b|flair/.test(t)) kind = "mri";
+    else if (/pet|fdg|psma|spect/.test(t)) kind = "pet";
+    else if (/\bct\b|hrct/.test(t)) kind = "ct";
+    if (hit && kind) return kind + " " + hit;
+    if (hit) return hit;
+    if (kind) return kind + " " + t.slice(0, 48);
+    return t.slice(0, 80);
+  },
+  toggle(force) {
+    this.on = force == null ? !this.on : !!force;
+    document.body.classList.toggle("meta-side", this.on);
+    const btn = document.getElementById("miDockBtn");
+    const back = document.getElementById("miRestore");
+    if (btn) btn.classList.toggle("on", this.on);
+    if (back) back.hidden = !this.on;
+    const frame = document.getElementById("metaSideFrame");
+    if (this.on && frame && frame.getAttribute("src") === "about:blank") {
+      frame.src = "/meta-image/index.html?v=112121&embed=1";
+    }
+    try { localStorage.setItem("meta-side", this.on ? "1" : "0"); } catch (e) {}
+  },
+  search(text) {
+    const q = this.term(text);
+    if (!q) return;
+    this.pending = q;
+    if (!this.on) this.toggle(true);
+    const frame = document.getElementById("metaSideFrame");
+    if (!frame || frame.dataset.ready !== "1" || !frame.contentWindow) return;
+    try { frame.contentWindow.postMessage({ type: "meta-search", q: q }, location.origin); } catch (e) {}
+  }
+};
+document.getElementById("miDockBtn").onclick = () => MetaSide.toggle();
+document.getElementById("miRestore").onclick = () => MetaSide.toggle(false);
+window.addEventListener("message", (e) => {
+  if (e.origin !== location.origin || !e.data) return;
+  if (e.data.type === "meta-ready") {
+    const frame = document.getElementById("metaSideFrame");
+    if (frame) frame.dataset.ready = "1";
+    if (MetaSide.pending) MetaSide.search(MetaSide.pending);
+  }
+  if (e.data.type === "studio-image" && document.body.classList.contains("meta-side")) MetaSide.search(e.data.q);
+});
+document.addEventListener("click", (e) => {
+  if (!document.body.classList.contains("meta-side")) return;
+  if (e.target.closest("#sidebar, #winBar, #miDockBtn, #miRestore")) return;
+  const img = e.target.closest("img");
+  const row = e.target.closest(".rr-row, .film-card, .case-th, figure, [data-ra]");
+  let text = "";
+  if (img) text = img.alt || img.title || (img.closest("figure, button, article") || {}).innerText || "";
+  else if (row) text = row.innerText || "";
+  if (text.replace(/\s+/g, " ").trim().length > 2) MetaSide.search(text);
+}, true);
+if (typeof liveSearchTerm === "function") {
+  const prevLive = liveSearchTerm;
+  liveSearchTerm = function (term) {
+    try { if (document.body.classList.contains("meta-side")) MetaSide.search(term); } catch (e) {}
+    return prevLive.apply(this, arguments);
+  };
+}
+try { if (localStorage.getItem("meta-side") === "1") MetaSide.toggle(true); } catch (e) {}
+</script>
 </body></html>

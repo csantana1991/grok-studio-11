@@ -34,6 +34,8 @@ export const Route = createFileRoute("/api/pmc/match")({
               : modality === "pet"
                 ? { q: "pet", cap: 64440 }
                 : { q: "computed tomography", cap: 112120 };
+          const it = (url.searchParams.get("it") || "").replace(/\s+/g, " ").trim().slice(0, 120);
+          const specQ = it || spec.q;
           const n = Math.min(36, Math.max(1, Number(url.searchParams.get("n") || 36) || 36));
           let m = Math.max(1, Number(url.searchParams.get("m") || 1) || 1);
           if (m > spec.cap) m = ((m - 1) % spec.cap) + 1;
@@ -41,7 +43,7 @@ export const Route = createFileRoute("/api/pmc/match")({
           try {
             const search =
               "https://openi.nlm.nih.gov/api/search?coll=pmc&query=" +
-              encodeURIComponent(spec.q) +
+              encodeURIComponent(specQ) +
               "&m=" +
               m +
               "&n=" +
