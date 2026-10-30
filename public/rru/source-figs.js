@@ -292,75 +292,95 @@
     el.addEventListener('pointercancel', up)
   }
 
+  function emptyNote() {
+    var nodes = document.querySelectorAll('p')
+    for (var i = 0; i < nodes.length; i++) {
+      if ((nodes[i].textContent || '').indexOf('No published figure matched') >= 0) return nodes[i]
+    }
+    return null
+  }
+
+  function placeMeta(host) {
+    var note = emptyNote()
+    var section = note ? note.closest('section') : null
+    if (!note || !section) {
+      host.style.display = 'none'
+      return
+    }
+    var bounds = section.getBoundingClientRect()
+    var top = note.getBoundingClientRect().top
+    if (bounds.width < 40 || bounds.bottom < 40) {
+      host.style.display = 'none'
+      return
+    }
+    host.style.display = 'block'
+    host.style.position = 'fixed'
+    host.style.left = Math.max(0, bounds.left) + 'px'
+    host.style.top = Math.max(bounds.top + 36, top - 2) + 'px'
+    host.style.width = bounds.width + 'px'
+    host.style.maxHeight = Math.max(96, bounds.bottom - top - 4) + 'px'
+    host.style.overflow = 'auto'
+    host.style.zIndex = '30'
+    host.style.boxSizing = 'border-box'
+  }
+
   function paintMeta() {
     var row = sourceRow()
     if (!row) return
-    var section = row.closest('section')
-    var scroll = section ? section.lastElementChild : null
-    if (!scroll) return
     loadMeta().then(function (films) {
-      var live = sourceRow()
-      if (!live) return
-      var sectionNow = live.closest('section')
-      var box = sectionNow ? sectionNow.lastElementChild : null
-      if (!box) return
+      if (!sourceRow()) return
       var blob = sideBlob()
       var match = matchFilms(films, blob)
       var key = (match.modality || 'any') + '|' + (match.anatomy || '') + '|' + query()
       var host = document.getElementById('rrMetaLib')
-      if (host && host.dataset.key === key && box.contains(host)) return
       if (!host) {
         host = document.createElement('div')
         host.id = 'rrMetaLib'
+        document.body.appendChild(host)
       }
-      host.dataset.key = key
-      host.replaceChildren()
-      host.style.cssText = 'margin:0;padding:8px;background:#0a0a0a;color:#f4f1ea;border-top:1px solid #333'
-      var title = document.createElement('p')
-      title.style.cssText = 'margin:0 0 4px;font:700 12px/1.3 sans-serif;color:#ffe14a'
-      var label = match.modality === 'pet' ? 'PET' : match.modality === 'mri' ? 'MRI' : match.modality === 'ct' ? 'CT' : match.modality === 'xray' ? 'X-ray' : 'related'
-      title.textContent = 'Meta Image · ' + (match.films.length ? label + ' films matched to this case' : 'no film for this study type')
-      var where = document.createElement('p')
-      where.style.cssText = 'margin:0 0 6px;font:11px/1.3 sans-serif;color:#9a958c'
-      where.textContent = match.anatomy
-        ? 'Station ' + match.anatomy + '. Drag to see each different film. These are reference films, not this accession.'
-        : 'Drag to see each different film. These are reference films, not this accession.'
-      host.appendChild(title)
-      host.appendChild(where)
-      if (!match.films.length) {
-        var empty = document.createElement('p')
-        empty.style.cssText = 'margin:0;font:12px/1.35 sans-serif;color:#fff'
-        empty.textContent = 'The library has X-ray, CT, MRI, and PET. This case did not match one of those.'
-        host.appendChild(empty)
-      } else {
-        var rail = document.createElement('div')
-        rail.className = 'rail'
-        rail.style.cssText = 'display:flex;gap:8px;overflow-x:auto;cursor:grab;padding-bottom:4px'
-        match.films.forEach(function (film) {
-          var fig = document.createElement('figure')
-          fig.style.cssText = 'margin:0;flex:0 0 78%;max-width:220px'
-          var img = document.createElement('img')
-          img.src = film.src
-          img.alt = film.caption
-          img.draggable = false
-          img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;background:#000;border:1px solid #333;border-radius:10px;display:block'
-          var cap = document.createElement('figcaption')
-          cap.textContent = film.caption
-          cap.style.cssText = 'margin-top:4px;font:12px/1.3 sans-serif;color:#f4f1ea'
-          fig.appendChild(img)
-          fig.appendChild(cap)
-          rail.appendChild(fig)
-        })
-        bindRail(rail)
-        host.appendChild(rail)
+      if (host.dataset.key !== key) {
+        host.dataset.key = key
+        host.replaceChildren()
+        host.style.background = '#000'
+        host.style.color = '#f4f1ea'
+        host.style.padding = '8px'
+        host.style.borderTop = '1px solid #333'
+        var title = document.createElement('p')
+        title.style.cssText = 'margin:0 0 4px;font:700 12px/1.3 sans-serif;color:#ffe14a'
+        var label = match.modality === 'pet' ? 'PET' : match.modality === 'mri' ? 'MRI' : match.modality === 'ct' ? 'CT' : match.modality === 'xray' ? 'X-ray' : 'related'
+        title.textContent = match.films.length
+          ? 'Meta Image · ' + match.films.length + ' ' + label + ' films for this case'
+          : 'Meta Image · no film for this study type'
+        var where = document.createElement('p')
+        where.style.cssText = 'margin:0 0 6px;font:11px/1.3 sans-serif;color:#d6d3cd'
+        where.textContent = match.anatomy
+          ? 'Matched to ' + label + ' · ' + match.anatomy + '. Drag sideways.'
+          : 'Drag sideways to see each film.'
+        host.appendChild(title)
+        host.appendChild(where)
+        if (match.films.length) {
+          var rail = document.createElement('div')
+          rail.style.cssText = 'display:flex;gap:8px;overflow-x:auto;cursor:grab'
+          match.films.forEach(function (film) {
+            var fig = document.createElement('figure')
+            fig.style.cssText = 'margin:0;flex:0 0 112px'
+            var img = document.createElement('img')
+            img.src = film.src
+            img.alt = film.caption
+            img.draggable = false
+            img.style.cssText = 'width:112px;height:112px;object-fit:cover;background:#000;border:1px solid #444;display:block'
+            var cap = document.createElement('figcaption')
+            cap.textContent = film.caption
+            cap.style.cssText = 'margin-top:4px;font:12px/1.3 sans-serif;color:#fff'
+            fig.appendChild(img)
+            fig.appendChild(cap)
+            rail.appendChild(fig)
+          })
+          bindRail(rail)
+          host.appendChild(rail)
+        }
       }
-      if (host.parentElement !== box) box.insertBefore(host, box.firstChild)
-      var sectionEl = box.closest('section')
-      if (sectionEl) {
-        sectionEl.style.setProperty('height', 'auto', 'important')
-        sectionEl.style.setProperty('max-height', '70vh', 'important')
-        sectionEl.style.setProperty('min-height', '16rem', 'important')
-      }
+      placeMeta(host)
     })
   }
 
@@ -436,6 +456,15 @@
   }
 
   var root = document.getElementById('root')
-  if (root) new MutationObserver(schedule).observe(root, { childList: true, subtree: true })
+  if (root) new MutationObserver(schedule).observe(root, { childList: true, subtree: true, characterData: true })
+  window.addEventListener('scroll', function () {
+    var host = document.getElementById('rrMetaLib')
+    if (host) placeMeta(host)
+  }, true)
+  window.addEventListener('resize', function () {
+    var host = document.getElementById('rrMetaLib')
+    if (host) placeMeta(host)
+  })
   schedule()
+  setInterval(paintMeta, 800)
 })()
