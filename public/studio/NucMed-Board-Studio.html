@@ -2141,6 +2141,12 @@ body.widget-embed #dockHandle,
 body.widget-embed #atlasSplit,
 body.widget-embed #atlasDrawer,
 body.widget-embed #livePop { display: none !important; }
+body.widget-embed.view-atlas .ra-sugs,
+body.widget-embed.view-atlas .ra-pubmed,
+body.widget-embed.view-atlas .panel-bar,
+body.widget-embed.view-atlas .widget-play { display: none !important; }
+body.widget-embed.view-atlas .ra-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+body.widget-embed.view-atlas .ra-card img { width: 100%; height: 140px; object-fit: contain; background: #000; display: block; }
 body.widget-embed .app,
 body.widget-embed .main,
 body.widget-embed .work,
@@ -13019,6 +13025,7 @@ async function raPubmedSearch(q){
 }
 
 function renderRadAtlas(){
+  document.body.classList.add("view-atlas");
   const q = RAD_ATLAS.query;
   $("#stage").innerHTML = `
     <div class="ra-root panel-wrap" data-panel-body="atlasw">
@@ -13088,6 +13095,7 @@ function renderRadAtlas(){
     raPubmedSearch(box ? box.value : RAD_ATLAS.query);
   };
   if (q && q.length >= 2) raPubmedSearch(q);
+  if (q && q.length >= 2) raRun();
   bindWidgetPlay({ finding: "RadAtlas open imaging search. Enter a query to search PMC and TCIA.", stationName: "ATLAS", categoryId: "nuclear" }, "radatlas");
 }
 
