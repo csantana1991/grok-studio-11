@@ -106,23 +106,36 @@ const BRIDGE = `(function(){
     if (!/^[A-Za-z0-9_-]{6,20}$/.test(id)) return;
     var box = document.querySelector("div.overflow-hidden.rounded-lg");
     if (!box) return;
-    var fr = box.querySelector("iframe");
     var src = "https://www.youtube-nocookie.com/embed/" + id + "?rel=0&playsinline=1&enablejsapi=1&origin=" + encodeURIComponent(location.origin);
-    if (!fr) {
-      fr = document.createElement("iframe");
-      fr.id = "hj-yt";
-      fr.className = "aspect-video w-full";
-      fr.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
-      fr.setAttribute("allowfullscreen", "true");
-      fr.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
-      var title = document.querySelector("h1");
-      if (title) fr.title = title.textContent || "Lecture";
-      box.appendChild(fr);
+    var frames = box.querySelectorAll("iframe");
+    var keep = null;
+    for (var i = 0; i < frames.length; i++) {
+      var cur = frames[i].getAttribute("src") || "";
+      if (!keep && cur.indexOf("/embed/" + id) >= 0) keep = frames[i];
     }
-    var cur = fr.getAttribute("src") || "";
-    if (cur.indexOf("/embed/" + id) < 0) fr.setAttribute("src", src);
+    if (!keep) {
+      keep = document.createElement("iframe");
+      keep.id = "hj-play";
+      keep.className = "aspect-video w-full";
+      keep.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
+      keep.setAttribute("allowfullscreen", "true");
+      keep.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+      var title = document.querySelector("h1");
+      if (title) keep.title = title.textContent || "Lecture";
+      keep.setAttribute("src", src);
+      box.appendChild(keep);
+    }
+    for (var j = 0; j < frames.length; j++) if (frames[j] !== keep) frames[j].remove();
+  }
+  function neuterYt(){
+    var yt = window.YT;
+    if (!yt || !yt.Player || yt.Player.__plain) return;
+    function Player(){ this.destroy = function(){}; this.getCurrentTime = function(){ return 0; }; this.getOption = function(){ return null; }; }
+    Player.__plain = true;
+    yt.Player = Player;
   }
   function tick(){
+    neuterYt();
     ensurePlayer();
     var frames = document.querySelectorAll("iframe");
     for (var j = 0; j < frames.length; j++) {
