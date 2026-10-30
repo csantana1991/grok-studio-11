@@ -723,6 +723,11 @@ body.sheet-min #widgetSheet { height: 44px; overflow: hidden; }
 .cqa-cor img { width:100%; height:100px; object-fit:cover; display:block; }
 .cqa-cor figcaption { font-size:11px; padding:6px 8px; color:#e8f2f7; }
 .cqa-live { display:grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap:8px; margin-top:8px; }
+.cqa-hist { display:flex; flex-direction:column; gap:6px; max-height:320px; overflow:auto; margin:8px 0; }
+.cqa-hist button { text-align:left; background:#fff; border:1px solid var(--line); border-radius:8px; padding:8px 10px; color:#111; cursor:pointer; }
+.cqa-hist button.on { border-color:#1d4ed8; background:#eef4ff; }
+.cqa-hist b { display:block; font-size:13px; }
+.cqa-hist small { color:#334155; font-size:11px; }
 .cqa-live figure { margin:0; background:#f4faf8; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
 .cqa-live img { width:100%; height:110px; object-fit:contain; background:#111; display:block; }
 .cqa-live figcaption { font-size:11px; padding:6px; color:#111; }
@@ -10052,6 +10057,65 @@ function renderCaseQA(){
   $("#playBtn").onclick = () => CaseQA.speak();
 }
 
+const SearchHist = {
+  KEY: "studio-search-hist-v1",
+  read() {
+    try {
+      const v = JSON.parse(localStorage.getItem(this.KEY) || "[]");
+      return Array.isArray(v) ? v : [];
+    } catch (e) { return []; }
+  },
+  write(list) {
+    try { localStorage.setItem(this.KEY, JSON.stringify(list.slice(0, 40))); } catch (e) {}
+  },
+  put(entry) {
+    const row = {
+      id: String(entry.id || ("s" + Date.now())),
+      at: new Date().toISOString(),
+      source: entry.source || "Case Q+A",
+      query: String(entry.query || "").slice(0, 160),
+      label: String(entry.label || entry.query || "Search").slice(0, 180),
+      images: (entry.images || []).filter(it => it && it.src).slice(0, 18).map(it => ({ src: String(it.src), cap: String(it.cap || "").slice(0, 90) })),
+      more: Number(entry.more) || 1
+    };
+    if (!row.query) return row;
+    const rest = this.read().filter(x => x && x.id !== row.id);
+    this.write([row].concat(rest));
+    return row;
+  },
+  addImages(id, images, more) {
+    const list = this.read();
+    const row = list.find(x => x && x.id === id);
+    if (!row) return null;
+    const seen = {};
+    (row.images || []).forEach(it => { if (it && it.src) seen[it.src] = 1; });
+    (images || []).forEach(it => {
+      if (!it || !it.src || seen[it.src] || row.images.length >= 36) return;
+      seen[it.src] = 1;
+      row.images.push({ src: String(it.src), cap: String(it.cap || "").slice(0, 90) });
+    });
+    if (more) row.more = more;
+    row.at = new Date().toISOString();
+    this.write(list);
+    return row;
+  }
+};
+function rememberCaseSearch(enc) {
+  if (!enc) return;
+  const source = (state && state.view === "academy") ? "Academy" : "RAD REVIEW";
+  const key = caseKey(enc);
+  const slot = CASE_IMG[key] || {};
+  const q = (typeof pubmedQueryFor === "function" ? pubmedQueryFor(enc) : "") || enc.finding || "";
+  const images = (slot.items || []).slice(0, 12).map(it => ({ src: it.src, cap: imageDescribe(it, enc) }));
+  SearchHist.put({
+    id: source + "|" + key,
+    source: source,
+    query: q,
+    label: (enc.accession || enc.studyKey || key) + " · " + (enc.finding || q),
+    images: images,
+    more: slot.moreOffset || 1
+  });
+}
 const CaseQA = {
   last: null,
   region: "chest",
@@ -10218,6 +10282,14 @@ const CaseQA = {
       </div>
       <h3>Correlate with different images</h3>
       <div class="cqa-cor" id="cqaCor">${cor}</div>
+      <h3>Search history</h3>
+      <p style="margin:0;font-size:13px;color:#333">A click in RAD REVIEW, Academy, Rad Atlas, or RAD REVIEW Ultimate is saved here with the time and the pictures it found.</p>
+      <div class="cqa-hist" id="cqaHist"></div>
+      <p style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button type="button" id="cqaMore">Add more images</button>
+        <span id="cqaHistStat" style="font-size:12px"></span>
+      </p>
+      <div class="cqa-live" id="cqaHistPics"></div>
       <h3>Live image search</h3>
       <p id="cqaStat" style="font-size:12px">Press Search matching images — Wikipedia, PubMed, Commons.</p>
       <div class="cqa-live" id="cqaLive"></div>
@@ -10261,6 +10333,9 @@ const CaseQA = {
     if (sp) sp.onclick = () => this.speak();
     const se = root.querySelector("#cqaSearch");
     if (se) se.onclick = () => this.search();
+    const more = root.querySelector("#cqaMore");
+    if (more) more.onclick = () => this.addMore();
+    this.paintHistory();
     const rg = root.querySelector("#cqaRegion");
     if (rg) {
       rg.value = (this.last && this.last.region) || this.region || "chest";
@@ -10340,7 +10415,79 @@ const CaseQA = {
     }
     host.innerHTML = google + items.slice(0, 24).map(it => `<figure><img src="${it.src}" alt="" referrerpolicy="no-referrer"><figcaption>${String(it.cap).slice(0,90).replace(/</g,"")}</figcaption></figure>`).join("");
     if (stat) stat.textContent = items.length + " live images · " + qs[0];
+    SearchHist.put({
+      id: "cqa|" + (qs[0] || "case"),
+      source: "Case Q+A",
+      query: qs[0] || "chest CT",
+      label: (this.last && this.last.title) || qs[0] || "Case Q+A",
+      images: items.slice(0, 18)
+    });
+    this.histId = "cqa|" + (qs[0] || "case");
+    this.paintHistory();
     if (typeof liveSearchTerm === "function") liveSearchTerm(qs[0]);
+  },
+  paintHistory() {
+    const box = document.getElementById("cqaHist");
+    if (!box) return;
+    const rows = SearchHist.read();
+    if (!rows.length) {
+      box.innerHTML = "<p style=\"font-size:12px;margin:0\">No saved searches yet. Click a case in RAD REVIEW, Academy, Rad Atlas, or RAD REVIEW Ultimate.</p>";
+      return;
+    }
+    const when = (iso) => {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "";
+      return d.toLocaleString();
+    };
+    box.innerHTML = rows.map(r => {
+      const on = r.id === this.histId ? " on" : "";
+      return '<button type="button" class="' + on.trim() + '" data-hist="' + escTxt(r.id) + '"><b>' + escTxt(r.label || r.query) + '</b><small>' + escTxt(r.source || "") + " · " + escTxt(when(r.at)) + " · " + ((r.images && r.images.length) || 0) + " pictures</small></button>";
+    }).join("");
+    box.querySelectorAll("[data-hist]").forEach(b => {
+      b.onclick = () => {
+        this.histId = b.getAttribute("data-hist");
+        this.showHist();
+        this.paintHistory();
+      };
+    });
+    if (this.histId) this.showHist();
+  },
+  showHist() {
+    const pics = document.getElementById("cqaHistPics");
+    const stat = document.getElementById("cqaHistStat");
+    const row = SearchHist.read().find(r => r && r.id === this.histId);
+    if (!pics) return;
+    if (!row) { pics.innerHTML = ""; if (stat) stat.textContent = ""; return; }
+    const imgs = row.images || [];
+    pics.innerHTML = imgs.map(it => '<figure><img src="' + escTxt(it.src) + '" alt="" referrerpolicy="no-referrer"><figcaption>' + escTxt(String(it.cap || "").slice(0, 90)) + "</figcaption></figure>").join("") || "<p>No picture was stored for this search. Add more images.</p>";
+    if (stat) stat.textContent = imgs.length + " saved · " + (row.query || "");
+    pics.querySelectorAll("figure").forEach(fig => {
+      fig.onclick = () => {
+        const img = fig.querySelector("img");
+        if (img && img.src) this.lightbox(img.src, fig.textContent || "Saved search");
+      };
+    });
+  },
+  async addMore() {
+    const row = SearchHist.read().find(r => r && r.id === this.histId) || SearchHist.read()[0];
+    const stat = document.getElementById("cqaHistStat");
+    if (!row) { if (stat) stat.textContent = "Click a saved search first."; return; }
+    this.histId = row.id;
+    const start = (Number(row.more) || 1) + 12;
+    if (stat) stat.textContent = "Adding more for “" + row.query + "”…";
+    let batch = [];
+    try {
+      const res = await fetch("/api/pmc/match?source=openi&n=12&m=" + start + "&q=" + encodeURIComponent(row.query || ""), { signal: AbortSignal.timeout(12000) });
+      const data = await res.json();
+      batch = ((data && data.results) || []).map(m => {
+        const img = String(m.url || m.imageUrl || "");
+        const src = img.indexOf("https://openi.nlm.nih.gov/imgs/") === 0 ? ("/api/pmc/img?src=" + encodeURIComponent(img)) : img;
+        return src ? { src: src, cap: m.title || m.caption || row.query } : null;
+      }).filter(Boolean);
+    } catch (e) {}
+    const updated = SearchHist.addImages(row.id, batch, start);
+    if (stat) stat.textContent = batch.length ? ("Added " + batch.length + " · " + ((updated && updated.images.length) || 0) + " pictures") : "No further Open-i figures for this search.";
+    this.paintHistory();
   }
 };
 
@@ -10460,6 +10607,7 @@ function paintCaseDock(enc){
       state.caseTouched[key] = 1;
     };
   });
+  try { rememberCaseSearch(enc); } catch (e) {}
 }
 function bindCaseGallery(enc){
   if (!enc) return;
@@ -12024,6 +12172,15 @@ async function raRun(){
   if (livePrev) { RAD_ATLAS.workspace = { title: livePrev.title, subtitle: livePrev.meta ? (livePrev.credit || livePrev.collection) : (livePrev.collection+" · TCIA"), url: livePrev.fullStudyUrl, preview: livePrev.previewUrl, kind:"study", list:prev, index: Math.max(0, prev.indexOf(livePrev)), imageCount:livePrev.imageCount, seriesUid:livePrev.seriesUid, collection:livePrev.collection }; raPaintWorkspace(); }
   else if (figs[0]) { RAD_ATLAS.workspace = { title: figs[0].title, subtitle: figs[0].pmcid, url: figs[0].articleUrl, preview: figs[0].imageUrl, kind:"source" }; raPaintWorkspace(); }
   if (RAD_ATLAS.query && RAD_ATLAS.query.length >= 2) raPubmedSearch(RAD_ATLAS.query);
+  try {
+    SearchHist.put({
+      id: "atlas|" + String(data.query || "").slice(0, 80),
+      source: "Rad Atlas",
+      query: data.query,
+      label: data.query,
+      images: (figs || []).slice(0, 12).map(f => ({ src: f.imageUrl, cap: f.title || f.caption || data.query })).filter(it => it.src)
+    });
+  } catch (e) {}
   try { liveSearchTerm(data.query); } catch (e) {}
   bindWidgetPlay({ finding: "RadAtlas results for "+data.query+". "+figs.length+" article figures, "+prev.length+" study previews.", stationName:"ATLAS", categoryId:"nuclear" }, "radatlas");
   try { IQA.paintBadges(); } catch(e) {}
