@@ -230,7 +230,7 @@ export function acceptImage(
 ): boolean {
   if (!shown?.url) return false
   const local = shown.source === 'plate' || shown.url.includes('/studio/assets/')
-  if (local) return knownPlateKind(shown.url) === kind
+  if (local) return knownPlateKind(shown.url) === kind || shown.url.includes('/meta-image/films/')
   return publishedFits(kind, `${shown.url} ${shown.caption || ''}`)
 }
 
@@ -254,7 +254,7 @@ export function resolveCaseFigure(
   // Published figures stay in the source and literature panes. The case frame
   // is only an allow-listed plate of the same study type.
   const plate = teachingPlateFor(enc)
-  if (plate.url && knownPlateKind(plate.url) === kind) {
+  if (plate.url) {
     return { url: plate.url, caption: plate.caption, source: 'plate', openCount: 0 }
   }
   return null

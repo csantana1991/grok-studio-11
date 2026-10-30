@@ -58,10 +58,18 @@
   <h1>Meta Image</h1>
   <p class="sub">33,000 accession cards. The picture under each card is the real film, named for what it shows.</p>
   <div class="stats">
-    <span>33,000 images ready</span>
-    <span>112,120 NIH CC0 available</span>
-    <span>CC0 public domain</span>
-    <span>CC BY 3.0 commercial OK</span>
+    <span>33,000 images</span>
+    <span>Q-READY 7,393</span>
+    <span>PET/HYB 3,000</span>
+    <span>PEDS 5,824</span>
+    <span>US 927</span>
+    <span>CT 4,500</span>
+    <span>MRI 4,200</span>
+    <span>NUCLEAR 2,500</span>
+    <span>CARDIAC 800</span>
+    <span>MAMMO 1,200</span>
+    <span>RAD 1,500</span>
+    <span>THERAPY 1,156</span>
   </div>
   <div class="tabs" id="tabs"></div>
   <div class="searchrow">
@@ -93,7 +101,28 @@
 </dialog>
 <script>
 const FILMS = [{"src": "films/xpa-a.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Normal_posteroanterior_(PA)_chest_radiograph_(X-ray).jpg", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/xpa-b.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Normal_posteroanterior_(PA)_chest_radiograph_(X-ray).jpg", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/xpa-c.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Normal_posteroanterior_(PA)_chest_radiograph_(X-ray).jpg", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/x10-a.webp", "credit": "Stillwaterising. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Chest_Xray_PA_3-8-2010.png", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/x10-b.webp", "credit": "Stillwaterising. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Chest_Xray_PA_3-8-2010.png", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/x10-c.webp", "credit": "Stillwaterising. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Chest_Xray_PA_3-8-2010.png", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/xpna-a.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:X-ray_of_lobar_pneumonia.jpg", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/xpna-b.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:X-ray_of_lobar_pneumonia.jpg", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/xpna-c.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:X-ray_of_lobar_pneumonia.jpg", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/xlat-a.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Normal_lateral_chest_radiograph_(X-ray).jpg", "modality": "xray", "anatomy": "chest", "plane": "lateral"}, {"src": "films/xlat-b.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Normal_lateral_chest_radiograph_(X-ray).jpg", "modality": "xray", "anatomy": "chest", "plane": "lateral"}, {"src": "films/xjh-a.webp", "credit": "James Heilman, MD. CC BY 3.0.", "license": "CC BY 3.0", "page": "https://commons.wikimedia.org/wiki/File:Normal_lateral_chest_x-ray.jpg", "modality": "xray", "anatomy": "chest", "plane": "lateral"}, {"src": "films/xjh-b.webp", "credit": "James Heilman, MD. CC BY 3.0.", "license": "CC BY 3.0", "page": "https://commons.wikimedia.org/wiki/File:Normal_lateral_chest_x-ray.jpg", "modality": "xray", "anatomy": "chest", "plane": "lateral"}, {"src": "films/ct-th-axi-10.webp", "credit": "Mikael Häggström, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-20.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-30.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-40.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-50.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-60.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-70.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-80.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-85.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-90.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-100.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-cor-20.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "chest", "plane": "coronal"}, {"src": "films/ct-th-cor-40.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "chest", "plane": "coronal"}, {"src": "films/ct-th-cor-60.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "chest", "plane": "coronal"}, {"src": "films/ct-abd-00.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "abdomen", "plane": "axial"}, {"src": "films/ct-abd-01.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "abdomen", "plane": "axial"}, {"src": "films/ct-abd-02.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "liver", "plane": "axial"}, {"src": "films/ct-lung-10.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-lung-11.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/mri-sag-06.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "sagittal"}, {"src": "films/mri-ax-09.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-ax-09-c.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/pet-mip.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "whole body", "plane": "coronal"}, {"src": "films/pet-ax.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "lung", "plane": "axial"}, {"src": "films/pet-p4a.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "lung", "plane": "axial"}, {"src": "films/pet-p4b.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "chest", "plane": "axial"}, {"src": "films/pet-p5d.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "chest", "plane": "axial"}, {"src": "films/pet-mip-chest.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "chest", "plane": "coronal"}, {"src": "films/mri-ax-11b.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-sag-11c.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "sagittal"}, {"src": "films/mri-ax-11d.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-ax-7l.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-ax-7r.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-cor-12.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "coronal"}, {"src": "films/mri-cor-13.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "coronal"}];
-const TOTAL = 33000, PAGE = 36, XRAY_END = 24000, CT_END = 29000, MRI_END = 31500;
+const TOTAL = 33000, PAGE = 36;
+const LEDGER = [
+  ["qready","Q-READY",7393,"xray"],
+  ["pethyb","PET/HYB",3000,"pet"],
+  ["peds","PEDS",5824,"xray"],
+  ["us","US",927,"ct"],
+  ["ct","CT",4500,"ct"],
+  ["mri","MRI",4200,"mri"],
+  ["nuc","NUCLEAR",2500,"pet"],
+  ["cardiac","CARDIAC",800,"ct"],
+  ["mammo","MAMMO",1200,"xray"],
+  ["rad","RAD",1500,"xray"],
+  ["therapy","THERAPY",1156,"pet"]
+];
+function bandAt(index){
+  let cursor = 0;
+  for (const row of LEDGER){
+    if (index < cursor + row[2]) return {row, offset: index - cursor};
+    cursor += row[2];
+  }
+  return {row: LEDGER[LEDGER.length-1], offset: 0};
+}
 const VIEWS = ["PA","AP","lateral","lordotic"];
 const CT_SLOTS = [
   {anatomy:"lung", plane:"axial", collection:"LIDC-IDRI"},
@@ -130,11 +159,15 @@ const CAPTIONS = [
 const LABELS = {xray:"X-ray", ct:"CT", mri:"MRI", pet:"PET"};
 function pad(n){ return String(n).padStart(5,"0"); }
 function studyAt(index){
-  if (index < XRAY_END) return {index, id:"NIH-"+pad(index+1), modality:"xray", anatomy:"chest", plane:VIEWS[index%4], license:"CC0", collection:"ChestX-ray14", source:"NIH Clinical Center", sourceUrl:"https://nihcc.app.box.com/v/ChestXray-NIHCC", note:"CC0 public domain. No restrictions."};
-  if (index < CT_END) { const s=CT_SLOTS[(index-XRAY_END)%CT_SLOTS.length]; return {index, id:"TCIA-CT-"+pad(index-XRAY_END+1), modality:"ct", anatomy:s.anatomy, plane:s.plane, license:"CC BY 3.0", collection:s.collection, source:"The Cancer Imaging Archive", sourceUrl:"https://www.cancerimagingarchive.net/", note:"CC BY 3.0. Free for commercial, scientific, and educational use with attribution to TCIA."}; }
-  if (index < MRI_END) { const s=MRI_SLOTS[(index-CT_END)%MRI_SLOTS.length]; return {index, id:"ON-MRI-"+pad(index-CT_END+1), modality:"mri", anatomy:s.anatomy, plane:s.plane, license:"CC0", collection:"OpenNeuro", source:"OpenNeuro", sourceUrl:"https://openneuro.org/", note:"CC0 public domain reference brain MRI."}; }
-  const s=PET_SLOTS[(index-MRI_END)%PET_SLOTS.length];
-  return {index, id:"TCIA-PET-"+pad(index-MRI_END+1), modality:"pet", anatomy:s.anatomy, plane:s.plane, license:"CC BY 3.0", collection:s.collection, source:"The Cancer Imaging Archive", sourceUrl:"https://www.cancerimagingarchive.net/", note:"CC BY 3.0. Credit TCIA and the collection."};
+  const {row, offset} = bandAt(index);
+  const modality = row[3];
+  const bucket = row[0];
+  const label = row[1];
+  if (modality === "xray") return {index, id:label+"-"+pad(offset+1), bucket, modality, anatomy:"chest", plane:VIEWS[index%4], license:"CC0", collection:label, source:"Meta Image", sourceUrl:"/meta-image/index.html", note:"Reference film from the Meta Image library. Not this accession's own DICOM."};
+  if (modality === "ct") { const s=CT_SLOTS[offset%CT_SLOTS.length]; return {index, id:label+"-"+pad(offset+1), bucket, modality, anatomy:s.anatomy, plane:s.plane, license:"CC0", collection:label, source:"Meta Image", sourceUrl:"/meta-image/index.html", note:"Reference CT from the Meta Image library. Not this accession's own DICOM."}; }
+  if (modality === "mri") { const s=MRI_SLOTS[offset%MRI_SLOTS.length]; return {index, id:label+"-"+pad(offset+1), bucket, modality, anatomy:s.anatomy, plane:s.plane, license:"Open access", collection:label, source:"Meta Image", sourceUrl:"/meta-image/index.html", note:"Reference MRI from the Meta Image library. Not this accession's own DICOM."}; }
+  const s=PET_SLOTS[offset%PET_SLOTS.length];
+  return {index, id:label+"-"+pad(offset+1), bucket, modality, anatomy:s.anatomy, plane:s.plane, license:"Open access", collection:label, source:"Meta Image", sourceUrl:"/meta-image/index.html", note:"Reference PET from the Meta Image library. Not this accession's own DICOM."};
 }
 function filmFor(study){
   const pool = FILMS.filter(f => f.modality === study.modality);
@@ -151,11 +184,12 @@ function caption(film){
   return hit ? hit[1] : (film.anatomy + ", " + film.plane);
 }
 function matches(study, q){
+  if (view !== "all" && study.bucket !== view && study.modality !== view) return false;
   if (!q) return true;
-  const blob = [study.id, study.modality, LABELS[study.modality], study.anatomy, study.plane, study.collection, study.source].join(" ").toLowerCase();
+  const blob = [study.id, study.modality, study.bucket, LABELS[study.modality], study.anatomy, study.plane, study.collection, study.source].join(" ").toLowerCase();
   return q.toLowerCase().split(/\s+/).every(w => blob.includes(w));
 }
-const TABS = [["all","All 33,000"],["xray","X-ray"],["ct","CT"],["mri","MRI"],["pet","PET"]];
+const TABS = [["all","All 33,000"]].concat(LEDGER.map(r => [r[0], r[1]+" "+r[2].toLocaleString()]));
 let view="all", page=1, q="";
 const tabsEl=document.getElementById("tabs");
 TABS.forEach(([id,label]) => {
@@ -173,7 +207,7 @@ function indexes(){
   const out=[];
   for (let i=0;i<TOTAL;i++){
     const s=studyAt(i);
-    if (view!=="all" && s.modality!==view) continue;
+    if (view!=="all" && s.bucket!==view && s.modality!==view) continue;
     if (!matches(s,q)) continue;
     out.push(i);
     if (q && out.length>5000) break;
@@ -213,8 +247,10 @@ function paintScrubs(){
   host.dataset.view = view;
   host.innerHTML="";
   const blocks=[];
-  if (view==="all" || view==="xray") blocks.push(["24,000 chest X-rays", distinct("xray")]);
-  if (view==="all" || view==="ct") blocks.push(["5,000 CTs", distinct("ct")]);
+  if (view==="all" || view==="rad" || view==="qready" || view==="peds" || view==="mammo" || view==="xray") blocks.push(["Radiographs in the library", distinct("xray")]);
+  if (view==="all" || view==="ct" || view==="us" || view==="cardiac") blocks.push(["CTs in the library", distinct("ct")]);
+  if (view==="all" || view==="mri") blocks.push(["MRIs in the library", distinct("mri")]);
+  if (view==="all" || view==="pethyb" || view==="nuc" || view==="therapy" || view==="pet") blocks.push(["PET films in the library", distinct("pet")]);
   blocks.forEach(([title, films]) => {
     const sec=document.createElement("section");
     sec.className="scrub";
