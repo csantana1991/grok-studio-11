@@ -2188,10 +2188,21 @@ body.hj-full #liveLabel {
 body.hj-full #hjSaid { flex:1; min-width:0; height:32px; margin:0; border:0; border-radius:999px; background:#f7f4ee; color:#1a1408; padding:0 12px; font:inherit; }
 #wikiTop { display:none; }
 #wikiTop.on {
-  display:flex; gap:8px; align-items:center; position:fixed; top:48px; left:0; right:0; height:78px;
+  display:flex; gap:8px; align-items:center; position:fixed; top:40px; left:0; right:0; height:72px;
   z-index:790; overflow-x:auto; overflow-y:hidden; background:#0c1210; padding:6px 10px;
   scrollbar-width: none;
 }
+body.wiki-top #hjBar {
+  display:flex !important; position:fixed; top:0; left:0; right:0; height:40px; z-index:810;
+  align-items:center; gap:8px; padding:0 10px; background:#07141f; overflow:hidden;
+}
+body.wiki-top #liveLabel {
+  display:inline-flex !important; align-items:center; height:26px; padding:0 10px; border-radius:999px;
+  background:#57d6c4; color:#082027; font-size:12px; font-weight:800; letter-spacing:.04em; flex:0 0 auto;
+}
+body.wiki-top #hjSaid { flex:1; min-width:0; height:28px; margin:0; border:0; border-radius:999px; background:#f7f4ee; color:#1a1408; padding:0 12px; font:inherit; }
+body.wiki-top:not(.hj-full) #hjExit { display:none !important; }
+body.wiki-top:not(.hj-full):not(.medb-full) .app { margin-top:112px; height:calc(100dvh - 112px); }
 #wikiTop button { flex:0 0 auto; width:120px; border:0; background:transparent; padding:0; }
 #wikiTop img { width:120px; height:66px; object-fit:cover; border-radius:6px; background:#07141f; }
 #wikiTop span, #wikiTop b[data-q] { display:none; }
@@ -5441,12 +5452,14 @@ const CapRail = {
   queryOf(text) {
     const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|after|before|their|there|they|them|then|also|only|most|more|some|such|been|being|which|while|where|will|would|could|should|follows|meets|used|basic|webinar|lecture|monday|short|travels|clinical|medicine|medical|public|youtube|ninja|nerd|warrior|channel|official)$/i;
     const words = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.test(w));
-    return words.slice(0, 5).join(" ");
+    let q = words.slice(0, 5).join(" ");
+    if (/tesla|magnet|spin|nuclei|proton|resonance|\bmri\b/.test(String(text || "").toLowerCase()) && !/\bmri\b/.test(q)) q = (q + " MRI").trim();
+    return q;
   },
   medicalTitle(title) {
     const t = String(title || "");
     if (/ninja|warrior|kawasaki|aerospace|motorcycle|singer|concert|album|band\b|actor|film|movie|sacred|football|soccer|portrait|bicycle|weapon|wrestl|spacecraft|airline|rocket|festival/i.test(t)) return false;
-    return /heart|cardi|failur|ventric|atri|edema|lung|chest|anatom|arter|vein|myocard|eject|valve|aort|pulmon|medic|diseas|syndrom|clinic|patholog|radiolog|\bct\b|\bmri\b|x-ray|infarct|dyspn|congestion|organ|thorax|coronary|perfusion|ischemi|fluid|pleural|hepat|renal|neuro|bone|thyroid|nodule|lesion|tumor|cancer|pet\b|scan/i.test(t);
+    return /heart|cardi|failur|ventric|atri|edema|lung|chest|anatom|arter|vein|myocard|eject|valve|aort|pulmon|medic|diseas|syndrom|clinic|patholog|radiolog|\bct\b|\bmri\b|x-ray|infarct|dyspn|congestion|organ|thorax|coronary|perfusion|ischemi|fluid|pleural|hepat|renal|neuro|bone|thyroid|nodule|lesion|tumor|cancer|pet\b|scan|magnet|tesla|proton|spin|resonance/i.test(t);
   },
   async atlas(text) {
     const q = this.queryOf(text);
@@ -5482,9 +5495,21 @@ const CapRail = {
     const paintTop = (pages) => {
       const host = document.getElementById("wikiTop");
       if (!host) return;
-      const rows = (pages || []).filter((p) => p && p.thumbnail && p.thumbnail.source && this.medicalTitle(p.title)).slice(0, 6);
+      const mri = /\bmri\b|magnetic|tesla/i.test(q);
+      const rows = (pages || []).filter((p) => {
+        if (!p || !p.thumbnail || !p.thumbnail.source || !this.medicalTitle(p.title)) return false;
+        if (!mri) return true;
+        return /mri|magnetic|tesla|proton|spin|nucle|resonance|field/i.test(p.title || "");
+      }).slice(0, 8);
       if (!rows.length) return;
       host.classList.add("on");
+      document.body.classList.add("wiki-top");
+      if (host.dataset.q !== q) {
+        host.querySelectorAll("button").forEach((node) => node.remove());
+        host.dataset.q = q;
+      }
+      const said = document.getElementById("hjSaid");
+      if (said && document.activeElement !== said) said.value = q;
       document.body.classList.add("wiki-top");
       rows.forEach((p) => {
         const src = p.thumbnail.source;
