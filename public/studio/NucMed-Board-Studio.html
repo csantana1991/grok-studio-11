@@ -5395,6 +5395,10 @@ const CapRail = {
         add(src, cap);
         if (typeof LiveHero !== "undefined") LiveHero.add({ src, cap, term: q, kind: "wiki-live", raw: p.title || q });
       });
+      const payload = { source: "atlas-figures", items: rows.slice(0, 2).map((p) => ({ src: p.thumbnail.source, title: p.title || q, href: p.fullurl || "" })) };
+      document.querySelectorAll("iframe").forEach((frame) => {
+        try { frame.contentWindow.postMessage(payload, "*"); } catch (e) {}
+      });
     };
     try {
       const wiki = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=6&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*";
