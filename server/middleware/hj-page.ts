@@ -98,7 +98,32 @@ const BRIDGE = `(function(){
     if (info.videoData && info.videoData.video_id) loadCues(info.videoData.video_id);
     if (typeof info.currentTime === "number") lineAt(info.currentTime);
   });
+  function ensurePlayer(){
+    var bits = location.pathname.split("/").filter(Boolean);
+    if (bits[0] !== "watch" || !bits[2]) return;
+    var id = "";
+    try { id = decodeURIComponent(bits[2]); } catch (e) { return; }
+    if (!/^[A-Za-z0-9_-]{6,20}$/.test(id)) return;
+    var box = document.querySelector("div.overflow-hidden.rounded-lg");
+    if (!box) return;
+    var fr = box.querySelector("iframe");
+    var src = "https://www.youtube-nocookie.com/embed/" + id + "?rel=0&playsinline=1&enablejsapi=1&origin=" + encodeURIComponent(location.origin);
+    if (!fr) {
+      fr = document.createElement("iframe");
+      fr.id = "hj-yt";
+      fr.className = "aspect-video w-full";
+      fr.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
+      fr.setAttribute("allowfullscreen", "true");
+      fr.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+      var title = document.querySelector("h1");
+      if (title) fr.title = title.textContent || "Lecture";
+      box.appendChild(fr);
+    }
+    var cur = fr.getAttribute("src") || "";
+    if (cur.indexOf("/embed/" + id) < 0) fr.setAttribute("src", src);
+  }
   function tick(){
+    ensurePlayer();
     var frames = document.querySelectorAll("iframe");
     for (var j = 0; j < frames.length; j++) {
       var fr = frames[j];
