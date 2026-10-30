@@ -5555,7 +5555,7 @@ const CapRail = {
     this._spin = 0;
     this.seenTop = this.seenTop || {};
     this.screenWords = this.screenWords || [];
-    this._follow = setInterval(() => { this.readScreen(); }, 2000);
+    this._follow = setInterval(() => { this.readScreen(); }, 1000);
     this.readScreen();
   },
   nextScreenPhrase() {
@@ -5570,15 +5570,12 @@ const CapRail = {
     return slice.join(" ");
   },
   async readScreen() {
-    if (this._busy) return;
     const phrase = this.nextScreenPhrase();
     if (!phrase) return;
     if (this.videoId) this.loadBoards(this.videoId);
-    this._busy = true;
     this.liveKey = "";
     this.wikiOff = ((this.wikiOff || 0) + 6) % 72;
-    try { await this.live(phrase, this.wikiOff); }
-    finally { this._busy = false; }
+    this.live(phrase, this.wikiOff);
   },
   loadBoards(id) {
     if (!id || this._boardId === id) return;
