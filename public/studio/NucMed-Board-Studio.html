@@ -5871,7 +5871,7 @@ function raPaintLessonHits(term, data){
     ${full.map((s,i)=>`<div class="ra-row"><div><b>${raEsc(s.title)}</b><p>${raEsc(s.collection||"")}</p></div>
       <button type="button" data-ra="full" data-i="${i}">Show here</button></div>`).join("")}
     ${(!figs.length && !prev.length && !full.length) ? "<p>No RadAtlas hits yet. Wiki/PubMed tiles still load below.</p>" : ""}`;
-  function openItem(url, title, preview){
+  function openItem(url, title, preview, meta){
     const view = document.getElementById("raLiveView");
     const pop = document.getElementById("livePop");
     const results = document.getElementById("raLiveResults");
@@ -5899,27 +5899,41 @@ function raPaintLessonHits(term, data){
     view.style.setProperty("flex", "1 1 auto", "important");
     view.style.setProperty("min-height", "0", "important");
     view.style.setProperty("flex-direction", "column", "important");
-    view.innerHTML = `<div class="panel-bar"><b>${raEsc(title||"Source")}</b><span>
-      <button type="button" id="raLivePlay">▶ Play</button>
-      <button type="button" id="raLiveHide">Back to list</button>
-    <a class="pill" href="${raEsc(url)}" data-ext="${raEsc(url)}">Copy source link</a></span></div>
-      <p class="lp-stat" style="padding:4px 10px">Cancer Imaging Archive page for this series. Not a downloaded copy.</p>
-      ${preview?`<img class="ra-hero" alt="" src="${raEsc(preview)}" referrerpolicy="no-referrer">`:""}
-      <iframe title="RadAtlas finding" src="${raEsc(url)}" sandbox="allow-forms allow-popups allow-scripts allow-same-origin"></iframe>`;
-    const frame = view.querySelector("iframe");
-    if (frame) {
-      frame.style.setProperty("flex", "1 1 auto", "important");
-      frame.style.setProperty("width", "100%", "important");
-      frame.style.setProperty("height", "100%", "important");
-      frame.style.setProperty("min-height", "0", "important");
-      frame.style.setProperty("border", "0", "important");
-    }
-    const hero = view.querySelector(".ra-hero");
-    if (hero) {
-      hero.style.setProperty("flex", "0 0 auto", "important");
-      hero.style.setProperty("max-height", "22vh", "important");
-      hero.style.setProperty("width", "100%", "important");
-      hero.style.setProperty("object-fit", "contain", "important");
+    const tcia = /cancerimagingarchive\.net|nbia-search/i.test(String(url || ""));
+    const seriesUid = (meta && meta.seriesUid) || "";
+    const imageCount = (meta && meta.imageCount) || 0;
+    const collection = (meta && meta.collection) || "";
+    if (tcia) {
+      view.innerHTML = `<div class="panel-bar"><b>${raEsc(title||"TCIA series")}</b><span>
+        <button type="button" id="raLivePlay">▶ Play</button>
+        <button type="button" id="raLiveHide">Back to list</button>
+        <a class="pill" href="${raEsc(url)}" target="_blank" rel="noopener">Open on TCIA</a></span></div>
+        <p class="lp-stat" style="padding:4px 10px">Public series from The Cancer Imaging Archive. Not this teaching row’s scan. TCIA’s own search page stays on “Loading query data,” so the slices load here.</p>
+        <div id="cineHost" style="flex:1;min-height:0;overflow:auto"></div>`;
+      SeriesCine.mount(view, { title: title, subtitle: collection, seriesUid: seriesUid, imageCount: imageCount, collection: collection });
+    } else {
+      view.innerHTML = `<div class="panel-bar"><b>${raEsc(title||"Source")}</b><span>
+        <button type="button" id="raLivePlay">▶ Play</button>
+        <button type="button" id="raLiveHide">Back to list</button>
+      <a class="pill" href="${raEsc(url)}" data-ext="${raEsc(url)}">Copy source link</a></span></div>
+        <p class="lp-stat" style="padding:4px 10px">Source page for this figure. Not a downloaded copy.</p>
+        ${preview?`<img class="ra-hero" alt="" src="${raEsc(preview)}" referrerpolicy="no-referrer">`:""}
+        <iframe title="RadAtlas finding" src="${raEsc(url)}" sandbox="allow-forms allow-popups allow-scripts allow-same-origin"></iframe>`;
+      const frame = view.querySelector("iframe");
+      if (frame) {
+        frame.style.setProperty("flex", "1 1 auto", "important");
+        frame.style.setProperty("width", "100%", "important");
+        frame.style.setProperty("height", "100%", "important");
+        frame.style.setProperty("min-height", "0", "important");
+        frame.style.setProperty("border", "0", "important");
+      }
+      const hero = view.querySelector(".ra-hero");
+      if (hero) {
+        hero.style.setProperty("flex", "0 0 auto", "important");
+        hero.style.setProperty("max-height", "22vh", "important");
+        hero.style.setProperty("width", "100%", "important");
+        hero.style.setProperty("object-fit", "contain", "important");
+      }
     }
     function closeStudy(){
       view.classList.remove("on");
@@ -5944,15 +5958,15 @@ function raPaintLessonHits(term, data){
     const k = b.dataset.ra, i = +b.dataset.i;
     if (k==="fig") {
       RAD_ATLAS.shown = { title: figs[i].title, caption: figs[i].caption, src: figs[i].imageUrl, collection: figs[i].collection, kind: "pmc" };
-      openItem(figs[i].articleUrl, figs[i].title, figs[i].imageUrl);
+      openItem(figs[i].articleUrl, figs[i].title, figs[i].imageUrl, figs[i]);
     }
     if (k==="prev") {
       RAD_ATLAS.shown = { title: prev[i].title, caption: prev[i].collection || "", src: prev[i].previewUrl, collection: prev[i].collection, kind: "tcia" };
-      openItem(prev[i].fullStudyUrl, prev[i].title, prev[i].previewUrl);
+      openItem(prev[i].fullStudyUrl, prev[i].title, prev[i].previewUrl, prev[i]);
     }
     if (k==="full") {
       RAD_ATLAS.shown = { title: full[i].title, caption: full[i].collection || "", src: "", collection: full[i].collection, kind: "tcia" };
-      openItem(full[i].fullStudyUrl, full[i].title, "");
+      openItem(full[i].fullStudyUrl, full[i].title, "", full[i]);
     }
   });
   box.querySelectorAll("[data-speak]").forEach(b => b.onclick = (e) => {
@@ -9902,17 +9916,33 @@ const IQA = (function(){
       if (!rows || !rows.length) { setTimeout(tick, 400); return; }
       const st = scanState();
       const start = st.n || 0;
-      const end = Math.min(start + 80, rows.length);
+      const end = Math.min(start + 200, rows.length);
+      if (!st.seen) st.seen = {};
+      let firstFlag = false;
       for (let i = start; i < end; i++) {
         const enc = rows[i];
         const plateName = enc && enc.plate;
-        const plate = plateName ? { src: (window.DRIMG && window.DRIMG[plateName]) || ("assets/dr/" + plateName), cap: plateName, kind: "matched", raw: plateName + " " + ((enc && enc.finding) || "") } : null;
-        const rec = plate ? decide(enc, plate) : { status: "REJECTED", reason: "BROKEN_URL" };
-        if (rec.status === "APPROVED" || rec.status === "APPROVED_WITH_WARNING") st.ok++;
+        const src = plateName ? ((typeof plateSrc === "function" && plateSrc(plateName)) || (window.DRIMG && window.DRIMG[plateName]) || ("assets/dr/" + plateName)) : "";
+        let bad = !src;
+        let why = src ? "" : "BROKEN_URL";
+        if (plateName && window.SharedCase && SharedCase.fileFits) {
+          const kind = SharedCase.studyKind(enc.finding, enc.categoryId);
+          bad = !SharedCase.fileFits(kind, enc.finding, plateName);
+          why = bad ? "WRONG_MODALITY" : "";
+        }
+        if (!plateName) st.blank = (st.blank || 0) + 1;
+        else if (!bad) st.ok++;
         else {
           st.deny++;
-          if (rec.reason === "WRONG_ANATOMY") st.anatomy++;
-          if (rec.reason === "WRONG_MODALITY") st.modality++;
+          if (why === "WRONG_ANATOMY") st.anatomy++;
+          if (why === "WRONG_MODALITY") st.modality++;
+          if (src && why !== "BROKEN_URL" && !st.seen[plateName] && (st.flagged || 0) < 24) {
+            st.seen[plateName] = 1;
+            st.flagged = (st.flagged || 0) + 1;
+            const before = lookQ().length;
+            queueLook(enc, { src: src, cap: plateName, kind: "plate", raw: ((enc && enc.finding) || "") + " " + plateName }, { reason: why, confidence: 40 });
+            if (!before) firstFlag = true;
+          }
         }
       }
       st.n = end;
@@ -9923,10 +9953,11 @@ const IQA = (function(){
       paintBadges();
       if (st.done) {
         const m = metrics();
-        m.lastSummary = "Automatic check finished. Teaching rows evaluated: " + st.n.toLocaleString() + ". Kept: " + st.ok.toLocaleString() + ". Rejected: " + st.deny.toLocaleString() + ". Anatomy mismatches: " + st.anatomy + ". Modality mismatches: " + st.modality + ". Waiting for a person: " + lookQ().length + ". These are educational analogues, not accession DICOM, and not an ACGME log.";
+        m.lastSummary = "Automatic check finished. Teaching rows evaluated: " + st.n.toLocaleString() + ". Kept: " + st.ok.toLocaleString() + ". No picture: " + (st.blank || 0).toLocaleString() + ". Rejected: " + st.deny.toLocaleString() + ". Waiting for a person: " + lookQ().length + ". These are educational analogues, not accession DICOM, and not an ACGME log.";
         save(K.metrics, m);
         if (state && state.view === "iqa") try { renderImageQA(); } catch (e) {}
       } else {
+        if (firstFlag && state && state.view === "iqa") try { renderImageQA(); } catch (e) {}
         setTimeout(tick, 40);
       }
     };
@@ -10279,6 +10310,14 @@ function iqaPlain(reason){
   if (/DUPE|DUPLICATE/.test(r)) return "This is a repeat of a picture already kept.";
   return "The agent is not sure this picture belongs with the case. You decide.";
 }
+function iqaEmpty(){
+  const s = (typeof IQA !== "undefined" && IQA.scanState) ? IQA.scanState() : { n:0, ok:0, running:false, done:false, total:33000, blank:0 };
+  if (s.running) return `<div class="iqa-hero"><div><h3>Still checking</h3><p>The walk is at ${Number(s.n||0).toLocaleString()} of ${Number(s.total||33000).toLocaleString()} teaching rows. A picture shows up here only when the file is the wrong body part or the wrong kind of scan. None has failed that check yet.</p></div></div>`;
+  if (s.n && !s.done) return `<div class="iqa-hero"><div><h3>Check paused</h3><p>${Number(s.n||0).toLocaleString()} rows were walked before the page reloaded. Press Check all 33,000 to start that walk again. A picture shows up here only when a file does not match the study.</p></div></div>`;
+  if (s.done && !s.n) return `<div class="iqa-hero"><div><h3>Nothing is waiting</h3><p>No picture was flagged. Open the scan numbers below and press Check all 33,000.</p></div></div>`;
+  if (s.done) return `<div class="iqa-hero"><div><h3>Nothing is waiting</h3><p>The check finished. ${Number(s.ok||0).toLocaleString()} plates matched the study and were kept. ${Number(s.blank||0).toLocaleString()} rows have no picture, on purpose. Nothing looked like the wrong scan, so there is nothing for you to keep or reject.</p></div></div>`;
+  return `<div class="iqa-hero"><div><h3>Nothing is waiting</h3><p>No picture was flagged. A picture only shows up here when the body part or the modality looks wrong. Open the scan numbers below and press Check all 33,000 if you want the agent to walk the cases.</p></div></div>`;
+}
 function renderImageQA(){
   IQA.boot();
   const m = IQA.metrics();
@@ -10304,7 +10343,7 @@ function renderImageQA(){
           </div>
           <p class="iqa-more">${look.length} waiting · this is 1 of ${look.length}</p>
         </div>
-      </div>` : `<div class="iqa-hero"><div><h3>Nothing is waiting</h3><p>No picture was flagged. A picture only shows up here when the body part or the modality looks wrong. Nothing has been marked approved by a person. Open the scan numbers below and press Check all 33,000 if you want the agent to walk the cases.</p></div></div>`}
+      </div>` : iqaEmpty()}
     <details class="iqa-more">
       <summary>Scan numbers</summary>
       <div class="iqa-grid">
@@ -10322,7 +10361,7 @@ function renderImageQA(){
   const sim = $("#iqaSim");
   if (sim) sim.onclick = () => {
     const rows = (typeof nbaGenerate === "function") ? nbaGenerate() : rrGenerate(2026);
-    const st = IQA.scanState(); st.n=0; st.ok=0; st.deny=0; st.done=false; st.running=false; IQA.save("iqa-scan-v1", st); IQA.startScan();
+    const st = IQA.scanState(); st.n=0; st.ok=0; st.deny=0; st.blank=0; st.flagged=0; st.seen={}; st.anatomy=0; st.modality=0; st.done=false; st.running=false; IQA.save("iqa-scan-v1", st); IQA.startScan();
     renderImageQA();
   };
   const ng = $("#iqaNeg");
@@ -11336,6 +11375,37 @@ async function raSearchPmc(query){
   out.forEach(f => { if (f && f.imageUrl && !seen.has(f.imageUrl) && raFitsQuery(query, f) > 0) { seen.add(f.imageUrl); uniq.push(f); } });
   return { figures: uniq.slice(0, 18), status: { source:"wiki", state: uniq.length?"ok":"empty", count: uniq.length, latencyMs: Date.now()-started, message: uniq.length ? "Wikipedia and Wikimedia Commons. Not PubMed." : "No reference image from Wikipedia or Commons." } };
 }
+function raSeriesJunk(r){
+  const d = String((r && (r.SeriesDescription || "")) + " " + (r && r.StudyDescription || "")).toLowerCase();
+  const mod = String((r && r.Modality) || "");
+  if (/topo|scout|localizer|dose report|secondary|patient protocol|screen save|derived/.test(d)) return true;
+  if (/^(PR|SR|KO|SEG|REG)$/.test(mod)) return true;
+  return false;
+}
+function raBestSeries(list, query){
+  const q = String(query || "").toLowerCase();
+  const wantPt = /pet|fdg|psma|positron/.test(q);
+  const wantMr = /\bmri\b|magnetic/.test(q) && !wantPt;
+  const scored = (list || []).filter(r => r && r.SeriesInstanceUID && !raSeriesJunk(r)).map(r => {
+    const mod = String(r.Modality || "");
+    const d = String(r.SeriesDescription || "").toLowerCase();
+    const body = String(r.BodyPartExamined || "").toLowerCase();
+    const n = Number(r.ImageCount) || 0;
+    let s = 0;
+    if (mod === "PT") s += wantPt ? 28 : 8;
+    if (mod === "CT") s += 50;
+    if (mod === "MR") s += wantMr ? 70 : 18;
+    if (n >= 16 && n <= 140) s += 22;
+    if (n < 8 || n > 220) s -= 30;
+    if (/ax|axial/.test(d)) s += 8;
+    if (/fused|pet\/?ct/.test(d)) s += 12;
+    q.split(/[^a-z0-9]+/).filter(w => w.length > 3).forEach(w => {
+      if (body.indexOf(w) >= 0 || d.indexOf(w) >= 0) s += 6;
+    });
+    return { r: r, s: s };
+  }).sort((a, b) => b.s - a.s);
+  return scored.length ? scored[0].r : null;
+}
 async function raSearchTcia(query){
   const started = Date.now();
   let collections = RA_HINTS.filter(([re]) => re.test(query)).flatMap(([,n]) => n);
@@ -11375,17 +11445,21 @@ async function raSearchTcia(query){
         if (!r.StudyInstanceUID) return;
         (byStudy[r.StudyInstanceUID] = byStudy[r.StudyInstanceUID] || []).push(r);
       });
-      Object.keys(byStudy).slice(0, 6).forEach(uid => {
+      let added = 0;
+      Object.keys(byStudy).some(uid => {
+        if (added >= 6) return true;
         const rs = byStudy[uid];
-        const rep = rs.find(x => /CT|MR|PT|NM/.test(String(x.Modality||""))) || rs[0];
+        const rep = raBestSeries(rs, query);
+        if (!rep) return false;
+        added++;
         const mods = Array.from(new Set(rs.map(x => x.Modality).filter(Boolean)));
-        const imgN = rs.reduce((s,x) => s + (Number(x.ImageCount)||0), 0);
-        const title = rep.StudyDescription || rep.SeriesDescription || (mods.join("/")+" study");
+        const imgN = Number(rep.ImageCount) || rs.reduce((s,x) => s + (Number(x.ImageCount)||0), 0);
+        const title = [rep.Modality, rep.BodyPartExamined, rep.SeriesDescription || rep.StudyDescription].filter(Boolean).join(" · ") || (mods.join("/") + " study");
         const portal = "https://nbia.cancerimagingarchive.net/nbia-search/?StudyUIDCriteria=" + encodeURIComponent(uid);
-        const thumb = "https://services.cancerimagingarchive.net/nbia-api/services/v1/getThumbnail?SeriesInstanceUID=" + encodeURIComponent(rep.SeriesInstanceUID||"");
+        const thumb = "";
         previews.push({
           id: "tcia-"+uid, title, collection: col, modality: raModality(rep.Modality), modalities: mods,
-          bodyPart: rep.BodyPartExamined, imageCount: imgN, previewUrl: thumb, fullStudyUrl: portal,
+          bodyPart: rep.BodyPartExamined, imageCount: imgN, previewUrl: "", fullStudyUrl: portal,
           seriesUid: rep.SeriesInstanceUID, studyUid: uid
         });
         studies.push({
@@ -11393,6 +11467,7 @@ async function raSearchTcia(query){
           imageCount: imgN, seriesCount: rs.length, fullStudyUrl: portal, seriesUid: rep.SeriesInstanceUID,
           downloadUrl: "https://services.cancerimagingarchive.net/nbia-api/services/v1/getImage?SeriesInstanceUID=" + encodeURIComponent(rep.SeriesInstanceUID||"")
         });
+        return false;
       });
     } catch (e) { portalCard(col); }
   }
@@ -12096,8 +12171,8 @@ const SeriesCine = {
       const res = await fetch("https://services.cancerimagingarchive.net/nbia-api/services/v1/getSeries?Collection=" + encodeURIComponent(col));
       const rows = await res.json();
       if (!Array.isArray(rows)) return;
-      const cts = rows.filter(r => /CT|MR/.test(String(r.Modality || "")) && Number(r.ImageCount) >= 20 && Number(r.ImageCount) <= 160);
-      const ct = cts.find(r => /KIDNEY|ABDOMEN|CHEST|LUNG/i.test(String(r.BodyPartExamined || ""))) || cts[0];
+      const cts = rows.filter(r => /CT|MR|PT/.test(String(r.Modality || "")) && Number(r.ImageCount) >= 12 && Number(r.ImageCount) <= 200 && !raSeriesJunk(r));
+      const ct = cts.find(r => /BLADDER|PELVIS|KIDNEY|ABDOMEN|CHEST|LUNG/i.test(String(r.BodyPartExamined || "") + " " + String(r.SeriesDescription || ""))) || cts[0];
       if (ct && ct.SeriesInstanceUID) await this.loadSeries(ct.SeriesInstanceUID);
       else if (lab) lab.textContent = "No CT series in " + col;
     } catch (e) {
@@ -12281,9 +12356,11 @@ function raPaintWorkspace(){
       <button type="button" data-act="min">–</button><button type="button" data-act="max">□</button>
       <a class="pill" href="${raEsc(item.url)}" data-ext="${raEsc(item.url)}">Copy source link</a></span></div>
     <div id="cineHost"></div>
-    ${item.preview ? `<img class="ra-hero" alt="" src="${raEsc(item.preview)}" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createElement('div'))">` : ""}
-    <iframe class="ra-frame" title="workspace" src="${raEsc(item.url)}" sandbox="allow-forms allow-popups allow-scripts allow-same-origin"></iframe>
-    <p class="ra-foot">${raEsc(item.subtitle)} · public source viewer · cine dictation is the Board Studio read of each slice</p>`;
+    ${item.preview && !/cancerimagingarchive\.net|nbia-search/i.test(String(item.url||"")) ? `<img class="ra-hero" alt="" src="${raEsc(item.preview)}" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createElement('div'))">` : ""}
+    ${/cancerimagingarchive\.net|nbia-search/i.test(String(item.url||""))
+      ? `<p class="ra-foot">Public TCIA series for this search. Not this teaching row’s scan. The archive search page stays on “Loading query data,” so the slices load in the viewer above. <a href="${raEsc(item.url)}" target="_blank" rel="noopener">Open on TCIA</a></p>`
+      : `<iframe class="ra-frame" title="workspace" src="${raEsc(item.url)}" sandbox="allow-forms allow-popups allow-scripts allow-same-origin"></iframe>`}
+    <p class="ra-foot">${raEsc(item.subtitle)} · cine dictation is the Board Studio read of each slice</p>`;
   bindPanelChrome(view);
   SeriesCine.mount(view, item);
   const prevB = $("#raPrev"), nextB = $("#raNext");
