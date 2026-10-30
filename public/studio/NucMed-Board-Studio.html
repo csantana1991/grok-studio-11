@@ -5450,8 +5450,13 @@ const CapRail = {
     if (p) p.textContent = cap || "";
     pop.classList.add("on");
   },
+  specific(text) {
+    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|after|before|their|there|they|them|then|also|only|most|more|some|such|been|being|which|while|where|will|would|could|should|meta|image|images|appearance|introduction|intro|background|abdomen|abdominal|pulse|sequence|sequences|normal|basic|part|outline|body|canada|licensed|doctor|residents|comfortable|concepts|although|pretty|weak|video|goal|using|used|lecture|clinical|medicine|medical|atlas|academy|nucleus|review|widget|search)$/i;
+    const words = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.test(w));
+    return words.slice(0, 4).join(" ");
+  },
   queryOf(text) {
-    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|after|before|their|there|they|them|then|also|only|most|more|some|such|been|being|which|while|where|will|would|could|should|follows|meets|used|basic|webinar|lecture|monday|short|travels|clinical|medicine|medical|public|youtube|ninja|nerd|warrior|channel|official|meta|image|images|atlas|academy|nucleus|review|ultimate|widget|search|imaging|clear|results|shown|verified|target|dicom|catalog)$/i;
+    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|after|before|their|there|they|them|then|also|only|most|more|some|such|been|being|which|while|where|will|would|could|should|follows|meets|used|basic|webinar|lecture|monday|short|travels|clinical|medicine|medical|public|youtube|ninja|nerd|warrior|channel|official|meta|image|images|atlas|academy|nucleus|review|ultimate|widget|search|imaging|clear|results|shown|verified|target|dicom|catalog|appearance|introduction|intro|background|abdomen|abdominal|pulse|sequence|sequences|normal|outline|body)$/i;
     const words = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => (w.length > 3 || /^(mri|pet|t1|t2)$/.test(w)) && !stop.test(w));
     let q = words.slice(0, 5).join(" ");
     if (/tesla|magnet|spin|nuclei|proton|resonance|\bmri\b/.test(String(text || "").toLowerCase()) && !/\bmri\b/.test(q)) q = (q + " MRI").trim();
@@ -5587,13 +5592,16 @@ const CapRail = {
   async readScreen() {
     this.watchPlayers();
     if (this.videoId) this.loadBoards(this.videoId);
-    if (this.line) this.wikiNet(this.line);
-    const slide = (this.screenWords || []).slice(-8).join(" ");
-    if (slide) this.slideNet(this.anchor() ? (this.anchor() + " " + slide) : slide);
+    if (this.line) {
+      const cap = this.specific(this.line);
+      if (cap) this.wikiNet(cap);
+    }
+    const slide = this.specific((this.screenWords || []).join(" "));
+    if (slide) this.slideNet(slide);
   },
   async wikiNet(text) {
-    const q = this.queryOf(text);
-    if (!q || q.length < 3 || /meta image/i.test(q)) return;
+    const q = this.specific(text);
+    if (!q || q.length < 4 || /meta image|pulse sequence|introduction|background|abdominal/i.test(q)) return;
     if (this.wikiNetKey === q) return;
     this.wikiNetKey = q;
     const host = document.getElementById("wikiTop");
@@ -5638,8 +5646,8 @@ const CapRail = {
     this.pushWidgets(q);
   },
   async slideNet(text) {
-    const q = this.queryOf(text);
-    if (!q || q.length < 3 || /meta image/i.test(q)) return;
+    const q = this.specific(text);
+    if (!q || q.length < 4 || /meta image|pulse sequence|introduction|background|abdominal/i.test(q)) return;
     if (this.slideKey === q) return;
     this.slideKey = q;
     const row = document.getElementById("capRow");
@@ -5679,7 +5687,6 @@ const CapRail = {
       phrases.push(p);
     };
     add(title || this.topic || "");
-    this.slideNet(title || this.topic || "");
     const run = () => {
       const spoken = phrases.find((p) => p.split(" ").length > 3);
       if (spoken) this.wikiNet(spoken);
@@ -5763,8 +5770,8 @@ const CapRail = {
       const found = String((out && out.data && out.data.text) || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3);
       found.forEach((w) => { if (this.screenWords.indexOf(w) < 0 && this.screenWords.length < 40) this.screenWords.push(w); });
       if (!found.length) return;
-      const phrase = this.anchor() || found.slice(0, 4).join(" ");
-      if (!/mri|abdomen|abdominal|pulse sequence|gradient|liver|pericard|cardiomyopath/i.test(phrase)) return;
+      const phrase = this.specific(found.join(" "));
+      if (!phrase) return;
       this.slideKey = "";
       this.slideNet(phrase);
     } catch (e) {}
