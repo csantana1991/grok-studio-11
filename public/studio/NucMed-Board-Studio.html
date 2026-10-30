@@ -5384,9 +5384,14 @@ const CapRail = {
     pop.classList.add("on");
   },
   queryOf(text) {
-    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|after|before|their|there|they|them|then|also|only|most|more|some|such|been|being|which|while|where|will|would|could|should|follows|meets|used|basic|webinar|lecture|monday|short|travels|clinical|medicine|public|youtube)$/i;
+    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|after|before|their|there|they|them|then|also|only|most|more|some|such|been|being|which|while|where|will|would|could|should|follows|meets|used|basic|webinar|lecture|monday|short|travels|clinical|medicine|medical|public|youtube|ninja|nerd|warrior|channel|official)$/i;
     const words = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.test(w));
-    return words.slice(0, 4).join(" ") || String(text || "").replace(/\s+/g, " ").trim().slice(0, 80);
+    return words.slice(0, 5).join(" ");
+  },
+  medicalTitle(title) {
+    const t = String(title || "");
+    if (/ninja|warrior|kawasaki|aerospace|motorcycle|singer|concert|album|band\b|actor|film|movie|sacred|football|soccer|portrait|bicycle|weapon|wrestl|spacecraft|airline|rocket|festival/i.test(t)) return false;
+    return /heart|cardi|failur|ventric|atri|edema|lung|chest|anatom|arter|vein|myocard|eject|valve|aort|pulmon|medic|diseas|syndrom|clinic|patholog|radiolog|\bct\b|\bmri\b|x-ray|infarct|dyspn|congestion|organ|thorax|coronary|perfusion|ischemi|fluid|pleural|hepat|renal|neuro|bone|thyroid|nodule|lesion|tumor|cancer|pet\b|scan/i.test(t);
   },
   async atlas(text) {
     const q = this.queryOf(text);
@@ -5422,7 +5427,7 @@ const CapRail = {
     const paintTop = (pages) => {
       const host = document.getElementById("wikiTop");
       if (!host) return;
-      const rows = (pages || []).filter((p) => p && p.thumbnail && p.thumbnail.source).slice(0, 6);
+      const rows = (pages || []).filter((p) => p && p.thumbnail && p.thumbnail.source && this.medicalTitle(p.title)).slice(0, 6);
       if (!rows.length) return;
       host.classList.add("on");
       document.body.classList.add("wiki-top");
@@ -5452,14 +5457,16 @@ const CapRail = {
       });
     };
     try {
-      const wiki = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsroffset=" + off + "&gsrlimit=6&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*";
+      const wiki = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q + " medicine anatomy") + "&gsroffset=" + off + "&gsrlimit=8&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*";
       const data = await fetch(wiki).then((r) => r.json());
       paintTop(Object.values((data.query && data.query.pages) || {}));
     } catch (e) {}
     try {
       const res = await fetch("/api/pmc/match?source=live&q=" + encodeURIComponent(q) + "&n=6");
       const data = await res.json();
-      (data.results || []).forEach((row) => { if (row && row.url) add(row.url, row.caption || ("Google · " + q)); });
+      (data.results || []).forEach((row) => {
+        if (row && row.url && this.medicalTitle(row.caption || q)) add(row.url, row.caption || ("Medicine · " + q));
+      });
     } catch (e) {}
     this.keepFollowing();
   },
@@ -5474,9 +5481,9 @@ const CapRail = {
       if (!base || base.length < 3) return;
       const words = this.queryOf(base).split(/\s+/).filter(Boolean);
       this._spin = (this._spin || 0) + 1;
-      const word = words.length ? words[this._spin % words.length] : base;
-      const q = this._spin % 2 === 0 ? base : word;
-      this.wikiOff = ((this.wikiOff || 0) + 4) % 48;
+      const phrase = words.join(" ");
+      const q = phrase || base;
+      this.wikiOff = ((this.wikiOff || 0) + 4) % 32;
       this.liveKey = "";
       this._busy = true;
       Promise.resolve(this.live(q, this.wikiOff)).finally(() => { this._busy = false; });
@@ -14172,8 +14179,10 @@ window.addEventListener("message", (e) => {
     SideFilm.lastQ = "";
     const left = document.getElementById("filmLeft");
     const row = document.getElementById("capRow");
+    const top = document.getElementById("wikiTop");
     if (left) left.innerHTML = "";
     if (row) row.innerHTML = "";
+    if (top) top.innerHTML = "";
     fetch("/api/pmc/match?source=captions&v=" + encodeURIComponent(data.videoId))
       .then((res) => res.json())
       .then((body) => {

@@ -18,7 +18,7 @@ type Hit = {
   license: string;
 };
 
-const JUNK = /bear|aircraft|portrait|biography|painting|football|soccer|album|song\b/i;
+const JUNK = /bear|aircraft|portrait|biography|painting|football|soccer|album|song\b|ninja|warrior|kawasaki|aerospace|motorcycle|singer|concert|sacred|airline|rocket|festival/i;
 
 function petParts(text: string) {
   const t = text.replace(/<[^>]+>/g, " ");
