@@ -2152,10 +2152,31 @@ body.hj-full .stage {
   margin:0 !important; padding:0 !important; overflow:hidden !important; display:flex !important; flex-direction:column !important;
   background:#0c1210 !important;
 }
-body.hj-full #hjFrame {
+body.hj-full #hjFrame, body.medb-full #mbFrame {
   flex:1 1 auto !important; width:100% !important; height:100% !important; min-height:100% !important;
   border:0 !important; display:block !important; background:#0c1210 !important;
 }
+body.medb-full #mbBar { display:flex !important; height:40px; min-height:40px; overflow:hidden; flex-wrap:nowrap; z-index:200; }
+body.medb-full #mbBar button { padding:6px 10px; font-size:13px; white-space:nowrap; }
+@media (max-width: 700px) {
+  body.medb-full #mbBar span { display:none !important; }
+}
+body.medb-full .app { display:block !important; height:100dvh !important; padding:0 !important; margin:0 !important; }
+body.medb-full .sidebar, body.medb-full .topbar, body.medb-full #colSplit, body.medb-full .player, body.medb-full #playerDock, body.medb-full #winBar, body.medb-full #dockHandle, body.medb-full #atlasDrawer, body.medb-full #atlasSplit, body.medb-full #bootSplash { display:none !important; }
+body.medb-full .main { display:flex !important; flex-direction:column !important; height:100dvh !important; min-height:0 !important; overflow:hidden !important; padding:0 !important; }
+body.medb-full .work {
+  position:fixed !important; top:40px !important; left:0 !important; right:0 !important; bottom:0 !important;
+  width:100% !important; height:auto !important; max-height:none !important; min-height:0 !important;
+  margin:0 !important; padding:0 !important; display:flex !important; flex-direction:column !important;
+  overflow:hidden !important; background:#f6f1e8 !important;
+}
+body.medb-full .stage {
+  flex:1 1 auto !important; width:100% !important; height:100% !important; min-height:0 !important; max-height:none !important;
+  margin:0 !important; padding:0 !important; overflow:hidden !important; display:flex !important; flex-direction:column !important;
+  background:#f6f1e8 !important;
+}
+body.medb-full #capRail { bottom: 0; z-index: 180; }
+body.medb-full #capPop { bottom: 88px; }
 #capRail {
   display: none; position: fixed; left: 0; right: 0; bottom: 52px; z-index: 86;
   height: 78px; padding: 6px 8px; gap: 8px; align-items: center;
@@ -2202,6 +2223,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 <div id="capRail"><span class="cap-tag">Image</span><div id="capRow"></div></div>
 <div id="capPop"><button type="button" id="capPopX">Close</button><img alt="" referrerpolicy="no-referrer"><p></p></div>
 <div class="rru-exitbar hj-exitbar" id="hjBar"><b>HJ Med</b><span>Live page</span><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
+<div class="rru-exitbar" id="mbBar"><b>Med-b</b><span>Live page</span><button type="button" id="mbAtlas">Atlas</button><button type="button" id="mbExit">Exit</button></div>
 <div id="hjAtlasSheet" aria-label="Grok 11 atlas"></div>
 <div class='app'>
 <aside class='sidebar panel-wrap' id='sidebar' data-panel-body='nav'>
@@ -2230,6 +2252,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
       <button type="button" data-view="rrultimate">RAD REVIEW Ultimate</button>
       <button type="button" data-view="metaimage">Meta Image</button>
       <button type="button" data-view="hjmed">HJ Med</button>
+      <button type="button" data-view="medb">Med-b</button>
     </div>
     <button type="button" id="homeBtn">Home</button>
     <button type="button" id="layoutBtn" class="pill">Layout: Classic</button>
@@ -4637,6 +4660,9 @@ function renderNav() {
     </button>
     <button class="nav-item ${state.view === "hjmed" ? "active" : ""}" data-view="hjmed">
       <span class="idx">HJ</span><span class="meta"><b>HJ Med</b><s>Their site. Our atlas beside it.</s></span>
+    </button>
+    <button class="nav-item ${state.view === "medb" ? "active" : ""}" data-view="medb">
+      <span class="idx">Mb</span><span class="meta"><b>Med-b</b><s>333 modules, live. Our atlas beside it.</s></span>
     </button>
     <div class="nav-sec">Course map · NM</div>` + nm.map(item).join("") +
     `<div class="nav-sec">Residency & fellowships</div>` + res.map(item).join("") +
@@ -7809,6 +7835,7 @@ function renderHome() {
         <div class="pager"><button class="primary" id="startBtn">Start with the blueprint →</button>
         <button class="primary" id="resBtn" style="margin-left:8px">Start the residency year</button>
         <button class="primary" id="hjHome" style="flex:1 1 100%">HJ Med</button>
+        <button class="primary" id="mbHome" style="flex:1 1 100%">Med-b</button>
         <span class="primary" id="homeDl" style="display:inline-block;margin-left:8px">Open a case from the list. The lectures play here.</span></div>
         <p class="disclaimer">Educational review aid only. Not affiliated with any residency, hospital, ABNM, ABR, NMTCB, NRC, or SNMMI. Not a guarantee of passing or of a residency slot. Volume numbers in the residency blueprint are study targets, not an official census. Confirm clinical numbers against current labels, NRC text, and society guidelines.</p>
       </div>
@@ -7828,6 +7855,8 @@ function renderHome() {
   if (resBtn) resBtn.onclick = () => startHjYear();
   const hjHome = $("#hjHome");
   if (hjHome) hjHome.onclick = () => startHjYear();
+  const mbHome = $("#mbHome");
+  if (mbHome) mbHome.onclick = () => startMedB();
   $("#playerInfo").innerHTML = `<b>NucMed Board Studio</b><span>Select a module and press play</span>`;
   $("#playBtn").onclick = () => { if (state.view === "home") openModule("welcome"); };
 }
@@ -7840,10 +7869,23 @@ function startHjYear(){
 }
 function renderHjMed(){
   document.body.classList.add("hj-full");
+  document.body.classList.remove("medb-full");
   document.body.classList.remove("atlas-open");
   const stage = $("#stage");
   stage.innerHTML = `<iframe id="hjFrame" title="HJ Med" src="https://hj-med.vercel.app/" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" style="width:100%;height:100%;border:0;display:block;background:#0c1210"></iframe>`;
   if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>HJ Med</b><span>Whole site inside Grok 11</span>`;
+}
+function startMedB(){
+  state.view = "medb";
+  render();
+}
+function renderMedB(){
+  document.body.classList.add("medb-full");
+  document.body.classList.remove("hj-full");
+  document.body.classList.remove("atlas-open");
+  const stage = $("#stage");
+  stage.innerHTML = `<iframe id="mbFrame" title="Med-b" src="https://noardstudiomannus.vercel.app/med" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" style="width:100%;height:100%;border:0;display:block;background:#f6f1e8"></iframe>`;
+  if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>Med-b</b><span>333 modules, live page</span>`;
 }
 function renderVolume() {
   const atlas = COURSE.atlas.map(sec => `
@@ -13026,6 +13068,11 @@ function render() {
   document.body.classList.toggle("view-rru", state.view === "rrultimate");
   if (state.view !== "hjmed") {
     document.body.classList.remove("hj-full");
+  }
+  if (state.view !== "medb") {
+    document.body.classList.remove("medb-full");
+  }
+  if (state.view !== "hjmed" && state.view !== "medb") {
     document.body.classList.remove("hj-atlas");
   }
   document.body.classList.toggle("lesson-audio", state.view === "module");
@@ -13075,6 +13122,9 @@ function render() {
   } else if (state.view === "hjmed") {
     crumb.innerHTML = "Studio / <b>HJ Med</b>";
     renderHjMed();
+  } else if (state.view === "medb") {
+    crumb.innerHTML = "Studio / <b>Med-b</b>";
+    renderMedB();
   } else if (state.view === "exam") {
     crumb.innerHTML = "Studio / <b>Mixed quiz</b>";
     if (!state.examBank) {
@@ -13169,7 +13219,7 @@ $("#backdrop").onclick = closeNav;
   }, true);
 })();
 $("#nav").addEventListener("click", (e) => { if (e.target.closest(".nav-item")) closeNav(); });
-$("#homeBtn").onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("rru-full"); document.body.classList.remove("hj-full"); document.body.classList.remove("hj-atlas"); render(); };
+$("#homeBtn").onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("rru-full"); document.body.classList.remove("hj-full"); document.body.classList.remove("medb-full"); document.body.classList.remove("hj-atlas"); render(); };
 (function bindWinHide() {
   const lab = document.getElementById("winHide");
   if (!lab) return;
@@ -13201,12 +13251,17 @@ const rruExit = document.getElementById("rruExit");
 if (rruExit) rruExit.onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("rru-full"); render(); };
 const hjExit = document.getElementById("hjExit");
 if (hjExit) hjExit.onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("hj-full"); document.body.classList.remove("hj-atlas"); render(); };
-const hjAtlasBtn = document.getElementById("hjAtlas");
-if (hjAtlasBtn) hjAtlasBtn.onclick = () => {
+const mbExit = document.getElementById("mbExit");
+if (mbExit) mbExit.onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("medb-full"); document.body.classList.remove("hj-atlas"); render(); };
+function toggleEmbedAtlas(){
   document.body.classList.toggle("hj-atlas");
   const sheet = document.getElementById("hjAtlasSheet");
   if (document.body.classList.contains("hj-atlas") && sheet && typeof paintAtlasInto === "function") paintAtlasInto(sheet);
-};
+}
+const hjAtlasBtn = document.getElementById("hjAtlas");
+if (hjAtlasBtn) hjAtlasBtn.onclick = toggleEmbedAtlas;
+const mbAtlasBtn = document.getElementById("mbAtlas");
+if (mbAtlasBtn) mbAtlasBtn.onclick = toggleEmbedAtlas;
 $("#rate").onchange = e => { state.rate = parseFloat(e.target.value); };
 (function bindPlayAll(){
   const b = document.getElementById("playAllBtn");
@@ -13401,7 +13456,7 @@ document.getElementById("miDockBtn").onclick = () => MetaSide.toggle();
 document.getElementById("miRestore").onclick = () => MetaSide.toggle(false);
 window.addEventListener("message", (e) => {
   if (!e.data || e.data.source !== "hj-caption") return;
-  if (e.origin !== "https://hj-med.vercel.app") return;
+  if (e.origin !== "https://hj-med.vercel.app" && e.origin !== "https://noardstudiomannus.vercel.app") return;
   const data = e.data;
   if (data.videoId && data.videoId !== CapRail.videoId && /^[A-Za-z0-9_-]{6,15}$/.test(data.videoId)) {
     CapRail.videoId = data.videoId;
