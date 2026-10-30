@@ -8,30 +8,37 @@
   :root { color-scheme: dark; --bg:#0a0a0a; --card:#151515; --line:#222; --bone:#f4f1ea; --mute:#9a958c; --lamp:#d7b56d; }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--bone); font: 15px/1.4 "IBM Plex Sans", system-ui, sans-serif; }
-  header { position:sticky; top:0; z-index:5; background:rgba(10,10,10,.92); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); padding:14px 16px 12px; }
+  header { position:sticky; top:0; z-index:5; background:rgba(10,10,10,.94); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); padding:10px 16px 8px; }
   h1 { margin:0; font-size:22px; font-weight:650; letter-spacing:-.02em; }
-  .sub { margin:4px 0 0; color:var(--mute); font-size:13px; }
-  .stats { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-  .stats span { border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:12px; color:var(--mute); }
-  .tabs, .searchrow { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-  button.tab, button.nav, button.x { border:1px solid var(--line); background:#111; color:var(--bone); border-radius:999px; padding:8px 12px; font:inherit; cursor:pointer; }
-  button.tab.on { background:var(--bone); color:#111; border-color:var(--bone); }
-  input { flex:1; min-width:160px; background:#111; color:var(--bone); border:1px solid var(--line); border-radius:999px; padding:8px 14px; font:inherit; }
+  .sub { margin:2px 0 0; color:var(--mute); font-size:13px; }
+  .stats { display:flex; flex-wrap:nowrap; overflow-x:auto; gap:8px; margin-top:8px; }
+  .stats span { border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:12px; color:var(--mute); flex:0 0 auto; }
+  .tabs, .searchrow, .chips { display:flex; gap:8px; margin-top:10px; }
+  .chips { overflow-x:auto; flex-wrap:nowrap; padding-bottom:2px; -webkit-overflow-scrolling:touch; }
+  button.tab, button.nav, button.x, button.chip { border:1px solid var(--line); background:#111; color:var(--bone); border-radius:999px; padding:8px 12px; font:inherit; cursor:pointer; }
+  button.chip { flex:0 0 auto; font-size:13px; padding:7px 11px; }
+  button.tab.on, button.chip.on { background:var(--bone); color:#111; border-color:var(--bone); }
+  input[type="search"], input[type="number"] { background:#111; color:var(--bone); border:1px solid var(--line); border-radius:999px; padding:8px 14px; font:inherit; }
+  input[type="search"] { flex:1; min-width:0; }
   main { padding:14px 16px 40px; }
   .meta { color:var(--mute); font-size:13px; font-variant-numeric:tabular-nums; }
+  .hero { margin-top:8px; background:#000; border:1px solid var(--line); border-radius:16px; overflow:hidden; touch-action:pan-y; }
+  .hero img { width:100%; aspect-ratio:1; max-height:58vw; object-fit:contain; display:block; background:#000; }
+  @media (min-width:720px) { .hero img { max-height:28rem; } }
+  input[type="range"] { width:100%; margin:10px 0 0; accent-color:var(--lamp); height:28px; }
   .grid { margin-top:12px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
   @media (min-width:720px) { .grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
   @media (min-width:1100px) { .grid { grid-template-columns:repeat(6,minmax(0,1fr)); } }
   .card { display:flex; flex-direction:column; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; color:inherit; padding:0; cursor:pointer; font:inherit; }
-  .card:hover { transform:translateY(-2px); }
   .shot { position:relative; aspect-ratio:1; background:#000; }
-  .shot img { width:100%; height:100%; object-fit:cover; display:block; }
+  .shot img { width:100%; height:100%; object-fit:contain; display:block; background:#000; }
   .badge { position:absolute; top:8px; border-radius:999px; background:rgba(10,10,10,.8); backdrop-filter:blur(8px); padding:3px 8px; font-size:11px; }
   .badge.l { left:8px; } .badge.r { right:8px; color:var(--lamp); }
   .cap { display:flex; flex-direction:column; gap:4px; padding:10px 12px 12px; }
   .cap b { font-weight:600; font-size:14px; line-height:1.3; }
   .cap small { color:var(--mute); font-variant-numeric:tabular-nums; }
-  .pager { margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:10px; border-top:1px solid var(--line); padding-top:12px; }
+  .pager { margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:10px; border-top:1px solid var(--line); padding-top:12px; flex-wrap:wrap; }
+  .pager form { display:flex; gap:8px; align-items:center; }
   dialog { width:min(920px, calc(100vw - 24px)); background:var(--card); color:var(--bone); border:1px solid var(--line); border-radius:18px; padding:0; }
   dialog::backdrop { background:rgba(0,0,0,.72); }
   dialog img { width:100%; max-height:62vh; object-fit:contain; background:#000; }
@@ -39,55 +46,65 @@
   dialog h2 { margin:0 0 6px; font-size:22px; }
   dialog p { margin:6px 0; color:var(--mute); }
   dialog a { color:var(--bone); }
-
   .scrub { margin: 4px 0 18px; }
   .scrub h2 { margin: 0; font-size: 14px; font-weight: 600; }
   .scrub .row { display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
-  .scrub .now { margin: 4px 0 0; font-size: 14px; }
+  .scrub .now { margin: 4px 0 0; font-size: 15px; font-weight:600; }
   .scrub .hint { margin: 0; color: var(--mute); font-size: 12px; }
   .rail { margin-top: 10px; display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; cursor:grab; padding-bottom:6px; }
   .rail.dragging { cursor:grabbing; scroll-snap-type:none; }
   .rail figure { flex: 0 0 78%; max-width: 24rem; scroll-snap-align:center; margin:0; }
-  .rail img { width:100%; aspect-ratio:1; object-fit:cover; background:#000; border:1px solid var(--line); border-radius:14px; display:block; user-select:none; -webkit-user-drag:none; }
+  .rail img { width:100%; aspect-ratio:1; object-fit:contain; background:#000; border:1px solid var(--line); border-radius:14px; display:block; user-select:none; -webkit-user-drag:none; }
   .rail figcaption { margin-top:8px; font-size:14px; line-height:1.3; }
   footer { margin-top:22px; color:var(--mute); font-size:12px; max-width:70ch; }
+  footer a { color:var(--bone); }
+  .wait { color:var(--mute); }
 </style>
 </head>
 <body>
 <header>
   <h1>Meta Image</h1>
-  <p class="sub">33,000 accession cards. The picture under each card is the real film, named for what it shows.</p>
-  <div class="stats">
-    <span>33,000 images</span>
-    <span>Q-READY 7,393</span>
-    <span>PET/HYB 3,000</span>
-    <span>PEDS 5,824</span>
-    <span>US 927</span>
-    <span>CT 4,500</span>
-    <span>MRI 4,200</span>
-    <span>NUCLEAR 2,500</span>
-    <span>CARDIAC 800</span>
-    <span>MAMMO 1,200</span>
-    <span>RAD 1,500</span>
-    <span>THERAPY 1,156</span>
-  </div>
+  <p class="sub" id="sub">Loading the NIH chest radiograph library…</p>
+  <div class="stats" id="stats"></div>
   <div class="tabs" id="tabs"></div>
   <div class="searchrow">
-    <input id="q" placeholder="Filter by ID, modality, chest, brain, lung, axial" />
+    <input id="q" type="search" placeholder="Image id or finding, such as pneumonia or 00000001_000" enterkeyhint="search" />
   </div>
 </header>
 <main>
+  <div id="nih">
+    <div class="chips" id="chips"></div>
+    <section class="scrub">
+      <div class="row">
+        <h2>NIH chest radiographs</h2>
+        <span class="meta" id="scrubCount"></span>
+      </div>
+      <p class="now" id="scrubNow">Loading the library index…</p>
+      <p class="hint">Drag the film or the slider. Each stop is a different radiograph.</p>
+      <div class="hero" id="hero"><img id="heroImg" alt="" /></div>
+      <input id="scrub" type="range" min="0" max="1" value="0" aria-label="Drag through the NIH library" />
+    </section>
+  </div>
   <div id="scrubs"></div>
   <p class="meta" id="count"></p>
   <div class="grid" id="grid"></div>
   <div class="pager">
     <p class="meta" id="pageLabel"></p>
-    <div>
+    <form id="jump">
       <button class="nav" id="prev" type="button">Prev</button>
+      <input id="pageInput" type="number" min="1" inputmode="numeric" aria-label="Page number" style="width:5.5rem" />
       <button class="nav" id="next" type="button">Next</button>
-    </div>
+    </form>
   </div>
-  <footer>Legal: NIH films are CC0 public domain with no restrictions. TCIA collections are CC BY 3.0, free for commercial, scientific, and educational use with attribution. The picture is a reference film matched to modality and plane, not the accession DICOM itself.</footer>
+  <footer>
+    NIH Clinical Center ChestX-ray14. 112,120 frontal chest radiographs, CC0 public domain.
+    The database on this page holds every image id and the finding mined from that study’s report.
+    Pictures load from the NIH files when you open a card. They are not repeated crops.
+    Cite Wang, Peng, Lu, Lu, Bagheri, and Summers, CVPR 2017,
+    <a href="https://arxiv.org/abs/1705.02315" target="_blank" rel="noreferrer">arXiv 1705.02315</a>.
+    Source files: <a href="https://nihcc.app.box.com/v/ChestXray-NIHCC" target="_blank" rel="noreferrer">NIH ChestX-ray download</a>.
+    CT, MRI, and PET tabs are separate open reference films, not part of the 112,120.
+  </footer>
 </main>
 <dialog id="dlg">
   <img id="dlgImg" alt="" />
@@ -95,55 +112,19 @@
     <h2 id="dlgTitle"></h2>
     <p id="dlgId"></p>
     <p id="dlgNote"></p>
-    <p><a id="dlgSrc" href="" target="_blank" rel="noreferrer">Source</a></p>
+    <p><a id="dlgSrc" href="https://nihcc.app.box.com/v/ChestXray-NIHCC" target="_blank" rel="noreferrer">NIH ChestX-ray14</a></p>
     <button class="x" id="close" type="button">Close</button>
   </div>
 </dialog>
 <script>
-const FILMS = [{"src": "films/xpa-a.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Normal_posteroanterior_(PA)_chest_radiograph_(X-ray).jpg", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/xpa-b.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Normal_posteroanterior_(PA)_chest_radiograph_(X-ray).jpg", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/xpa-c.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Normal_posteroanterior_(PA)_chest_radiograph_(X-ray).jpg", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/x10-a.webp", "credit": "Stillwaterising. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Chest_Xray_PA_3-8-2010.png", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/x10-b.webp", "credit": "Stillwaterising. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Chest_Xray_PA_3-8-2010.png", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/x10-c.webp", "credit": "Stillwaterising. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Chest_Xray_PA_3-8-2010.png", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/xpna-a.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:X-ray_of_lobar_pneumonia.jpg", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/xpna-b.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:X-ray_of_lobar_pneumonia.jpg", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/xpna-c.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:X-ray_of_lobar_pneumonia.jpg", "modality": "xray", "anatomy": "chest", "plane": "frontal"}, {"src": "films/xlat-a.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Normal_lateral_chest_radiograph_(X-ray).jpg", "modality": "xray", "anatomy": "chest", "plane": "lateral"}, {"src": "films/xlat-b.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:Normal_lateral_chest_radiograph_(X-ray).jpg", "modality": "xray", "anatomy": "chest", "plane": "lateral"}, {"src": "films/xjh-a.webp", "credit": "James Heilman, MD. CC BY 3.0.", "license": "CC BY 3.0", "page": "https://commons.wikimedia.org/wiki/File:Normal_lateral_chest_x-ray.jpg", "modality": "xray", "anatomy": "chest", "plane": "lateral"}, {"src": "films/xjh-b.webp", "credit": "James Heilman, MD. CC BY 3.0.", "license": "CC BY 3.0", "page": "https://commons.wikimedia.org/wiki/File:Normal_lateral_chest_x-ray.jpg", "modality": "xray", "anatomy": "chest", "plane": "lateral"}, {"src": "films/ct-th-axi-10.webp", "credit": "Mikael Häggström, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-20.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-30.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-40.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-50.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-60.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-70.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-80.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-85.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-90.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-100.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-cor-20.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "chest", "plane": "coronal"}, {"src": "films/ct-th-cor-40.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "chest", "plane": "coronal"}, {"src": "films/ct-th-cor-60.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "chest", "plane": "coronal"}, {"src": "films/ct-abd-00.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "abdomen", "plane": "axial"}, {"src": "films/ct-abd-01.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "abdomen", "plane": "axial"}, {"src": "films/ct-abd-02.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "liver", "plane": "axial"}, {"src": "films/ct-lung-10.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-lung-11.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/mri-sag-06.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "sagittal"}, {"src": "films/mri-ax-09.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-ax-09-c.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/pet-mip.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "whole body", "plane": "coronal"}, {"src": "films/pet-ax.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "lung", "plane": "axial"}, {"src": "films/pet-p4a.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "lung", "plane": "axial"}, {"src": "films/pet-p4b.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "chest", "plane": "axial"}, {"src": "films/pet-p5d.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "chest", "plane": "axial"}, {"src": "films/pet-mip-chest.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "chest", "plane": "coronal"}, {"src": "films/mri-ax-11b.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-sag-11c.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "sagittal"}, {"src": "films/mri-ax-11d.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-ax-7l.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-ax-7r.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-cor-12.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "coronal"}, {"src": "films/mri-cor-13.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "coronal"}];
-const TOTAL = 33000, PAGE = 36;
-const LEDGER = [
-  ["qready","Q-READY",7393,"xray"],
-  ["pethyb","PET/HYB",3000,"pet"],
-  ["peds","PEDS",5824,"xray"],
-  ["us","US",927,"ct"],
-  ["ct","CT",4500,"ct"],
-  ["mri","MRI",4200,"mri"],
-  ["nuc","NUCLEAR",2500,"pet"],
-  ["cardiac","CARDIAC",800,"ct"],
-  ["mammo","MAMMO",1200,"xray"],
-  ["rad","RAD",1500,"xray"],
-  ["therapy","THERAPY",1156,"pet"]
-];
-function bandAt(index){
-  let cursor = 0;
-  for (const row of LEDGER){
-    if (index < cursor + row[2]) return {row, offset: index - cursor};
-    cursor += row[2];
-  }
-  return {row: LEDGER[LEDGER.length-1], offset: 0};
-}
-const VIEWS = ["PA","AP","lateral","lordotic"];
-const CT_SLOTS = [
-  {anatomy:"lung", plane:"axial", collection:"LIDC-IDRI"},
-  {anatomy:"chest", plane:"axial", collection:"LIDC-IDRI"},
-  {anatomy:"lung", plane:"coronal", collection:"NSCLC-Radiomics"},
-  {anatomy:"abdomen", plane:"axial", collection:"DeepLesion"},
-  {anatomy:"liver", plane:"axial", collection:"DeepLesion"}
-];
-const MRI_SLOTS = [{anatomy:"brain",plane:"axial"},{anatomy:"brain",plane:"sagittal"},{anatomy:"brain",plane:"coronal"}];
-const PET_SLOTS = [
-  {anatomy:"lung", plane:"axial", collection:"NSCLC-Radiomics-PET"},
-  {anatomy:"chest", plane:"coronal", collection:"NSCLC PET-CT"},
-  {anatomy:"whole body", plane:"coronal", collection:"NSCLC PET-CT"}
-];
-const ANATOMY = {lung:["lung","chest"], chest:["chest","lung"], liver:["liver","abdomen"], abdomen:["abdomen","liver"], "whole body":["whole body","chest"], brain:["brain"]};
+const FILMS = [{"src": "films/ct-th-axi-10.webp", "credit": "Mikael Häggström, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-20.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-30.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-40.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-50.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-60.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-70.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-80.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-85.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-90.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-axi-100.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-th-cor-20.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "chest", "plane": "coronal"}, {"src": "films/ct-th-cor-40.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "chest", "plane": "coronal"}, {"src": "films/ct-th-cor-60.webp", "credit": "Mikael H\\u00e4ggstr\\u00f6m, MD. CC0. Normal thorax HRCT.", "license": "CC0", "page": "https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg", "modality": "ct", "anatomy": "chest", "plane": "coronal"}, {"src": "films/ct-abd-00.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "abdomen", "plane": "axial"}, {"src": "films/ct-abd-01.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "abdomen", "plane": "axial"}, {"src": "films/ct-abd-02.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "liver", "plane": "axial"}, {"src": "films/ct-lung-10.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/ct-lung-11.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "ct", "anatomy": "lung", "plane": "axial"}, {"src": "films/mri-sag-06.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "sagittal"}, {"src": "films/mri-ax-09.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-ax-09-c.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/pet-mip.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "whole body", "plane": "coronal"}, {"src": "films/pet-ax.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "lung", "plane": "axial"}, {"src": "films/pet-p4a.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "lung", "plane": "axial"}, {"src": "films/pet-p4b.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "chest", "plane": "axial"}, {"src": "films/pet-p5d.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "chest", "plane": "axial"}, {"src": "films/pet-mip-chest.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "pet", "anatomy": "chest", "plane": "coronal"}, {"src": "films/mri-ax-11b.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-sag-11c.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "sagittal"}, {"src": "films/mri-ax-11d.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-ax-7l.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-ax-7r.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "axial"}, {"src": "films/mri-cor-12.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "coronal"}, {"src": "films/mri-cor-13.webp", "credit": "Open-access figure via Open-i, U.S. National Library of Medicine.", "license": "Open access", "page": "https://openi.nlm.nih.gov/", "modality": "mri", "anatomy": "brain", "plane": "coronal"}];
+const NAMES = ["Atelectasis","Cardiomegaly","Consolidation","Edema","Effusion","Emphysema","Fibrosis","Hernia","Infiltration","Mass","Nodule","Pleural_Thickening","Pneumonia","Pneumothorax"];
+const PAGE = 36;
+const HF = "https://datasets-server.huggingface.co/rows?dataset=timm/nih-chest-xray-14&config=default&split=";
+let manifest = null, dv = null, view = "nih", finding = "all", q = "", cursor = 0, page = 1, results = null;
+let generation = 0;
+const blobCache = new Map();
 const CAPTIONS = [
-  ["films/xpa-","Normal PA chest radiograph"],
-  ["films/x10-","PA chest radiograph"],
-  ["films/xpna-","Lobar pneumonia, PA chest radiograph"],
-  ["films/xlat-","Normal lateral chest radiograph"],
-  ["films/xjh-","Normal lateral chest radiograph"],
   ["films/ct-th-axi-","Axial HRCT of a normal thorax"],
   ["films/ct-th-cor-","Coronal HRCT of a normal thorax"],
   ["films/ct-abd-02","Axial CT through the liver"],
@@ -151,192 +132,470 @@ const CAPTIONS = [
   ["films/ct-lung-","Axial CT of the lungs"],
   ["films/mri-sag-","Sagittal MRI of the brain"],
   ["films/mri-ax-","Axial MRI of the brain"],
-  ["films/mri-cor-","Axial MRI of the brain"],
+  ["films/mri-cor-","Coronal MRI of the brain"],
   ["films/pet-mip","Whole-body FDG PET, coronal MIP"],
   ["films/pet-p5d","Axial fused FDG PET/CT of the chest"],
   ["films/pet-","Axial FDG PET of the chest"]
 ];
-const LABELS = {xray:"X-ray", ct:"CT", mri:"MRI", pet:"PET"};
-function pad(n){ return String(n).padStart(5,"0"); }
-function studyAt(index){
-  const {row, offset} = bandAt(index);
-  const modality = row[3];
-  const bucket = row[0];
-  const label = row[1];
-  if (modality === "xray") return {index, id:label+"-"+pad(offset+1), bucket, modality, anatomy:"chest", plane:VIEWS[index%4], license:"CC0", collection:label, source:"Meta Image", sourceUrl:"/meta-image/index.html", note:"Reference film from the Meta Image library. Not this accession's own DICOM."};
-  if (modality === "ct") { const s=CT_SLOTS[offset%CT_SLOTS.length]; return {index, id:label+"-"+pad(offset+1), bucket, modality, anatomy:s.anatomy, plane:s.plane, license:"CC0", collection:label, source:"Meta Image", sourceUrl:"/meta-image/index.html", note:"Reference CT from the Meta Image library. Not this accession's own DICOM."}; }
-  if (modality === "mri") { const s=MRI_SLOTS[offset%MRI_SLOTS.length]; return {index, id:label+"-"+pad(offset+1), bucket, modality, anatomy:s.anatomy, plane:s.plane, license:"Open access", collection:label, source:"Meta Image", sourceUrl:"/meta-image/index.html", note:"Reference MRI from the Meta Image library. Not this accession's own DICOM."}; }
-  const s=PET_SLOTS[offset%PET_SLOTS.length];
-  return {index, id:label+"-"+pad(offset+1), bucket, modality, anatomy:s.anatomy, plane:s.plane, license:"Open access", collection:label, source:"Meta Image", sourceUrl:"/meta-image/index.html", note:"Reference PET from the Meta Image library. Not this accession's own DICOM."};
+function pretty(name){ return name.replaceAll("_", " "); }
+function rec(i){
+  const o = i * 8;
+  const patient = dv.getUint32(o, true);
+  const follow = dv.getUint8(o + 4);
+  const age = dv.getUint8(o + 5);
+  const flags = dv.getUint16(o + 6, true);
+  const id = String(patient).padStart(8,"0") + "_" + String(follow).padStart(3,"0");
+  return {i, id, patient, follow, age, flags};
 }
-function filmFor(study){
-  const pool = FILMS.filter(f => f.modality === study.modality);
-  const names = new Set(ANATOMY[study.anatomy] || [study.anatomy]);
-  const byA = pool.filter(f => names.has(f.anatomy));
-  const base = byA.length ? byA : pool;
-  const frontal = study.plane === "PA" || study.plane === "AP" || study.plane === "lordotic";
-  const byP = base.filter(f => frontal ? f.plane === "frontal" : f.plane === study.plane);
-  const use = byP.length ? byP : base;
-  return use[Math.abs(study.index * 5 + 1) % use.length] || pool[0];
+function findingText(flags){
+  const bits = flags & 0x3fff;
+  if (!bits) return "No finding";
+  const out = [];
+  for (let b = 0; b < 14; b++) if (bits & (1 << b)) out.push(pretty(NAMES[b]));
+  return out.join(", ");
 }
-function caption(film){
-  const hit = CAPTIONS.find(([p]) => film.src.startsWith(p));
-  return hit ? hit[1] : (film.anatomy + ", " + film.plane);
+function viewName(flags){ return (flags & 0x8000) ? "AP" : "PA"; }
+function sexName(flags){ return (flags & 0x4000) ? "F" : "M"; }
+function captionOf(r){
+  const findingName = findingText(r.flags);
+  const plane = viewName(r.flags) === "AP" ? "AP" : "PA";
+  if (findingName === "No finding") return "No finding, " + plane + " chest radiograph";
+  return findingName + ", " + plane + " chest radiograph";
 }
-function matches(study, q){
-  if (view !== "all" && study.bucket !== view && study.modality !== view) return false;
-  if (!q) return true;
-  const blob = [study.id, study.modality, study.bucket, LABELS[study.modality], study.anatomy, study.plane, study.collection, study.source].join(" ").toLowerCase();
-  return q.toLowerCase().split(/\s+/).every(w => blob.includes(w));
+function splitOf(globalIndex){
+  if (globalIndex < manifest.train) return ["train", globalIndex];
+  return ["test", globalIndex - manifest.train];
 }
-const TABS = [["all","All 33,000"]].concat(LEDGER.map(r => [r[0], r[1]+" "+r[2].toLocaleString()]));
-let view="all", page=1, q="";
-const tabsEl=document.getElementById("tabs");
-TABS.forEach(([id,label]) => {
-  const b=document.createElement("button");
-  b.className="tab"; b.type="button"; b.textContent=label; b.dataset.view=id;
-  b.onclick=() => { view=id; page=1; draw(); };
-  tabsEl.appendChild(b);
-});
-document.getElementById("q").oninput = (e) => { q=e.target.value.trim(); page=1; draw(); };
-document.getElementById("prev").onclick = () => { if(page>1){ page--; draw(); } };
-document.getElementById("next").onclick = () => { page++; draw(); };
-const dlg=document.getElementById("dlg");
-document.getElementById("close").onclick = () => dlg.close();
-function indexes(){
-  const out=[];
-  for (let i=0;i<TOTAL;i++){
-    const s=studyAt(i);
-    if (view!=="all" && s.bucket!==view && s.modality!==view) continue;
-    if (!matches(s,q)) continue;
+function resultCount(){ return results ? results.length : manifest.total; }
+function globalAt(pos){ return results ? results[pos] : pos; }
+function rebuild(){
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const bit = finding === "all" ? null : (finding === "none" ? -1 : NAMES.indexOf(finding));
+  if (!words.length && bit === null) { results = null; return; }
+  const out = [];
+  for (let i = 0; i < manifest.total; i++){
+    const flags = dv.getUint16(i * 8 + 6, true);
+    const bits = flags & 0x3fff;
+    if (bit === -1 && bits) continue;
+    if (bit !== null && bit >= 0 && !(bits & (1 << bit))) continue;
+    if (words.length){
+      const r = rec(i);
+      const blob = (r.id + " " + findingText(flags) + " " + viewName(flags) + " " + sexName(flags) + " chest radiograph xray").toLowerCase();
+      if (!words.every(w => blob.includes(w))) continue;
+    }
     out.push(i);
-    if (q && out.length>5000) break;
   }
-  return out;
+  results = out;
 }
+function clampCursor(){
+  const n = resultCount();
+  if (!n) { cursor = 0; page = 1; return; }
+  if (cursor > n - 1) cursor = n - 1;
+  if (cursor < 0) cursor = 0;
+  page = Math.floor(cursor / PAGE) + 1;
+}
+function pages(){ return Math.max(1, Math.ceil(resultCount() / PAGE)); }
 
-const DUPES = new Set(["films/x10-b.webp","films/xpna-b.webp"]);
-function distinct(mod){
-  return FILMS.filter(f => f.modality===mod && !DUPES.has(f.src));
-}
 function bindDrag(el){
-  let state=null;
+  let state = null;
   el.addEventListener("pointerdown", (e) => {
-    if (e.button!==0) return;
-    state={x:e.clientX,y:e.clientY,left:el.scrollLeft,id:e.pointerId,on:false};
+    if (e.button !== 0) return;
+    state = {x:e.clientX, y:e.clientY, left:el.scrollLeft, id:e.pointerId, on:false};
   });
   el.addEventListener("pointermove", (e) => {
     if (!state) return;
-    const dx=e.clientX-state.x, dy=e.clientY-state.y;
+    const dx = e.clientX - state.x, dy = e.clientY - state.y;
     if (!state.on){
-      if (Math.abs(dx)<6 && Math.abs(dy)<6) return;
-      if (Math.abs(dy)>Math.abs(dx)){ state=null; return; }
-      state.on=true;
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      if (Math.abs(dy) > Math.abs(dx)) { state = null; return; }
+      state.on = true;
       el.setPointerCapture(state.id);
       el.classList.add("dragging");
     }
     el.scrollLeft = state.left - dx;
   });
-  const up=()=>{ state=null; el.classList.remove("dragging"); };
+  const up = () => { state = null; el.classList.remove("dragging"); };
   el.addEventListener("pointerup", up);
   el.addEventListener("pointercancel", up);
 }
+function filmCaption(film){
+  const hit = CAPTIONS.find(([p]) => film.src.startsWith(p));
+  return hit ? hit[1] : (film.anatomy + ", " + film.plane);
+}
+function distinct(mod){ return FILMS.filter(f => f.modality === mod); }
 function paintScrubs(){
-  const host=document.getElementById("scrubs");
-  if (host.dataset.view === view) return;
-  host.dataset.view = view;
-  host.innerHTML="";
-  const blocks=[];
-  if (view==="all" || view==="rad" || view==="qready" || view==="peds" || view==="mammo" || view==="xray") blocks.push(["Radiographs in the library", distinct("xray")]);
-  if (view==="all" || view==="ct" || view==="us" || view==="cardiac") blocks.push(["CTs in the library", distinct("ct")]);
-  if (view==="all" || view==="mri") blocks.push(["MRIs in the library", distinct("mri")]);
-  if (view==="all" || view==="pethyb" || view==="nuc" || view==="therapy" || view==="pet") blocks.push(["PET films in the library", distinct("pet")]);
-  blocks.forEach(([title, films]) => {
-    const sec=document.createElement("section");
-    sec.className="scrub";
-    const row=document.createElement("div");
-    row.className="row";
-    const h=document.createElement("h2");
-    h.textContent=title;
-    const n=document.createElement("span");
-    n.className="meta";
-    n.textContent="1 of "+films.length;
-    row.append(h,n);
-    const now=document.createElement("p");
-    now.className="now";
-    now.textContent=films[0]?caption(films[0]):"";
-    const hint=document.createElement("p");
-    hint.className="hint";
-    hint.textContent="Click and drag to see each different film.";
-    const rail=document.createElement("div");
-    rail.className="rail";
-    films.forEach((film)=>{
-      const fig=document.createElement("figure");
-      const img=document.createElement("img");
-      const cap=caption(film);
-      img.src=film.src; img.alt=cap; img.draggable=false;
-      const fc=document.createElement("figcaption");
-      fc.textContent=cap;
-      fig.append(img, fc);
-      rail.append(fig);
-    });
-    rail.addEventListener("scroll", () => {
-      const mid=rail.scrollLeft+rail.clientWidth/2;
-      let best=0, bestD=1e9;
-      [...rail.children].forEach((kid,i)=>{
-        const c=kid.offsetLeft+kid.offsetWidth/2;
-        const d=Math.abs(c-mid);
-        if (d<bestD){ bestD=d; best=i; }
-      });
-      n.textContent=(best+1)+" of "+films.length;
-      now.textContent=caption(films[best]);
-    });
-    bindDrag(rail);
-    sec.append(row, now, hint, rail);
-    host.append(sec);
+  const host = document.getElementById("scrubs");
+  host.innerHTML = "";
+  if (view === "nih") return;
+  const films = distinct(view);
+  const title = view === "ct" ? "CT reference films" : view === "mri" ? "MRI reference films" : "PET reference films";
+  const sec = document.createElement("section");
+  sec.className = "scrub";
+  const row = document.createElement("div");
+  row.className = "row";
+  const h = document.createElement("h2");
+  h.textContent = title;
+  const n = document.createElement("span");
+  n.className = "meta";
+  n.textContent = films.length ? "1 of " + films.length : "0";
+  row.append(h, n);
+  const now = document.createElement("p");
+  now.className = "now";
+  now.textContent = films[0] ? filmCaption(films[0]) : "";
+  const hint = document.createElement("p");
+  hint.className = "hint";
+  hint.textContent = "Drag to see each different film.";
+  const rail = document.createElement("div");
+  rail.className = "rail";
+  films.forEach((film) => {
+    const fig = document.createElement("figure");
+    const img = document.createElement("img");
+    const cap = filmCaption(film);
+    img.src = film.src; img.alt = cap; img.draggable = false;
+    const fc = document.createElement("figcaption");
+    fc.textContent = cap;
+    fig.append(img, fc);
+    rail.append(fig);
   });
+  rail.addEventListener("scroll", () => {
+    const mid = rail.scrollLeft + rail.clientWidth / 2;
+    let best = 0, bestD = 1e9;
+    [...rail.children].forEach((kid, i) => {
+      const c = kid.offsetLeft + kid.offsetWidth / 2;
+      const d = Math.abs(c - mid);
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    n.textContent = (best + 1) + " of " + films.length;
+    now.textContent = filmCaption(films[best]);
+  });
+  bindDrag(rail);
+  sec.append(row, now, hint, rail);
+  host.append(sec);
 }
 
-function draw(){
-  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.view===view));
-  const ids = indexes();
-  const pages = Math.max(1, Math.ceil(ids.length / PAGE));
-  if (page>pages) page=pages;
-  const start=(page-1)*PAGE;
-  const slice=ids.slice(start, start+PAGE);
-  const grid=document.getElementById("grid");
-  grid.innerHTML="";
-  slice.forEach(i => {
-    const s=studyAt(i);
-    const film=filmFor(s);
-    const cap=caption(film);
-    const btn=document.createElement("button");
-    btn.className="card"; btn.type="button";
-    btn.setAttribute("aria-label", cap+". Accession "+s.id+".");
-    btn.innerHTML = `<span class="shot"><img src="${film.src}" alt="${cap}" loading="lazy" /><span class="badge l">${LABELS[s.modality]}</span><span class="badge r">${s.license}</span></span><span class="cap"><b>${cap}</b><small>${s.id}</small></span>`;
-    btn.onclick=() => openStudy(s, film, cap);
-    grid.appendChild(btn);
-  });
-  const from = ids.length ? start+1 : 0;
-  const to = start+slice.length;
-  document.getElementById("count").textContent = ids.length ? `Showing ${from.toLocaleString()}–${to.toLocaleString()} of ${ids.length.toLocaleString()}` : "No studies match";
-  document.getElementById("pageLabel").textContent = `Page ${page.toLocaleString()} of ${pages.toLocaleString()}`;
-  document.getElementById("prev").disabled = page<=1;
-  document.getElementById("next").disabled = page>=pages;
+function remember(key, url){
+  if (blobCache.has(key)) { blobCache.delete(key); blobCache.set(key, url); return url; }
+  blobCache.set(key, url);
+  while (blobCache.size > 96) {
+    const oldest = blobCache.keys().next().value;
+    URL.revokeObjectURL(blobCache.get(oldest));
+    blobCache.delete(oldest);
+  }
+  return url;
+}
+async function remoteSrc(split, offset, length){
+  const res = await fetch(HF + split + "&offset=" + offset + "&length=" + length);
+  if (!res.ok) throw new Error("rows " + res.status);
+  const data = await res.json();
+  const map = new Map();
+  for (const item of data.rows || []) {
+    const src = item.row && item.row.image && item.row.image.src;
+    if (src) map.set(item.row_idx, src);
+  }
+  return map;
+}
+function rangesFor(pairs){
+  const by = {train: [], test: []};
+  pairs.forEach(p => by[p.split].push(p.row));
+  const ranges = [];
+  for (const split of ["train", "test"]) {
+    const rows = [...new Set(by[split])].sort((a, b) => a - b);
+    let start = null, prev = null;
+    const flush = () => { if (start != null) ranges.push({split, offset: start, length: prev - start + 1}); };
+    for (const row of rows) {
+      if (start == null) { start = prev = row; continue; }
+      if (row === prev + 1 && prev - start + 1 < 100) prev = row;
+      else { flush(); start = prev = row; }
+    }
+    flush();
+  }
+  return ranges;
+}
+async function loadJpeg(split, row, srcMap){
+  const key = split + ":" + row;
+  if (blobCache.has(key)) return blobCache.get(key);
+  let remote = srcMap.get(row);
+  if (!remote) {
+    const one = await remoteSrc(split, row, 1);
+    remote = one.get(row);
+  }
+  if (!remote) throw new Error("no src");
+  const res = await fetch(remote);
+  if (!res.ok) throw new Error("jpeg");
+  const blob = new Blob([await res.arrayBuffer()], {type: "image/jpeg"});
+  return remember(key, URL.createObjectURL(blob));
+}
+async function fillImages(jobs, gen){
+  const pairs = jobs.map(j => ({split: j.split, row: j.row}));
+  const srcMapBySplit = {train: new Map(), test: new Map()};
+  await Promise.all(rangesFor(pairs).map(async (range) => {
+    try {
+      const got = await remoteSrc(range.split, range.offset, range.length);
+      if (gen !== generation) return;
+      got.forEach((src, row) => srcMapBySplit[range.split].set(row, src));
+    } catch (e) { /* card stays labeled */ }
+  }));
+  if (gen !== generation) return;
+  const queue = jobs.slice();
+  async function worker(){
+    while (queue.length && gen === generation) {
+      const job = queue.shift();
+      try {
+        const url = await loadJpeg(job.split, job.row, srcMapBySplit[job.split]);
+        if (gen !== generation) return;
+        job.img.src = url;
+      } catch (e) {
+        job.img.alt = job.alt + ". Picture did not load.";
+      }
+    }
+  }
+  await Promise.all([worker(), worker(), worker(), worker()]);
+}
+
+let heroTimer = 0, gridTimer = 0;
+function scheduleHero(){
+  clearTimeout(heroTimer);
+  heroTimer = setTimeout(paintHeroImage, 160);
+}
+function scheduleGrid(){
+  clearTimeout(gridTimer);
+  gridTimer = setTimeout(drawGrid, 160);
+}
+function updateChrome(){
+  document.querySelectorAll("button.tab").forEach(b => b.classList.toggle("on", b.dataset.view === view));
+  document.getElementById("nih").hidden = view !== "nih";
+  const n = view === "nih" ? resultCount() : distinct(view).length;
+  const fromPage = view === "nih" ? (n ? (page - 1) * PAGE + 1 : 0) : (n ? 1 : 0);
+  const sliceLen = view === "nih" ? Math.min(PAGE, Math.max(0, n - (page - 1) * PAGE)) : n;
+  document.getElementById("count").textContent = n ? "Showing " + fromPage.toLocaleString() + "–" + (fromPage + sliceLen - 1).toLocaleString() + " of " + n.toLocaleString() : "No films match";
+  const pgs = view === "nih" ? pages() : 1;
+  document.getElementById("pageLabel").textContent = "Page " + page.toLocaleString() + " of " + pgs.toLocaleString();
+  document.getElementById("pageInput").value = String(page);
+  document.getElementById("pageInput").max = String(pgs);
+  document.getElementById("prev").disabled = page <= 1 || view !== "nih";
+  document.getElementById("next").disabled = page >= pgs || view !== "nih";
+  if (view === "nih" && n) {
+    const r = rec(globalAt(cursor));
+    document.getElementById("scrubNow").textContent = captionOf(r);
+    document.getElementById("scrubCount").textContent = (cursor + 1).toLocaleString() + " of " + n.toLocaleString();
+    const slider = document.getElementById("scrub");
+    slider.max = String(Math.max(0, n - 1));
+    slider.value = String(cursor);
+  }
+}
+function drawGrid(){
+  generation++;
+  const gen = generation;
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  updateChrome();
+  if (view !== "nih") {
+    distinct(view).forEach(film => {
+      const cap = filmCaption(film);
+      const btn = document.createElement("button");
+      btn.className = "card"; btn.type = "button";
+      btn.setAttribute("aria-label", cap);
+      const shot = document.createElement("span"); shot.className = "shot";
+      const img = document.createElement("img"); img.src = film.src; img.alt = cap;
+      const b1 = document.createElement("span"); b1.className = "badge l"; b1.textContent = view.toUpperCase();
+      const b2 = document.createElement("span"); b2.className = "badge r"; b2.textContent = film.license || "";
+      shot.append(img, b1, b2);
+      const capEl = document.createElement("span"); capEl.className = "cap";
+      const strong = document.createElement("b"); strong.textContent = cap;
+      const small = document.createElement("small"); small.textContent = film.anatomy + " · " + film.plane;
+      capEl.append(strong, small);
+      btn.append(shot, capEl);
+      btn.onclick = () => openFilm(film, cap);
+      grid.append(btn);
+    });
+    paintScrubs();
+    return;
+  }
+  const n = resultCount();
+  const start = (page - 1) * PAGE;
+  const jobs = [];
+  for (let k = 0; k < PAGE && start + k < n; k++) {
+    const g = globalAt(start + k);
+    const r = rec(g);
+    const cap = captionOf(r);
+    const [split, row] = splitOf(g);
+    const btn = document.createElement("button");
+    btn.className = "card"; btn.type = "button";
+    btn.setAttribute("aria-label", cap + ". " + r.id);
+    const shot = document.createElement("span"); shot.className = "shot";
+    const img = document.createElement("img"); img.alt = cap;
+    const b1 = document.createElement("span"); b1.className = "badge l"; b1.textContent = "X-ray";
+    const b2 = document.createElement("span"); b2.className = "badge r"; b2.textContent = "CC0";
+    shot.append(img, b1, b2);
+    const capEl = document.createElement("span"); capEl.className = "cap";
+    const strong = document.createElement("b"); strong.textContent = cap;
+    const small = document.createElement("small");
+    small.textContent = r.id + " · " + viewName(r.flags) + " · " + r.age + sexName(r.flags);
+    capEl.append(strong, small);
+    btn.append(shot, capEl);
+    btn.onclick = () => openNih(r, img);
+    grid.append(btn);
+    jobs.push({img, split, row, alt: cap});
+  }
+  fillImages(jobs, gen);
+}
+async function paintHeroImage(){
+  if (view !== "nih" || !resultCount()) return;
+  const g = globalAt(cursor);
+  const r = rec(g);
+  const [split, row] = splitOf(g);
+  const img = document.getElementById("heroImg");
+  img.alt = captionOf(r);
+  try {
+    const key = split + ":" + row;
+    if (!blobCache.has(key)) {
+      const one = await remoteSrc(split, row, 1);
+      await loadJpeg(split, row, one);
+    }
+    if (globalAt(cursor) === g) img.src = blobCache.get(key);
+  } catch (e) {
+    img.alt = captionOf(r) + ". Picture did not load.";
+  }
+}
+function drawAll(){
+  clampCursor();
   paintScrubs();
+  drawGrid();
+  if (view === "nih") paintHeroImage();
 }
-function openStudy(s, film, cap){
-  document.getElementById("dlgImg").src=film.src;
-  document.getElementById("dlgImg").alt=cap;
-  document.getElementById("dlgTitle").textContent=cap;
-  document.getElementById("dlgId").textContent=`${s.id} · ${s.collection} · ${film.credit}`;
-  document.getElementById("dlgNote").textContent=s.note;
-  const a=document.getElementById("dlgSrc");
-  a.href=film.page || s.sourceUrl;
-  a.textContent=film.credit || s.source;
-  dlg.showModal();
+function openNih(r, thumb){
+  const cap = captionOf(r);
+  const [split, row] = splitOf(r.i);
+  const img = document.getElementById("dlgImg");
+  img.alt = cap;
+  const key = split + ":" + row;
+  img.src = blobCache.get(key) || (thumb && thumb.src) || "";
+  document.getElementById("dlgTitle").textContent = cap;
+  document.getElementById("dlgId").textContent = r.id + " · patient " + r.patient + " · follow-up " + r.follow + " · " + viewName(r.flags) + " · " + r.age + sexName(r.flags) + " · " + split + " row " + row.toLocaleString();
+  document.getElementById("dlgNote").textContent = "NIH text-mined label from the original radiology report (ChestX-ray14). This is that study’s frontal chest radiograph, not a stand-in.";
+  const a = document.getElementById("dlgSrc");
+  a.href = "https://nihcc.app.box.com/v/ChestXray-NIHCC";
+  a.textContent = "NIH Clinical Center · CC0";
+  document.getElementById("dlg").showModal();
 }
-draw();
+function openFilm(film, cap){
+  document.getElementById("dlgImg").src = film.src;
+  document.getElementById("dlgImg").alt = cap;
+  document.getElementById("dlgTitle").textContent = cap;
+  document.getElementById("dlgId").textContent = film.credit || "";
+  document.getElementById("dlgNote").textContent = "Open reference film. Not an NIH ChestX-ray14 study.";
+  const a = document.getElementById("dlgSrc");
+  a.href = film.page || "https://openi.nlm.nih.gov/";
+  a.textContent = film.credit || "Source";
+  document.getElementById("dlg").showModal();
+}
+
+function buildChrome(){
+  const stats = document.getElementById("stats");
+  const bits = [
+    manifest.total.toLocaleString() + " films in the library",
+    manifest.counts["No Finding"].toLocaleString() + " no finding",
+    manifest.patients.toLocaleString() + " patients",
+    "CC0 public domain"
+  ];
+  bits.forEach(t => { const s = document.createElement("span"); s.textContent = t; stats.append(s); });
+  document.getElementById("sub").textContent = "112,120 NIH chest films. The line under each picture is that study’s finding.";
+  const tabs = document.getElementById("tabs");
+  [["nih","NIH 112,120"], ["ct","CT " + distinct("ct").length], ["mri","MRI " + distinct("mri").length], ["pet","PET " + distinct("pet").length]].forEach(([id, label]) => {
+    const b = document.createElement("button");
+    b.className = "tab"; b.type = "button"; b.textContent = label; b.dataset.view = id;
+    b.onclick = () => { view = id; q = ""; document.getElementById("q").value = ""; finding = "all"; cursor = 0; page = 1; results = null; syncChips(); drawAll(); };
+    tabs.append(b);
+  });
+  const chips = document.getElementById("chips");
+  const chipList = [["all", "All " + manifest.total.toLocaleString()], ["none", "No finding " + manifest.counts["No Finding"].toLocaleString()]];
+  NAMES.forEach(name => chipList.push([name, pretty(name) + " " + (manifest.counts[name] || 0).toLocaleString()]));
+  chipList.forEach(([id, label]) => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.type = "button"; b.textContent = label; b.dataset.finding = id;
+    b.onclick = () => { finding = id; cursor = 0; rebuild(); drawAll(); syncChips(); };
+    chips.append(b);
+  });
+  syncChips();
+}
+function syncChips(){
+  document.querySelectorAll("button.chip").forEach(b => b.classList.toggle("on", b.dataset.finding === finding));
+}
+
+const hero = document.getElementById("hero");
+let heroDrag = null;
+hero.addEventListener("pointerdown", (e) => {
+  if (view !== "nih") return;
+  heroDrag = {x: e.clientX, y: e.clientY, cursor, id: e.pointerId, on: false};
+});
+hero.addEventListener("pointermove", (e) => {
+  if (!heroDrag) return;
+  const dx = e.clientX - heroDrag.x, dy = e.clientY - heroDrag.y;
+  if (!heroDrag.on) {
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+    if (Math.abs(dy) > Math.abs(dx)) { heroDrag = null; return; }
+    heroDrag.on = true;
+    hero.setPointerCapture(heroDrag.id);
+  }
+  const step = Math.round(-dx / 18);
+  const next = heroDrag.cursor + step;
+  if (next === cursor) return;
+  cursor = next;
+  clampCursor();
+  updateChrome();
+  if (Math.floor(heroDrag.cursor / PAGE) !== Math.floor(cursor / PAGE)) scheduleGrid();
+  scheduleHero();
+});
+hero.addEventListener("pointerup", () => { heroDrag = null; });
+hero.addEventListener("pointercancel", () => { heroDrag = null; });
+document.getElementById("scrub").addEventListener("input", (e) => {
+  cursor = Number(e.target.value);
+  clampCursor();
+  updateChrome();
+  scheduleGrid();
+  scheduleHero();
+});
+document.getElementById("q").addEventListener("input", (e) => {
+  q = e.target.value.trim();
+  cursor = 0;
+  clearTimeout(gridTimer);
+  gridTimer = setTimeout(() => { rebuild(); drawAll(); }, 180);
+});
+document.getElementById("prev").onclick = () => { if (page > 1) { cursor = (page - 2) * PAGE; drawAll(); } };
+document.getElementById("next").onclick = () => { if (page < pages()) { cursor = page * PAGE; drawAll(); } };
+document.getElementById("jump").onsubmit = (e) => {
+  e.preventDefault();
+  const want = Number(document.getElementById("pageInput").value);
+  if (!want) return;
+  page = Math.min(pages(), Math.max(1, want));
+  cursor = (page - 1) * PAGE;
+  drawAll();
+};
+document.getElementById("close").onclick = () => document.getElementById("dlg").close();
+document.getElementById("dlg").addEventListener("click", (e) => { if (e.target.id === "dlg") e.target.close(); });
+
+async function boot(){
+  try {
+    const [manRes, binRes] = await Promise.all([fetch("nih/manifest.json"), fetch("nih/rows.bin")]);
+    if (!manRes.ok || !binRes.ok) throw new Error("index");
+    manifest = await manRes.json();
+    const raw = await binRes.arrayBuffer();
+    if (raw.byteLength !== manifest.total * 8) throw new Error("size");
+    dv = new DataView(raw);
+    const first = rec(0);
+    const last = rec(manifest.total - 1);
+    const test0 = rec(manifest.train);
+    if (first.id !== "00000001_000" || findingText(first.flags) !== "Cardiomegaly") throw new Error("record 0");
+    if (test0.id !== "00000003_000" || findingText(test0.flags) !== "Hernia") throw new Error("test 0");
+    if (last.id !== "00030805_000") throw new Error("last");
+    buildChrome();
+    drawAll();
+  } catch (err) {
+    document.getElementById("sub").textContent = "The library index did not load.";
+    document.getElementById("count").textContent = "112,120 records are supposed to be in nih/rows.bin.";
+  }
+}
+boot();
 </script>
 </body>
 </html>
