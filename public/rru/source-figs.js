@@ -191,6 +191,179 @@
     })
   }
 
+  var META = null
+  var metaKey = ''
+
+  var SLICE_ANATOMY = [
+    [0, 12, 'brain'],
+    [13, 20, 'neck'],
+    [21, 35, 'chest'],
+    [36, 56, 'abdomen'],
+    [57, 65, 'pelvis'],
+    [66, 100, 'whole body']
+  ]
+
+  function loadMeta() {
+    if (META) return Promise.resolve(META)
+    return fetch('/meta-image/films.json', { signal: AbortSignal.timeout(8000) })
+      .then(function (res) { return res.ok ? res.json() : [] })
+      .then(function (rows) { META = Array.isArray(rows) ? rows : []; return META })
+      .catch(function () { META = []; return META })
+  }
+
+  function sideBlob() {
+    var side = document.querySelector('.rr-side')
+    var view = document.querySelector('.rr-viewcol')
+    return ((side && side.innerText) || '') + '\n' + ((view && view.innerText) || '')
+  }
+
+  function sliceNo(blob) {
+    var m = String(blob || '').match(/\b(\d{1,3})\s*\/\s*100\b/)
+    return m ? Number(m[1]) : null
+  }
+
+  function anatomyAt(slice) {
+    if (slice == null) return ''
+    for (var i = 0; i < SLICE_ANATOMY.length; i++) {
+      if (slice >= SLICE_ANATOMY[i][0] && slice <= SLICE_ANATOMY[i][1]) return SLICE_ANATOMY[i][2]
+    }
+    return ''
+  }
+
+  function modalityOf(blob) {
+    var b = String(blob || '').toLowerCase()
+    if (/pet\s*\/\s*hybrid|\bpethyb\b|\bpet\b|\bfdg\b|\bsuv\b/.test(b)) return 'pet'
+    if (/\bmri\b|\bmra\b/.test(b)) return 'mri'
+    if (/\bct\b|\bcta\b/.test(b)) return 'ct'
+    if (/x-?ray|radiograph|\bcxr\b/.test(b)) return 'xray'
+    return ''
+  }
+
+  function sameAnatomy(film, anatomy) {
+    if (!anatomy) return false
+    if (film.anatomy === anatomy) return true
+    if (anatomy === 'chest' && (film.anatomy === 'lung' || film.anatomy === 'chest')) return true
+    if (anatomy === 'abdomen' && (film.anatomy === 'abdomen' || film.anatomy === 'liver')) return true
+    if (anatomy === 'brain' && film.anatomy === 'brain') return true
+    if (anatomy === 'whole body' && (film.anatomy === 'whole body' || /mip/.test(film.src))) return true
+    if (anatomy === 'pelvis' && film.anatomy === 'whole body') return true
+    return false
+  }
+
+  function matchFilms(films, blob) {
+    var mod = modalityOf(blob + ' ' + query())
+    var anatomy = anatomyAt(sliceNo(blob))
+    var ranked = films.map(function (film) {
+      var score = 0
+      if (mod && film.modality === mod) score += 10
+      if (sameAnatomy(film, anatomy)) score += 6
+      if (!mod && film.modality === 'xray') score += 1
+      return { film: film, score: score }
+    })
+    ranked.sort(function (a, b) { return b.score - a.score })
+    var picked = ranked.filter(function (row) { return row.score >= 10 }).map(function (row) { return row.film })
+    if (!picked.length && mod) picked = films.filter(function (film) { return film.modality === mod })
+    return { films: picked, modality: mod, anatomy: anatomy }
+  }
+
+  function bindRail(el) {
+    if (el.dataset.drag === '1') return
+    el.dataset.drag = '1'
+    var state = null
+    el.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return
+      state = { x: e.clientX, y: e.clientY, left: el.scrollLeft, id: e.pointerId, on: false }
+    })
+    el.addEventListener('pointermove', function (e) {
+      if (!state) return
+      var dx = e.clientX - state.x
+      var dy = e.clientY - state.y
+      if (!state.on) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return
+        if (Math.abs(dy) > Math.abs(dx)) { state = null; return }
+        state.on = true
+        el.setPointerCapture(state.id)
+        el.classList.add('dragging')
+      }
+      el.scrollLeft = state.left - dx
+    })
+    function up() { state = null; el.classList.remove('dragging') }
+    el.addEventListener('pointerup', up)
+    el.addEventListener('pointercancel', up)
+  }
+
+  function paintMeta() {
+    var row = sourceRow()
+    if (!row) return
+    var section = row.closest('section')
+    var scroll = section ? section.lastElementChild : null
+    if (!scroll) return
+    loadMeta().then(function (films) {
+      var live = sourceRow()
+      if (!live) return
+      var sectionNow = live.closest('section')
+      var box = sectionNow ? sectionNow.lastElementChild : null
+      if (!box) return
+      var blob = sideBlob()
+      var match = matchFilms(films, blob)
+      var key = (match.modality || 'any') + '|' + (match.anatomy || '') + '|' + query()
+      var host = document.getElementById('rrMetaLib')
+      if (host && host.dataset.key === key && box.contains(host)) return
+      if (!host) {
+        host = document.createElement('div')
+        host.id = 'rrMetaLib'
+      }
+      host.dataset.key = key
+      host.replaceChildren()
+      host.style.cssText = 'margin:0;padding:8px;background:#0a0a0a;color:#f4f1ea;border-top:1px solid #333'
+      var title = document.createElement('p')
+      title.style.cssText = 'margin:0 0 4px;font:700 12px/1.3 sans-serif;color:#ffe14a'
+      var label = match.modality === 'pet' ? 'PET' : match.modality === 'mri' ? 'MRI' : match.modality === 'ct' ? 'CT' : match.modality === 'xray' ? 'X-ray' : 'related'
+      title.textContent = 'Meta Image · ' + (match.films.length ? label + ' films matched to this case' : 'no film for this study type')
+      var where = document.createElement('p')
+      where.style.cssText = 'margin:0 0 6px;font:11px/1.3 sans-serif;color:#9a958c'
+      where.textContent = match.anatomy
+        ? 'Station ' + match.anatomy + '. Drag to see each different film. These are reference films, not this accession.'
+        : 'Drag to see each different film. These are reference films, not this accession.'
+      host.appendChild(title)
+      host.appendChild(where)
+      if (!match.films.length) {
+        var empty = document.createElement('p')
+        empty.style.cssText = 'margin:0;font:12px/1.35 sans-serif;color:#fff'
+        empty.textContent = 'The library has X-ray, CT, MRI, and PET. This case did not match one of those.'
+        host.appendChild(empty)
+      } else {
+        var rail = document.createElement('div')
+        rail.className = 'rail'
+        rail.style.cssText = 'display:flex;gap:8px;overflow-x:auto;cursor:grab;padding-bottom:4px'
+        match.films.forEach(function (film) {
+          var fig = document.createElement('figure')
+          fig.style.cssText = 'margin:0;flex:0 0 78%;max-width:220px'
+          var img = document.createElement('img')
+          img.src = film.src
+          img.alt = film.caption
+          img.draggable = false
+          img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;background:#000;border:1px solid #333;border-radius:10px;display:block'
+          var cap = document.createElement('figcaption')
+          cap.textContent = film.caption
+          cap.style.cssText = 'margin-top:4px;font:12px/1.3 sans-serif;color:#f4f1ea'
+          fig.appendChild(img)
+          fig.appendChild(cap)
+          rail.appendChild(fig)
+        })
+        bindRail(rail)
+        host.appendChild(rail)
+      }
+      if (host.parentElement !== box) box.insertBefore(host, box.firstChild)
+      var sectionEl = box.closest('section')
+      if (sectionEl) {
+        sectionEl.style.setProperty('height', 'auto', 'important')
+        sectionEl.style.setProperty('max-height', '70vh', 'important')
+        sectionEl.style.setProperty('min-height', '16rem', 'important')
+      }
+    })
+  }
+
   function run() {
     var row = sourceRow()
     if (!row || painting) return
@@ -255,9 +428,11 @@
   }
 
   function schedule() {
-    if (painting) return
     clearTimeout(timer)
-    timer = setTimeout(run, 350)
+    timer = setTimeout(function () {
+      if (!painting) run()
+      paintMeta()
+    }, 350)
   }
 
   var root = document.getElementById('root')
