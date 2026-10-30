@@ -102,11 +102,12 @@
           overflow: visible !important;
           min-height: 0 !important;
         }
-        #root main > aside:first-of-type {
-          height: 360px !important;
+        #root main > aside:first-of-type,
+        #root main > .rr-list {
+          height: auto !important;
           min-height: 0 !important;
-          max-height: 360px !important;
-          overflow: hidden !important;
+          max-height: none !important;
+          overflow: visible !important;
         }
         #root main > aside:first-of-type h2,
         #root main > aside:first-of-type h2 + span {
@@ -312,6 +313,45 @@
   <body>
     <div id="root"></div>
     <script src="./source-figs.js" defer></script>
+    <script>
+      (function () {
+        function enlargeFilm() {
+          var labels = document.querySelectorAll("div");
+          for (var i = 0; i < labels.length; i++) {
+            var el = labels[i];
+            if (!el.textContent || !/teaching rows/.test(el.textContent) || el.children.length) continue;
+            var box = el.parentElement;
+            var scroller = el.nextElementSibling;
+            if (!box || !scroller) continue;
+            box.style.setProperty("height", "156px", "important");
+            box.style.setProperty("min-height", "156px", "important");
+            box.style.setProperty("flex", "0 0 156px", "important");
+            box.style.setProperty("overflow", "visible", "important");
+            scroller.style.setProperty("height", "128px", "important");
+            scroller.style.setProperty("min-height", "128px", "important");
+            scroller.style.setProperty("max-height", "none", "important");
+            var buttons = scroller.querySelectorAll("button");
+            for (var b = 0; b < buttons.length; b++) {
+              buttons[b].style.setProperty("height", "120px", "important");
+              buttons[b].style.setProperty("min-height", "120px", "important");
+            }
+            var imgs = scroller.querySelectorAll("img");
+            for (var k = 0; k < imgs.length; k++) {
+              imgs[k].style.setProperty("height", "120px", "important");
+              imgs[k].style.setProperty("width", "100%", "important");
+              imgs[k].style.setProperty("object-fit", "cover", "important");
+            }
+          }
+        }
+        var timer = 0;
+        function schedule() {
+          clearTimeout(timer);
+          timer = setTimeout(enlargeFilm, 200);
+        }
+        new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
+        schedule();
+      })();
+    </script>
     <script src="/library/ui.js" defer></script>
   </body>
 </html>

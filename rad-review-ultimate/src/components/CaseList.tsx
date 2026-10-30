@@ -207,7 +207,7 @@ export default function CaseList({
   const scrollRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportH, setViewportH] = useState(720)
-  const [filmH, setFilmH] = useState(72)
+  const [filmH, setFilmH] = useState(140)
 
   const onScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(e.currentTarget.scrollTop)
@@ -343,14 +343,15 @@ export default function CaseList({
       </div>
 
       {filmH > 0 && cases.length > 0 && (
-        <div className="shrink-0 border-b border-rr-line px-2 pt-1" style={{ height: filmH + 16 }}>
+        <div className="rr-film shrink-0 border-b border-rr-line px-2 pt-1" style={{ height: Math.max(filmH, 140) + 16 }}>
           <div className="px-1 text-[11px] font-bold text-white tabular-nums">
-            {cases.length.toLocaleString()} rows · scroll
+            {cases.length.toLocaleString()} teaching rows · scroll
           </div>
           <div
             ref={filmRef}
             onScroll={(e) => setFilmLeft(e.currentTarget.scrollLeft)}
-            className="rr-scroll h-[calc(100%-18px)] overflow-x-scroll"
+            className="rr-scroll overflow-x-scroll"
+            style={{ height: Math.max(filmH, 140) - 8 }}
           >
             <div style={{ width: cases.length * THUMB, height: '100%', position: 'relative' }}>
               <div
