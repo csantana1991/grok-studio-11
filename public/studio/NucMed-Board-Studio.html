@@ -11412,6 +11412,105 @@ async function raSearchOpenNeuro(query){
 function raTimeout(p, ms, fallback){
   return Promise.race([p, new Promise(r => setTimeout(() => r(fallback), ms))]);
 }
+
+const RA_META_FILMS = [{"src":"/meta-image/films/xpa-a.webp","caption":"Normal PA chest radiograph","modality":"xray","anatomy":"chest","plane":"frontal","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:Normal_posteroanterior_(PA)_chest_radiograph_(X-ray).jpg"},{"src":"/meta-image/films/xpa-b.webp","caption":"Normal PA chest radiograph","modality":"xray","anatomy":"chest","plane":"frontal","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:Normal_posteroanterior_(PA)_chest_radiograph_(X-ray).jpg"},{"src":"/meta-image/films/xpa-c.webp","caption":"Normal PA chest radiograph","modality":"xray","anatomy":"chest","plane":"frontal","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:Normal_posteroanterior_(PA)_chest_radiograph_(X-ray).jpg"},{"src":"/meta-image/films/x10-a.webp","caption":"PA chest radiograph","modality":"xray","anatomy":"chest","plane":"frontal","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:Chest_Xray_PA_3-8-2010.png"},{"src":"/meta-image/films/x10-c.webp","caption":"PA chest radiograph","modality":"xray","anatomy":"chest","plane":"frontal","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:Chest_Xray_PA_3-8-2010.png"},{"src":"/meta-image/films/xpna-a.webp","caption":"Lobar pneumonia, PA chest radiograph","modality":"xray","anatomy":"chest","plane":"frontal","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:X-ray_of_lobar_pneumonia.jpg"},{"src":"/meta-image/films/xpna-c.webp","caption":"Lobar pneumonia, PA chest radiograph","modality":"xray","anatomy":"chest","plane":"frontal","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:X-ray_of_lobar_pneumonia.jpg"},{"src":"/meta-image/films/xlat-a.webp","caption":"Normal lateral chest radiograph","modality":"xray","anatomy":"chest","plane":"lateral","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:Normal_lateral_chest_radiograph_(X-ray).jpg"},{"src":"/meta-image/films/xlat-b.webp","caption":"Normal lateral chest radiograph","modality":"xray","anatomy":"chest","plane":"lateral","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:Normal_lateral_chest_radiograph_(X-ray).jpg"},{"src":"/meta-image/films/xjh-a.webp","caption":"Normal lateral chest radiograph","modality":"xray","anatomy":"chest","plane":"lateral","license":"CC BY 3.0","page":"https://commons.wikimedia.org/wiki/File:Normal_lateral_chest_x-ray.jpg"},{"src":"/meta-image/films/xjh-b.webp","caption":"Normal lateral chest radiograph","modality":"xray","anatomy":"chest","plane":"lateral","license":"CC BY 3.0","page":"https://commons.wikimedia.org/wiki/File:Normal_lateral_chest_x-ray.jpg"},{"src":"/meta-image/films/ct-th-axi-10.webp","caption":"Axial HRCT of a normal thorax","modality":"ct","anatomy":"lung","plane":"axial","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-th-axi-20.webp","caption":"Axial HRCT of a normal thorax","modality":"ct","anatomy":"lung","plane":"axial","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-th-axi-30.webp","caption":"Axial HRCT of a normal thorax","modality":"ct","anatomy":"lung","plane":"axial","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-th-axi-40.webp","caption":"Axial HRCT of a normal thorax","modality":"ct","anatomy":"lung","plane":"axial","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-th-axi-50.webp","caption":"Axial HRCT of a normal thorax","modality":"ct","anatomy":"lung","plane":"axial","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-th-axi-60.webp","caption":"Axial HRCT of a normal thorax","modality":"ct","anatomy":"lung","plane":"axial","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-th-axi-70.webp","caption":"Axial HRCT of a normal thorax","modality":"ct","anatomy":"lung","plane":"axial","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-th-axi-80.webp","caption":"Axial HRCT of a normal thorax","modality":"ct","anatomy":"lung","plane":"axial","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-th-axi-85.webp","caption":"Axial HRCT of a normal thorax","modality":"ct","anatomy":"lung","plane":"axial","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-th-axi-90.webp","caption":"Axial HRCT of a normal thorax","modality":"ct","anatomy":"lung","plane":"axial","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-th-axi-100.webp","caption":"Axial HRCT of a normal thorax","modality":"ct","anatomy":"lung","plane":"axial","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-th-cor-20.webp","caption":"Coronal HRCT of a normal thorax","modality":"ct","anatomy":"chest","plane":"coronal","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-th-cor-40.webp","caption":"Coronal HRCT of a normal thorax","modality":"ct","anatomy":"chest","plane":"coronal","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-th-cor-60.webp","caption":"Coronal HRCT of a normal thorax","modality":"ct","anatomy":"chest","plane":"coronal","license":"CC0","page":"https://commons.wikimedia.org/wiki/File:High-resolution_computed_tomograph_of_a_normal_thorax,_axial_plane_(85).jpg"},{"src":"/meta-image/films/ct-abd-00.webp","caption":"Axial CT of the abdomen","modality":"ct","anatomy":"abdomen","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/ct-abd-01.webp","caption":"Axial CT of the abdomen","modality":"ct","anatomy":"abdomen","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/ct-abd-02.webp","caption":"Axial CT through the liver","modality":"ct","anatomy":"liver","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/ct-lung-10.webp","caption":"Axial CT of the lungs","modality":"ct","anatomy":"lung","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/ct-lung-11.webp","caption":"Axial CT of the lungs","modality":"ct","anatomy":"lung","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/mri-sag-06.webp","caption":"Sagittal MRI of the brain","modality":"mri","anatomy":"brain","plane":"sagittal","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/mri-ax-09.webp","caption":"Axial MRI of the brain","modality":"mri","anatomy":"brain","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/mri-ax-09-c.webp","caption":"Axial MRI of the brain","modality":"mri","anatomy":"brain","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/pet-mip.webp","caption":"Whole-body FDG PET, coronal MIP","modality":"pet","anatomy":"whole body","plane":"coronal","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/pet-ax.webp","caption":"Axial FDG PET of the chest","modality":"pet","anatomy":"lung","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/pet-p4a.webp","caption":"Axial FDG PET of the chest","modality":"pet","anatomy":"lung","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/pet-p4b.webp","caption":"Axial FDG PET of the chest","modality":"pet","anatomy":"chest","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/pet-p5d.webp","caption":"Axial fused FDG PET/CT of the chest","modality":"pet","anatomy":"chest","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/pet-mip-chest.webp","caption":"Whole-body FDG PET, coronal MIP","modality":"pet","anatomy":"chest","plane":"coronal","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/mri-ax-11b.webp","caption":"Axial MRI of the brain","modality":"mri","anatomy":"brain","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/mri-sag-11c.webp","caption":"Sagittal MRI of the brain","modality":"mri","anatomy":"brain","plane":"sagittal","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/mri-ax-11d.webp","caption":"Axial MRI of the brain","modality":"mri","anatomy":"brain","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/mri-ax-7l.webp","caption":"Axial MRI of the brain","modality":"mri","anatomy":"brain","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/mri-ax-7r.webp","caption":"Axial MRI of the brain","modality":"mri","anatomy":"brain","plane":"axial","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/mri-cor-12.webp","caption":"Axial MRI of the brain","modality":"mri","anatomy":"brain","plane":"coronal","license":"Open access","page":"https://openi.nlm.nih.gov/"},{"src":"/meta-image/films/mri-cor-13.webp","caption":"Axial MRI of the brain","modality":"mri","anatomy":"brain","plane":"coronal","license":"Open access","page":"https://openi.nlm.nih.gov/"}];
+function raMetaScore(query, film){
+  const q = String(query||"").toLowerCase();
+  const blob = (film.caption+" "+film.modality+" "+film.anatomy+" "+film.plane).toLowerCase();
+  const head = /head|brain|cerebr|subdural|hematoma|intracran|skull/.test(q);
+  const ct = /\bct\b|computed/.test(q);
+  const mri = /\bmri\b|magnetic/.test(q);
+  const nm = /spect|nuclear|scint|pet\b|fdg|psma|gamma/.test(q);
+  const chest = /chest|thorax|lung|pulmonary|pneumonia/.test(q);
+  const abd = /abdom|liver|pelvis/.test(q);
+  const xr = /x-ray|xray|radiograph/.test(q);
+  let s = 1;
+  if (head && film.anatomy === "brain") s += 50;
+  if (head && film.modality === "mri") s += 12;
+  if (mri && film.modality === "mri") s += 24;
+  if (ct && film.modality === "ct") s += 22;
+  if (nm && film.modality === "pet") s += 30;
+  if (chest && (film.anatomy === "chest" || film.anatomy === "lung")) s += 18;
+  if (abd && (film.anatomy === "abdomen" || film.anatomy === "liver")) s += 22;
+  if (xr && film.modality === "xray") s += 24;
+  if (head && film.anatomy !== "brain") s -= 8;
+  if (head && film.modality === "xray") s -= 18;
+  q.split(/[^a-z0-9]+/).filter(w => w.length > 3).forEach(w => { if (blob.indexOf(w) >= 0) s += 6; });
+  return s;
+}
+function raMetaNote(query, film){
+  const q = String(query||"").toLowerCase();
+  const head = /head|brain|cerebr|subdural|hematoma|intracran|skull/.test(q);
+  const ct = /\bct\b|computed/.test(q);
+  const nm = /spect|nuclear|scint|pet\b|fdg/.test(q);
+  const cap = film.caption;
+  if (head && film.anatomy === "brain") return cap + ". Closest Meta Image for a head query. This is brain MRI, not a CT, and it does not show a subdural hematoma.";
+  if (nm && film.modality === "pet") return cap + ". Nuclear-medicine reference from Meta Image. This is FDG PET, not a brain SPECT.";
+  if (ct && film.modality === "ct" && film.anatomy !== "brain") return cap + ". CT from Meta Image. This slice is " + (film.anatomy || "torso") + ", not a head CT.";
+  return cap + ". Meta Image teaching film matched to this search. Not this patient's study.";
+}
+function raMetaPack(query){
+  const q = String(query||"").toLowerCase();
+  const head = /head|brain|cerebr|subdural|hematoma|intracran|skull/.test(q);
+  const ct = /\bct\b|computed/.test(q);
+  const mri = /\bmri\b|magnetic/.test(q);
+  const nm = /spect|nuclear|scint|pet\b|fdg|psma|gamma/.test(q);
+  const chest = /chest|thorax|lung|pulmonary|pneumonia/.test(q);
+  const abd = /abdom|liver|pelvis/.test(q);
+  const xr = /x-ray|xray|radiograph/.test(q);
+  const ranked = RA_META_FILMS.slice().sort((a,b) => raMetaScore(q, b) - raMetaScore(q, a) || a.src.localeCompare(b.src));
+  const used = {};
+  const picked = [];
+  function take(pred, n){
+    let got = 0;
+    ranked.forEach(film => {
+      if (got >= n || picked.length >= 8) return;
+      if (used[film.src] || !pred(film)) return;
+      used[film.src] = 1;
+      picked.push(film);
+      got++;
+    });
+  }
+  if (head || mri) take(f => f.anatomy === "brain" && /sagittal/i.test(f.caption), 1);
+  if (head || mri) take(f => f.anatomy === "brain" && /axial/i.test(f.caption), 2);
+  if (nm) take(f => f.modality === "pet" && /mip|whole-body/i.test(f.caption), 1);
+  if (nm) take(f => f.modality === "pet" && /fused/i.test(f.caption), 1);
+  if (nm) take(f => f.modality === "pet", 1);
+  if (ct && head) take(f => f.modality === "ct" && (f.anatomy === "lung" || f.anatomy === "chest"), 2);
+  else if (ct) take(f => f.modality === "ct", 2);
+  if (chest) take(f => f.modality === "xray" || f.anatomy === "lung" || f.anatomy === "chest", 2);
+  if (abd) take(f => f.anatomy === "abdomen" || f.anatomy === "liver", 2);
+  if (xr) take(f => f.modality === "xray", 3);
+  ranked.forEach(film => { if (picked.length < 6 && !used[film.src]) { used[film.src] = 1; picked.push(film); } });
+  const top = picked.slice(0, 8);
+  const figures = top.map((film, i) => ({
+    id: "meta-"+i,
+    title: film.caption,
+    caption: raMetaNote(query, film),
+    imageUrl: film.src,
+    articleUrl: film.src,
+    pmcid: "Meta Image",
+    modality: film.modality,
+    badge: "Meta Image · " + String(film.modality||"").toUpperCase(),
+    meta: true
+  }));
+  const previews = top.map((film, i) => ({
+    id: "meta-prev-"+i,
+    title: film.caption,
+    collection: "Meta Image",
+    modality: String(film.modality||"").toUpperCase(),
+    modalities: [String(film.modality||"").toUpperCase()],
+    bodyPart: raMetaNote(query, film),
+    imageCount: 1,
+    previewUrl: film.src,
+    fullStudyUrl: film.src,
+    seriesUid: "",
+    studyUid: film.src,
+    meta: true,
+    credit: film.license + " · " + film.caption
+  }));
+  return { figures, previews };
+}
 async function raSearch(query, withOn){
   const t0 = Date.now();
   const [pmc, tcia, on] = await Promise.all([
@@ -11419,14 +11518,21 @@ async function raSearch(query, withOn){
     raTimeout(raSearchTcia(query), 8000, { previews: [], studies: [], status: { source:"tcia", state:"error", count:0, latencyMs:8000, message:"timeout" } }),
     withOn ? raTimeout(raSearchOpenNeuro(query), 6000, { studies: [], status: { source:"openneuro", state:"error", count:0, latencyMs:6000 } }) : Promise.resolve({ studies: [], status: { source:"openneuro", state:"disabled", count:0, latencyMs:0, message:"Off" } })
   ]);
+  const packed = raMetaPack(query);
+  const liveFigs = (pmc.figures && pmc.figures.length) ? pmc.figures : packed.figures;
+  const livePrev = (tcia.previews && tcia.previews.length) ? tcia.previews : packed.previews;
+  const providers = [pmc.status, tcia.status, on.status];
+  if (!(pmc.figures && pmc.figures.length) || !(tcia.previews && tcia.previews.length)) {
+    providers.push({ source:"meta", state:"ok", count: packed.figures.length, message:"Meta Image library" });
+  }
   return {
     query,
     groups: {
-      articleFigures: pmc.figures,
-      studyPreviews: tcia.previews,
+      articleFigures: liveFigs,
+      studyPreviews: livePrev,
       fullStudies: tcia.studies.concat(on.studies)
     },
-    providers: [pmc.status, tcia.status, on.status],
+    providers,
     meta: { durationMs: Date.now()-t0 }
   };
 }
@@ -11690,7 +11796,7 @@ async function raRun(){
     <div class="ra-cards">${figs.length ? figs.map((f,i)=>`
       <article class="ra-card" data-kind="fig" data-i="${i}">
         <img alt="" src="${raEsc(f.imageUrl)}" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('noimg')">
-        <div><span class="ra-badge">PMC ${raEsc(f.modality||"")}</span>
+        <div><span class="ra-badge">${raEsc(f.badge || ("PMC " + (f.modality||"")))}</span>
         <h4>${raEsc(f.title)}</h4>
         <p>${raEsc(f.caption)}</p>
         <button type="button" data-open="fig" data-i="${i}">Source</button></div>
@@ -11701,7 +11807,7 @@ async function raRun(){
         <img alt="" src="${raEsc(s.previewUrl||"")}" referrerpolicy="no-referrer" onerror="this.style.display='none'">
         <div><span class="ra-badge">${raEsc(s.modality)}</span> <span>${raEsc(s.collection)}</span>
         <h4>${raEsc(s.title)}</h4>
-        <p>${raEsc(s.bodyPart||"")} · ${(s.imageCount||0).toLocaleString()} images</p>
+        <p>${raEsc(s.meta ? (s.bodyPart||"") : ((s.bodyPart||"") + " · " + (s.imageCount||0).toLocaleString() + " images"))}</p>
         <button type="button" data-open="prev" data-i="${i}">Show here</button></div>
       </article>`).join("") : "<p>No TCIA previews (API may be blocked in this browser). Collections still searchable via portal.</p>"}
     <h3>Full studies & datasets</h3>
@@ -11713,12 +11819,12 @@ async function raRun(){
     const kind = b.dataset.open, i = +b.dataset.i;
     let item = null;
     if (kind==="fig") { const f = figs[i]; item = { title:f.title, subtitle:f.pmcid, url:f.articleUrl, preview:f.imageUrl, kind:"source" }; }
-    if (kind==="prev") { const s = prev[i]; item = { title:s.title, subtitle:s.collection+" · TCIA", url:s.fullStudyUrl, preview:s.previewUrl, kind:"study", list:prev, index:i, imageCount:s.imageCount, seriesUid:s.seriesUid, collection:s.collection }; }
+    if (kind==="prev") { const s = prev[i]; item = { title:s.title, subtitle:s.meta ? (s.credit || s.collection) : (s.collection+" · TCIA"), url:s.fullStudyUrl, preview:s.previewUrl, kind:"study", list:prev, index:i, imageCount:s.imageCount, seriesUid:s.seriesUid, collection:s.collection }; }
     if (kind==="full") { const s = full[i]; item = { title:s.title, subtitle:s.collection, url:s.fullStudyUrl, kind:"study", seriesUid:s.seriesUid, collection:s.collection, imageCount:s.imageCount }; }
     RAD_ATLAS.workspace = item;
     raPaintWorkspace();
   });
-  if (prev[0]) { RAD_ATLAS.workspace = { title: prev[0].title, subtitle: prev[0].collection+" · TCIA", url: prev[0].fullStudyUrl, preview: prev[0].previewUrl, kind:"study", list:prev, index:0, imageCount:prev[0].imageCount, seriesUid:prev[0].seriesUid, collection:prev[0].collection }; raPaintWorkspace(); }
+  if (prev[0]) { RAD_ATLAS.workspace = { title: prev[0].title, subtitle: prev[0].meta ? (prev[0].credit || prev[0].collection) : (prev[0].collection+" · TCIA"), url: prev[0].fullStudyUrl, preview: prev[0].previewUrl, kind:"study", list:prev, index:0, imageCount:prev[0].imageCount, seriesUid:prev[0].seriesUid, collection:prev[0].collection }; raPaintWorkspace(); }
   else if (figs[0]) { RAD_ATLAS.workspace = { title: figs[0].title, subtitle: figs[0].pmcid, url: figs[0].articleUrl, preview: figs[0].imageUrl, kind:"source" }; raPaintWorkspace(); }
   if (RAD_ATLAS.query && RAD_ATLAS.query.length >= 2) raPubmedSearch(RAD_ATLAS.query);
   try { liveSearchTerm(data.query); } catch (e) {}
