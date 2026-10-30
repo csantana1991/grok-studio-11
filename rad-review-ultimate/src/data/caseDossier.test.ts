@@ -129,6 +129,27 @@ describe('case dossier', () => {
     expect(cited?.url).toContain('fdg.jpg')
   })
 
+  it('keeps breast ultrasound and pediatric chest films as their own study', () => {
+    const breast = 'Breast ultrasound BI-RADS 3 circumscribed oval hypoechoic mass'
+    expect(studyKind(breast, 'US')).toBe('us')
+    const us = resolveCaseFigure(enc({ categoryId: 'US', finding: breast, stationId: 'BREAST' }))
+    expect(us?.url).toContain('breast-us-mass')
+    expect(
+      buildDossier(enc({ categoryId: 'US', finding: breast }), { url: us?.url, source: 'plate' }).imageRole,
+    ).toBe('teaching-plate')
+
+    const chest = '7M sickle cell acute chest syndrome bibasilar consolidation'
+    expect(studyKind(chest, 'PEDS')).toBe('radiograph')
+    const xr = resolveCaseFigure(enc({ categoryId: 'PEDS', finding: chest, stationId: 'CHEST' }))
+    expect(xr?.url).toMatch(/^nih:/)
+    expect(
+      buildDossier(enc({ categoryId: 'PEDS', finding: chest }), { url: xr?.url, source: 'plate' }).imageRole,
+    ).toBe('teaching-plate')
+
+    const rds = 'Preterm infant respiratory distress syndrome ground glass and air bronchograms'
+    expect(studyKind(rds, 'PEDS')).toBe('radiograph')
+  })
+
   it('searches the tracer named by the study, not a random SUV', () => {
     const blob = caseSearchBlob({
       search: 'muga equilibrium radionuclide',

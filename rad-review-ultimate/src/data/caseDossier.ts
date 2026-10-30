@@ -79,7 +79,7 @@ export function studyKind(finding: string, categoryId: string): StudyKind {
   }
   if (/bone scan|three-phase bone|\bmdp\b|ra-223/.test(f)) return 'bone'
   if (/leukocyte/.test(f)) return 'other'
-  if (categoryId === 'MAMMO' || (/mammogram|tomosynthesis|\bbi-rads\b/.test(f) && !/\bmri\b/.test(f))) {
+  if (categoryId === 'MAMMO' || (/mammogram|tomosynthesis|\bbi-rads\b/.test(f) && !/\bmri\b|\bultrasound\b/.test(f))) {
     return 'mammo'
   }
   if (categoryId === 'US' || (/\bultrasound\b|\bduplex\b|\bdoppler\b/.test(f) && !/\bct\b|\bmri\b/.test(f))) {
@@ -88,7 +88,8 @@ export function studyKind(finding: string, categoryId: string): StudyKind {
   if (
     categoryId === 'RAD' ||
     /radiograph/.test(f) ||
-    /bronchiolitis|steeple sign|\bcroup\b/.test(f)
+    (/bronchiolitis|steeple sign|\bcroup\b|acute chest syndrome|air bronchogram/.test(f) &&
+      !/\bct\b|\bmri\b|\bultrasound\b|\bpet\b/.test(f))
   ) {
     return 'radiograph'
   }
