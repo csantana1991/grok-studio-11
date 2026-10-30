@@ -189,12 +189,27 @@
     if (kind === "ct") return "oi:ct";
     if (kind === "mri") return "oi:mri";
     if (kind === "pet-fdg") return "oi:pet";
+    if (kind === "pet-psma") return "oi:psma";
+    if (kind === "pet-dota") return "oi:dota";
+    if (kind === "muga") return "oi:muga";
+    if (kind === "pyp") return "oi:pyp";
+    if (kind === "bone") return "oi:bone";
+    if (kind === "thyroid") return "oi:thyroid";
+    if (kind === "vq") return "oi:vq";
+    if (kind === "hida") return "oi:hida";
+    if (kind === "renal") return "oi:renal";
+    if (kind === "mpi") return "oi:mpi";
+    if (kind === "us") return "oi:us";
+    if (kind === "mammo") return "oi:mammo";
     if (kind === "radiograph") {
       var chestXr = /chest|lung|pneumonia|\bcxr\b|portable|\brib\b/.test(f)
         && !/\bct\b|\bmri\b|ultrasound|\bpet\b|\bfdg\b/.test(f)
         && !/knee|ankle|patella|calcaneus|pelvis|\bhip\b|skull|spine|abdominal|abdomen|foot|toe|wrist|elbow/.test(f);
       if (chestXr) return "nih";
+      return "oi:xr";
     }
+    if (/parathyroid/.test(f)) return "oi:para";
+    if (/\becho\b|echocardiogr/.test(f)) return "oi:echo";
     return "";
   }
 
@@ -228,12 +243,19 @@
   }
 
   function resolveMetaToken(token) {
-    var live = String(token || "").match(/^(oi:ct|oi:mri|oi:pet|nih):(\d+)$/);
+    var caps = {
+      ct: 347302, mri: 316774, pet: 220264, xray: 112120,
+      muga: 188838, pyp: 2938, bone: 190870, thyroid: 32841,
+      vq: 16410, hida: 3087, renal: 75583, mpi: 9660,
+      us: 82831, mammo: 4637, psma: 27133, dota: 1254,
+      xr: 15658, para: 7453, echo: 63562
+    };
+    var live = String(token || "").match(/^(oi:[a-z]+|nih):(\d+)$/);
     if (live) {
-      var modality = live[1] === "oi:ct" ? "ct" : live[1] === "oi:mri" ? "mri" : live[1] === "oi:pet" ? "pet" : "xray";
-      var cap = modality === "ct" ? 347302 : modality === "mri" ? 316774 : modality === "pet" ? 220264 : 112120;
-      var m = (Number(live[2]) % cap) + 1;
-      return "/api/pmc/match?source=film&modality=" + modality + "&m=" + m;
+      var modality = live[1] === "nih" ? "xray" : live[1].slice(3);
+      var cap = caps[modality] || 1000;
+      var rank = (Number(live[2]) % cap) + 1;
+      return "/api/pmc/match?source=film&modality=" + modality + "&m=" + rank;
     }
     var m = String(token || "").match(/^(tcia:ct|tcia:mri|tcia:pet|films:ct-abd|films:xr):(\d+)$/);
     if (!m) return "";
@@ -251,6 +273,21 @@
     if (t.indexOf("oi:ct:") === 0) return "CT figure from the Meta Image library. Not this row's scan.";
     if (t.indexOf("oi:mri:") === 0) return "MRI figure from the Meta Image library. Not this row's scan.";
     if (t.indexOf("oi:pet:") === 0) return "PET figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:muga:") === 0) return "Blood-pool scintigraphy figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:pyp:") === 0) return "Pyrophosphate scintigraphy figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:bone:") === 0) return "Bone scintigraphy figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:thyroid:") === 0) return "Thyroid scintigraphy figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:vq:") === 0) return "Ventilation-perfusion figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:hida:") === 0) return "Hepatobiliary scintigraphy figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:renal:") === 0) return "Renal scintigraphy figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:mpi:") === 0) return "Myocardial perfusion figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:us:") === 0) return "Ultrasound figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:mammo:") === 0) return "Mammography figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:psma:") === 0) return "PSMA PET figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:dota:") === 0) return "DOTATATE figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:xr:") === 0) return "Radiograph from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:para:") === 0) return "Parathyroid scintigraphy figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:echo:") === 0) return "Echocardiography figure from the Meta Image library. Not this row's scan.";
     if (t.indexOf("nih:") === 0) return "NIH chest radiograph from the Meta Image library. Not this row's scan.";
     if (t.indexOf("tcia:ct:") === 0) return "Axial chest CT, lung window. LIDC-IDRI. CC BY 3.0. Not this row's scan.";
     if (t.indexOf("tcia:mri:") === 0) return "Axial brain MRI. UPENN-GBM. CC BY 4.0. Not this row's scan.";

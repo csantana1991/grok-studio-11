@@ -57,7 +57,33 @@ export const Route = createFileRoute("/api/pmc/match")({
         if (url.searchParams.get("source") === "film") {
           const modality = url.searchParams.get("modality") || "ct";
           const asJson = url.searchParams.get("format") === "json";
-          const caps: Record<string, number> = { ct: 347302, mri: 316774, pet: 220264, xray: 112120 };
+          const caps: Record<string, number> = {
+            ct: 347302, mri: 316774, pet: 220264, xray: 112120,
+            muga: 188838, pyp: 2938, bone: 190870, thyroid: 32841,
+            vq: 16410, hida: 3087, renal: 75583, mpi: 9660,
+            us: 82831, mammo: 4637, psma: 27133, dota: 1254,
+            xr: 15658, para: 7453, echo: 63562,
+          };
+          const queries: Record<string, string> = {
+            ct: "computed tomography",
+            mri: "magnetic resonance imaging",
+            pet: '"positron emission tomography"',
+            muga: '"gated blood pool scintigraphy"',
+            pyp: '"pyrophosphate scintigraphy"',
+            bone: '"bone scintigraphy"',
+            thyroid: '"thyroid scintigraphy"',
+            vq: '"ventilation-perfusion scintigraphy"',
+            hida: '"hepatobiliary scintigraphy"',
+            renal: '"renal scintigraphy"',
+            mpi: '"sestamibi" SPECT',
+            us: "ultrasonography",
+            mammo: "mammography",
+            psma: '"PSMA PET"',
+            dota: "DOTATATE",
+            xr: "radiograph",
+            para: '"parathyroid scintigraphy"',
+            echo: "echocardiography",
+          };
           const cap = caps[modality] || 347302;
           const m = (Math.max(0, Number(url.searchParams.get("m") || 1) || 1) - 1) % cap + 1;
           const send = (image: string, caption: string) => {
@@ -84,14 +110,18 @@ export const Route = createFileRoute("/api/pmc/match")({
               const caption = (names.filter(Boolean).join(", ") || "No finding") + ". NIH ChestX-ray14, CC0.";
               return send(row?.image?.src || "", caption);
             }
-            const specQ = modality === "mri" ? "magnetic resonance imaging" : modality === "pet" ? '"positron emission tomography"' : "computed tomography";
-            const search = "https://openi.nlm.nih.gov/api/search?coll=pmc&query=" + encodeURIComponent(specQ) + "&m=" + m + "&n=1";
-            const res = await fetch(search, { signal: AbortSignal.timeout(20000), headers: { "User-Agent": "BoardStudio/1.0 (teaching)" } });
-            if (!res.ok) return send("", modality.toUpperCase() + " figure");
-            const data = (await res.json()) as { list?: { title?: string; imgLarge?: string; image?: { caption?: string } }[] };
-            const row = (data.list || []).find((item) => item.imgLarge);
+            const specQ = queries[modality] || queries.ct;
+            const pull = async (start: number) => {
+              const search = "https://openi.nlm.nih.gov/api/search?coll=pmc&query=" + encodeURIComponent(specQ) + "&m=" + start + "&n=1";
+              const res = await fetch(search, { signal: AbortSignal.timeout(20000), headers: { "User-Agent": "BoardStudio/1.0 (teaching)" } });
+              if (!res.ok) return null;
+              const data = (await res.json()) as { list?: { title?: string; imgLarge?: string; image?: { caption?: string } }[] };
+              return (data.list || []).find((item) => item.imgLarge) || null;
+            };
+            let row = await pull(m);
+            if (!row) row = await pull(((m + 17 - 1) % cap) + 1);
             const raw = (row?.image?.caption || row?.title || specQ).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 220);
-            const pet = modality === "pet" ? petParts(raw) : null;
+            const pet = modality === "pet" || modality === "psma" || modality === "dota" ? petParts(raw) : null;
             const caption = pet?.label ? pet.label + ". " + raw : raw;
             return send(row?.imgLarge ? "https://openi.nlm.nih.gov" + row.imgLarge : "", caption);
           } catch {

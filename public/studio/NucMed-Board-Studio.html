@@ -2277,7 +2277,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
   </div>
 </div>
 <script src="stem-plates.js"></script>
-<script src="shared-case.js?v=library2"></script>
+<script src="shared-case.js?v=library3"></script>
 <script>
 const COURSE = {
   title: "NucMed Board Studio",
@@ -3697,11 +3697,11 @@ let RR_CACHE={seed:null,rows:null,v:3};
 function plateForRow(finding, stationId, categoryId, salt){
   if (window.SharedCase) {
     const kind = SharedCase.studyKind(finding, categoryId);
+    const meta = SharedCase.metaPlateFor ? SharedCase.metaPlateFor(finding, stationId, categoryId, salt) : "";
+    if (meta) return meta;
     const gated = SharedCase.plateFor(finding, categoryId, salt);
     if (kind === "muga") return "";
     if (kind === "pyp") return gated || "";
-    const meta = SharedCase.metaPlateFor ? SharedCase.metaPlateFor(finding, stationId, categoryId, salt) : "";
-    if (meta) return meta;
     if (gated) return gated;
     if (kind === "bone") return "bone-scan-wb.jpg";
     if (kind) return "";
