@@ -13116,6 +13116,7 @@ const MetaSide = {
   term(text) {
     const t = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
     if (t.length < 3) return "";
+    if (/^(next|question|score|play|home|atlas|widget|restore|minimize|maximize|board|studio|rad|review|yes|no|prev|back)( question| case| row)?$/.test(t)) return "";
     const named = ["pneumonia","atelectasis","cardiomegaly","consolidation","edema","effusion","emphysema","fibrosis","hernia","infiltration","mass","nodule","pneumothorax","pleural"];
     const hit = named.find(n => t.indexOf(n) >= 0);
     let kind = "";
@@ -13159,7 +13160,7 @@ window.addEventListener("message", (e) => {
     if (frame) frame.dataset.ready = "1";
     if (MetaSide.pending) MetaSide.search(MetaSide.pending);
   }
-  if (e.data.type === "studio-image" && document.body.classList.contains("meta-side")) MetaSide.search(e.data.q);
+  if (e.data.type === "studio-image") MetaSide.search(e.data.q);
 });
 document.addEventListener("click", (e) => {
   if (!document.body.classList.contains("meta-side")) return;
@@ -13174,7 +13175,7 @@ document.addEventListener("click", (e) => {
 if (typeof liveSearchTerm === "function") {
   const prevLive = liveSearchTerm;
   liveSearchTerm = function (term) {
-    try { if (document.body.classList.contains("meta-side")) MetaSide.search(term); } catch (e) {}
+    try { MetaSide.search(term); } catch (e) {}
     return prevLive.apply(this, arguments);
   };
 }
