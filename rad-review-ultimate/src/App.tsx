@@ -38,7 +38,7 @@ import {
   nucleusCandidate,
 } from './data/selectFigure'
 import { teachingMatch } from './data/teachingPlate'
-import { buildDossier, caseSearchBlob, publishedFits, resolveCaseFigure, resolveVisibleFigure, studyKind } from './data/caseDossier'
+import { buildDossier, caseReading, caseSearchBlob, publishedFits, resolveCaseFigure, resolveVisibleFigure, studyKind } from './data/caseDossier'
 
 /**
  * Unmatched findings processed per "match all" run. Bounded to stay polite to
@@ -511,7 +511,7 @@ export default function App() {
     // compress. Below it the whole console scrolls horizontally rather than
     // crushing the viewer and the teaching bar into unreadable slivers.
     <div className="h-full w-full overflow-auto bg-rr-bg">
-    <div className="flex h-full min-h-0 w-full flex-col bg-rr-bg">
+    <div className="flex h-full min-h-0 w-full flex-col bg-rr-bg max-[719px]:h-auto max-[719px]:min-h-full max-[719px]:overflow-visible">
       <Header
         active={filter}
         onSelect={setFilter}
@@ -529,7 +529,7 @@ export default function App() {
         onOpenReview={() => setReviewOpen(true)}
       />
 
-      <main ref={stageRef} className="flex min-h-0 flex-1 flex-col xl:flex-row">
+      <main ref={stageRef} className="flex min-h-0 flex-1 flex-col min-[720px]:flex-row min-[720px]:overflow-hidden">
         <div
           className="rr-list flex min-h-0 min-w-0 flex-col overflow-hidden"
           style={{ flex: `0 0 ${listShare}%` }}
@@ -584,7 +584,7 @@ export default function App() {
         <div
           title="Drag to give more room to the images"
           onPointerDown={dragSplit}
-          className="z-10 h-3 shrink-0 cursor-ns-resize bg-[#1d4ed8] xl:h-auto xl:w-3 xl:cursor-ew-resize"
+          className="z-10 h-4 shrink-0 cursor-ns-resize bg-[#1d4ed8] min-[720px]:h-auto min-[720px]:w-3 min-[720px]:cursor-ew-resize"
         />
 
         <div className="rr-viewcol flex min-h-0 min-w-0 flex-1 flex-col">
@@ -668,16 +668,20 @@ export default function App() {
             }
             stackLabel={seriesCount > 1 ? `SERIES · ${seriesCount}` : 'ATLAS 0–100'}
           />
-          <InfoBar station={station} slice={slice} />
+          <InfoBar
+            station={station}
+            slice={slice}
+            reading={dossier ? caseReading(dossier.kind, station.interpretation) : undefined}
+          />
         </div>
 
         <div
           title="Drag sideways to open the reading panel"
           onPointerDown={dragRight}
-          className="z-10 h-3 w-full shrink-0 cursor-ew-resize bg-[#1d4ed8] xl:h-auto xl:w-3"
+          className="z-10 h-3 w-full shrink-0 cursor-ns-resize bg-[#1d4ed8] min-[720px]:h-auto min-[720px]:w-2"
         />
         <div
-          className="rr-side flex min-h-0 w-full shrink-0 flex-col overflow-hidden xl:h-full"
+          className="rr-side flex min-h-0 w-full shrink-0 flex-col overflow-hidden min-[720px]:h-full min-[720px]:overflow-auto"
           style={{ ['--rr-right' as string]: `${rightW}px` }}
         >
         <SourceWindow
@@ -717,7 +721,7 @@ export default function App() {
               state={selectedFinding ? lit.state[selectedFinding] : undefined}
               enabled={liveEnabled}
               onToggleEnabled={setLiveEnabled}
-              onSearch={() => selectedFinding && void lit.ensure(selectedFinding)}
+              onSearch={() => selectedFinding && void lit.ensure(selectedFinding, true)}
               batch={lit.batch}
               onRunBatch={() =>
                 void lit.runBatch(uniqueFindingsInView.slice(0, BATCH_LIMIT))
@@ -777,7 +781,7 @@ export default function App() {
       />
       <footer className="flex shrink-0 items-center gap-3 border-t border-rr-line bg-rr-panel px-3 py-1 text-[9px] text-rr-dim">
         <span>
-          {GRAND_TOTAL.toLocaleString()} encounters indexed client-side
+          {GRAND_TOTAL.toLocaleString()} teaching rows, not verified images
         </span>
         <span className="text-rr-line">|</span>
         <span>{filtered.length.toLocaleString()} in current view</span>

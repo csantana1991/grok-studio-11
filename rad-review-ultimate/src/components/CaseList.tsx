@@ -83,6 +83,7 @@ function Row({
   onLoad,
   thumb,
   caption,
+  height,
 }: {
   c: Encounter
   selected: boolean
@@ -90,6 +91,7 @@ function Row({
   onLoad: (c: Encounter) => void
   thumb?: string
   caption?: string
+  height: number
 }) {
   const cat = CATEGORY_BY_ID[c.categoryId]
   return (
@@ -98,14 +100,14 @@ function Row({
       onClick={() => onSelect(c)}
       onDoubleClick={() => onLoad(c)}
       title="Double-click to load this encounter into the viewer"
-      style={{ height: ROW_H }}
+      style={{ height }}
       data-selected={selected ? '1' : undefined}
       className={
         'flex w-full items-center gap-2 border-b border-rr-line px-3 text-left transition-colors ' +
         (selected ? 'bg-rr-blue/20' : 'hover:bg-[#141419]')
       }
     >
-      <span className="relative h-24 w-28 shrink-0 overflow-hidden rounded border border-rr-line bg-black">
+      <span className="relative h-[78%] w-[34%] max-w-[240px] shrink-0 overflow-hidden rounded border border-rr-line bg-black">
         {thumb ? (
           <FullThumb c={c} src={thumb} plain className="absolute inset-0 h-full w-full" />
         ) : (
@@ -140,7 +142,7 @@ function Row({
         <span className="ml-auto text-[9px] text-rr-dim tabular-nums">{c.date}</span>
       </div>
 
-      <p className="line-clamp-2 text-[15px] leading-snug text-white">{c.finding}</p>
+      <p className="line-clamp-3 text-[15px] leading-snug text-white">{c.finding}</p>
       {caption && (
         <p className="line-clamp-2 text-[12px] font-semibold leading-snug text-[#facc15]">
           {caption}
@@ -207,7 +209,8 @@ export default function CaseList({
   const scrollRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportH, setViewportH] = useState(720)
-  const [filmH, setFilmH] = useState(140)
+  const [filmH, setFilmH] = useState(180)
+  const [rowH, setRowH] = useState(ROW_H)
 
   const onScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(e.currentTarget.scrollTop)
@@ -233,22 +236,23 @@ export default function CaseList({
     if (!el || selectedIdx == null) return
     const pos = cases.findIndex((c) => c.idx === selectedIdx)
     if (pos < 0) return
-    const top = pos * ROW_H
+    const top = pos * rowH
     el.scrollTop = top
     setScrollTop(top)
-  }, [cases, selectedIdx])
+  }, [cases, selectedIdx, rowH])
 
-  const totalHeight = cases.length * ROW_H
-  const startIdx = Math.max(0, Math.floor(scrollTop / ROW_H) - OVERSCAN)
-  const visibleCount = Math.ceil(viewportH / ROW_H) + OVERSCAN * 2
+  const totalHeight = cases.length * rowH
+  const startIdx = Math.max(0, Math.floor(scrollTop / rowH) - OVERSCAN)
+  const visibleCount = Math.ceil(viewportH / rowH) + OVERSCAN * 2
   const endIdx = Math.min(cases.length, startIdx + visibleCount)
   const rows = cases.slice(startIdx, endIdx)
-  const offsetY = startIdx * ROW_H
+  const offsetY = startIdx * rowH
 
   const filmRef = useRef<HTMLDivElement>(null)
   const [filmLeft, setFilmLeft] = useState(0)
   const [filmW, setFilmW] = useState(480)
-  const THUMB = 68
+  const thumbW = Math.max(110, Math.min(240, Math.round(filmH * 0.95)))
+  const THUMB = thumbW + 6
 
   useEffect(() => {
     const el = filmRef.current
@@ -342,35 +346,44 @@ export default function CaseList({
         ))}
       </div>
 
-      {filmH > 0 && cases.length > 0 && (
-        <div className="rr-film shrink-0 border-b border-rr-line px-2 pt-1" style={{ height: Math.max(filmH, 140) + 16 }}>
+      {filmH > 48 && cases.length > 0 && (
+        <div className="rr-film shrink-0 border-b border-rr-line px-2 pt-1" style={{ height: filmH + 36 }}>
           <div className="px-1 text-[11px] font-bold text-white tabular-nums">
-            {cases.length.toLocaleString()} teaching rows · scroll
+            {cases.length.toLocaleString()} teaching rows · scroll sideways
           </div>
           <div
             ref={filmRef}
             onScroll={(e) => setFilmLeft(e.currentTarget.scrollLeft)}
+            onWheel={(e) => {
+              if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return
+              e.currentTarget.scrollLeft += e.deltaY
+            }}
             className="rr-scroll overflow-x-scroll"
-            style={{ height: Math.max(filmH, 140) - 8 }}
+            style={{ height: filmH }}
           >
             <div style={{ width: cases.length * THUMB, height: '100%', position: 'relative' }}>
               <div
-                className="absolute top-0 flex h-full gap-1"
-                style={{ left: filmStart * THUMB }}
+                className="absolute top-0 flex h-full"
+                style={{ left: filmStart * THUMB, gap: 6 }}
               >
                 {cases.slice(filmStart, filmEnd).map((c) => {
                   const src = thumbFor(c)
+                  const label = src ? imageLabel(c) : 'No match'
                   return (
                     <button
                       key={c.idx}
                       type="button"
-                      title={imageLabel(c)}
+                      title={label}
                       onClick={() => onSelect(c)}
-                      className="relative h-full w-16 shrink-0 overflow-hidden rounded border border-rr-line bg-black"
+                      className="relative flex h-full shrink-0 flex-col overflow-hidden rounded border border-rr-line bg-black"
+                      style={{ width: thumbW }}
                     >
-                      {src ? <FullThumb c={c} src={src} plain className="absolute inset-0 h-full w-full" /> : (
-                        <span className="flex h-full items-center px-0.5 text-center text-[8px] font-bold text-[#ffe14a]">No match</span>
-                      )}
+                      <span className="relative min-h-0 flex-1">
+                        {src ? <FullThumb c={c} src={src} plain className="absolute inset-0 h-full w-full" /> : (
+                          <span className="flex h-full items-center px-1 text-center text-[11px] font-bold text-[#ffe14a]">No match</span>
+                        )}
+                      </span>
+                      <span className="block h-5 shrink-0 truncate bg-black px-1 text-left text-[10px] leading-5 text-white">{label}</span>
                     </button>
                   )
                 })}
@@ -380,14 +393,15 @@ export default function CaseList({
         </div>
       )}
       <div
-        title="Drag to resize the image strip. Double-click to hide it."
-        onDoubleClick={() => setFilmH((h) => (h < 24 ? 72 : 0))}
+        title="Drag down to make the images bigger. Drag up to give the case row more room. Double-click to hide the strip."
+        onDoubleClick={() => setFilmH((h) => (h < 48 ? 180 : 0))}
         onPointerDown={(e) => {
           if (e.button !== 0) return
+          e.preventDefault()
           const startY = e.clientY
           const startH = filmH
           const move = (ev: PointerEvent) => {
-            setFilmH(Math.min(220, Math.max(0, startH + (ev.clientY - startY))))
+            setFilmH(Math.min(560, Math.max(0, startH + (ev.clientY - startY))))
           }
           const up = () => {
             globalThis.removeEventListener('pointermove', move)
@@ -396,8 +410,10 @@ export default function CaseList({
           globalThis.addEventListener('pointermove', move)
           globalThis.addEventListener('pointerup', up)
         }}
-        className="h-3 shrink-0 cursor-ns-resize border-b border-rr-line bg-[#1d4ed8]"
-      />
+        className="flex h-4 shrink-0 cursor-ns-resize items-center justify-center border-b border-rr-line bg-[#1d4ed8] text-[10px] font-bold tracking-wide text-white"
+      >
+        drag to resize images
+      </div>
 
       <div ref={scrollRef} onScroll={onScroll} className="rr-scroll min-h-0 flex-1 overflow-y-scroll">
         {indexing ? (
@@ -418,6 +434,7 @@ export default function CaseList({
                   onLoad={onLoad}
                   thumb={thumbFor(c)}
                   caption={c.idx === selectedIdx ? caption : undefined}
+                  height={rowH}
                 />
               ))}
             </div>
@@ -425,9 +442,27 @@ export default function CaseList({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-rr-line px-3 py-1.5 text-[9px] text-rr-dim">
-        Virtualized &middot; row {ROW_H}px &middot; rendering {rows.length} of{' '}
-        {cases.length.toLocaleString()} &middot; double-click to load
+      <div
+        title="Drag down to make the 54F-style case row taller"
+        onPointerDown={(e) => {
+          if (e.button !== 0) return
+          e.preventDefault()
+          const startY = e.clientY
+          const start = rowH
+          const move = (ev: PointerEvent) => {
+            setRowH(Math.min(320, Math.max(96, start + (ev.clientY - startY))))
+          }
+          const up = () => {
+            globalThis.removeEventListener('pointermove', move)
+            globalThis.removeEventListener('pointerup', up)
+          }
+          globalThis.addEventListener('pointermove', move)
+          globalThis.addEventListener('pointerup', up)
+        }}
+        className="shrink-0 cursor-ns-resize border-t border-rr-line px-3 py-1.5 text-[9px] text-white"
+      >
+        Drag this bar to make the case row taller · row {rowH}px · showing {rows.length} of{' '}
+        {cases.length.toLocaleString()} · double-click a row to load
       </div>
     </aside>
   )
