@@ -2235,7 +2235,12 @@ body.hj-full #filmLeft, body.medb-full #filmLeft { left: 0; }
 body.hj-full #filmRight, body.medb-full #filmRight { right: 0; }
 body.hj-full.film-widget #filmRight, body.medb-full.film-widget #filmRight { width: 480px; }
 body.hj-full .work { left: 210px !important; right: 210px !important; bottom: 86px !important; }
-body.hj-full.film-widget .work { right: 480px !important; }
+body.hj-full #filmLeft,
+body.hj-full #filmRight { display: none !important; }
+body.hj-full .work,
+body.hj-full.film-widget .work { left: 0 !important; right: 0 !important; bottom: 86px !important; }
+body.hj-full .stage,
+body.hj-full #hjFrame { width: 100% !important; max-width: none !important; }
 body.medb-full .work { left: 210px !important; right: 210px !important; bottom: 86px !important; }
 body.medb-full.film-widget .work { right: 480px !important; }
 #filmLeft button { display: block; width: 100%; padding: 0 0 6px; border: 0; border-radius: 10px; background: #123044; color: #e8f2f7; text-align: left; cursor: pointer; }
