@@ -2133,9 +2133,13 @@ body.view-rru #rruFrame {
   height: 100% !important;
   min-height: 0 !important;
 }
-body.view-hj .stage { display:flex; flex-direction:column; min-height:0; height:100%; padding:0; }
-body.view-hj .hj-host { flex:1; min-height:0; display:flex; flex-direction:column; background:#0c1210; }
-body.view-hj .hj-host iframe { flex:1; width:100%; min-height:0; border:0; background:#0c1210; }
+body.hj-full .hj-exitbar { display:flex; }
+body.hj-full .app { grid-template-columns: 1fr; padding-top:44px; height:100vh; }
+body.hj-full .sidebar, body.hj-full .topbar, body.hj-full #colSplit, body.hj-full .player, body.hj-full #winBar, body.hj-full #dockHandle, body.hj-full #atlasDrawer, body.hj-full #atlasSplit { display:none !important; }
+body.hj-full .work { position:fixed; inset:44px 0 0 0; }
+body.hj-full .stage, body.hj-full #hjFrame { width:100%; height:100%; min-height:0; }
+#hjAtlasSheet { display:none; position:fixed; top:44px; right:0; bottom:0; width:min(560px,100%); z-index:85; overflow:auto; background:#0e1c28; box-shadow:-12px 0 32px rgba(0,0,0,.35); }
+body.hj-atlas #hjAtlasSheet { display:block; }
 body.tabs-up .app-tabs,
 body.tabs-up #homeBtn,
 body.tabs-up #layoutBtn,
@@ -2159,6 +2163,8 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 </div>
 <div class='backdrop' id='backdrop'></div>
 <div class="rru-exitbar" id="rruBar"><b>RAD REVIEW Ultimate</b><span>Full-page 33,000-case worklist · Image QA · live PubMed · same features as RAD REVIEW</span><button type="button" id="rruExit">Exit to Board Studio</button></div>
+<div class="rru-exitbar hj-exitbar" id="hjBar"><b>HJ Med</b><span>Whole site, inside Grok 11</span><button type="button" id="hjAtlas">Grok 11 atlas</button><button type="button" id="hjExit">Exit to Board Studio</button></div>
+<div id="hjAtlasSheet" aria-label="Grok 11 atlas"></div>
 <div class='app'>
 <aside class='sidebar panel-wrap' id='sidebar' data-panel-body='nav'>
   <div class='brand'><div class='panel-bar' data-panel='nav'><b>Course map</b><span><button type='button' data-act='min'>–</button><button type='button' data-act='max'>□</button></span></div><h1>GROK <span>studio 11</span></h1><p>Main app · Academy, RAD REVIEW, and Meta Image are widgets</p></div>
@@ -7699,17 +7705,11 @@ function startHjYear(){
   render();
 }
 function renderHjMed(){
+  document.body.classList.add("hj-full");
+  document.body.classList.remove("atlas-open");
   const stage = $("#stage");
-  if (!state.hjYear) {
-    stage.innerHTML = `<div class="home-grid"><div class="hero-card"><div class="badge">HJ Med inside Grok 11</div><h2>Start the residency year</h2><p>The programs, lectures, and boards stay on hj-med.vercel.app. That site keeps its own atlas. In this window the atlas beside the page is the Grok 11 atlas.</p><div class="pager"><button class="primary" id="hjStart">Start residency year</button></div></div></div>`;
-    const go = document.getElementById("hjStart");
-    if (go) go.onclick = startHjYear;
-    return;
-  }
-  stage.innerHTML = `<section class="hj-host"><div class="panel-bar" data-panel="hj"><b>HJ Med</b><span>Page is still hj-med.vercel.app. Atlas in this window is the Grok 11 atlas.</span><span><button type="button" id="hjAtlas">Grok 11 atlas</button></span></div><iframe title="HJ Med" src="https://hj-med.vercel.app/" referrerpolicy="no-referrer-when-downgrade"></iframe></section>`;
-  const btn = document.getElementById("hjAtlas");
-  if (btn) btn.onclick = () => openAtlasDrawer(state.atlasKey || "nuclear");
-  openAtlasDrawer(state.atlasKey || "nuclear");
+  stage.innerHTML = `<iframe id="hjFrame" title="HJ Med" src="https://hj-med.vercel.app/" style="width:100%;height:100%;border:0;display:block;background:#0c1210"></iframe>`;
+  if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>HJ Med</b><span>Whole site inside Grok 11</span>`;
 }
 function renderVolume() {
   const atlas = COURSE.atlas.map(sec => `
@@ -12835,7 +12835,10 @@ function render() {
     b.classList.toggle("on", on);
   });
   document.body.classList.toggle("view-rru", state.view === "rrultimate");
-  document.body.classList.toggle("view-hj", state.view === "hjmed");
+  if (state.view !== "hjmed") {
+    document.body.classList.remove("hj-full");
+    document.body.classList.remove("hj-atlas");
+  }
   document.body.classList.toggle("lesson-audio", state.view === "module");
   const chromeLabel = document.getElementById("chromeLabel");
   if (chromeLabel) {
@@ -12977,7 +12980,7 @@ $("#backdrop").onclick = closeNav;
   }, true);
 })();
 $("#nav").addEventListener("click", (e) => { if (e.target.closest(".nav-item")) closeNav(); });
-$("#homeBtn").onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("rru-full"); render(); };
+$("#homeBtn").onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("rru-full"); document.body.classList.remove("hj-full"); document.body.classList.remove("hj-atlas"); render(); };
 (function bindWinHide() {
   const lab = document.getElementById("winHide");
   if (!lab) return;
@@ -13007,6 +13010,14 @@ $("#homeBtn").onclick = () => { stopSpeech(); closeNav(); state.view = "home"; s
 })();
 const rruExit = document.getElementById("rruExit");
 if (rruExit) rruExit.onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("rru-full"); render(); };
+const hjExit = document.getElementById("hjExit");
+if (hjExit) hjExit.onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("hj-full"); document.body.classList.remove("hj-atlas"); render(); };
+const hjAtlasBtn = document.getElementById("hjAtlas");
+if (hjAtlasBtn) hjAtlasBtn.onclick = () => {
+  document.body.classList.toggle("hj-atlas");
+  const sheet = document.getElementById("hjAtlasSheet");
+  if (document.body.classList.contains("hj-atlas") && sheet && typeof paintAtlasInto === "function") paintAtlasInto(sheet);
+};
 $("#rate").onchange = e => { state.rate = parseFloat(e.target.value); };
 (function bindPlayAll(){
   const b = document.getElementById("playAllBtn");
