@@ -5274,7 +5274,7 @@ const CapRail = {
     const it = (picked.length ? picked : words).slice(0, 4).join(" ") || modality;
     const q = it || String(text).slice(0, 80);
     try {
-      const res = await fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(q) + "&n=6");
+      const res = await fetch("/api/pmc/match?source=live&q=" + encodeURIComponent(q) + "&n=6");
       const data = await res.json();
       if (seq !== this.seq) return;
       (data.results || []).forEach((row) => { if (row && row.url) this.add(row.url, row.caption || q); });
@@ -5354,10 +5354,24 @@ const CapRail = {
   async live(text) {
     const q = this.queryOf(text);
     if (!q || q.length < 3) return;
+    const key = "live|" + q;
+    if (this.liveKey === key) return;
+    this.liveKey = key;
+    const rail = document.getElementById("capRail");
+    if (rail) rail.classList.add("on");
+    const add = (src, cap) => { if (src) this.add(src, cap); };
     try {
-      const res = await fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(q) + "&n=4");
+      const wiki = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=6&prop=pageimages|info&inprop=url&pithumbsize=480&format=json&origin=*";
+      const data = await fetch(wiki).then((r) => r.json());
+      Object.values((data.query && data.query.pages) || {}).forEach((p) => {
+        const src = p && p.thumbnail && p.thumbnail.source;
+        if (src) add(src, "Wikipedia · " + (p.title || q));
+      });
+    } catch (e) {}
+    try {
+      const res = await fetch("/api/pmc/match?source=live&q=" + encodeURIComponent(q) + "&n=6");
       const data = await res.json();
-      (data.results || []).forEach((row) => { if (row && row.url) this.add(row.url, row.caption || q); });
+      (data.results || []).forEach((row) => { if (row && row.url) add(row.url, row.caption || ("Google · " + q)); });
     } catch (e) {}
   },
   scrub(lines, title) {
@@ -14024,6 +14038,7 @@ window.addEventListener("message", (e) => {
     CapRail.topic = "";
     CapRail.scrubbed = "";
     CapRail.atlasKey = "";
+    CapRail.liveKey = "";
     SideFilm.seen = {};
     SideFilm.lastQ = "";
     const left = document.getElementById("filmLeft");

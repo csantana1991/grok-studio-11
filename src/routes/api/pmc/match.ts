@@ -72,6 +72,69 @@ export const Route = createFileRoute("/api/pmc/match")({
             return Response.json({ lines: [] });
           }
         }
+        if (url.searchParams.get("source") === "live") {
+          const words = q.split(/[^A-Za-z0-9+-]+/).filter((w) => w.length >= 3).slice(0, 6);
+          const term = (words.join(" ") || q).slice(0, 120);
+          const results: { url: string; caption: string }[] = [];
+          const seen = new Set<string>();
+          const push = (image: string, caption: string) => {
+            if (!image || seen.has(image) || JUNK.test(caption)) return;
+            seen.add(image);
+            results.push({ url: image, caption: caption.slice(0, 160) });
+          };
+          try {
+            const wiki = await fetch(
+              "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" +
+                encodeURIComponent(term) +
+                "&gsrlimit=6&prop=pageimages&piprop=thumbnail&pithumbsize=480&format=json",
+              { signal: AbortSignal.timeout(8000), headers: { "User-Agent": "BoardStudio/1.0 (teaching)" } },
+            );
+            if (wiki.ok) {
+              const data = (await wiki.json()) as {
+                query?: { pages?: Record<string, { title?: string; thumbnail?: { source?: string } }> };
+              };
+              for (const page of Object.values(data.query?.pages || {})) {
+                if (page.thumbnail?.source) push(page.thumbnail.source, "Wikipedia · " + (page.title || term));
+              }
+            }
+          } catch {
+            /* Wikipedia miss is not fatal */
+          }
+          try {
+            const google = await fetch(
+              "https://www.google.com/search?tbm=isch&hl=en&gl=us&q=" + encodeURIComponent(term),
+              {
+                signal: AbortSignal.timeout(12000),
+                headers: {
+                  "User-Agent":
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                  "Accept-Language": "en-US,en;q=0.9",
+                },
+              },
+            );
+            if (google.ok) {
+              const html = await google.text();
+              const found = html.match(/https?:\\?\/\\?\/[^"'\\\s<>]+/g) || [];
+              let n = 0;
+              for (const raw of found) {
+                const image = raw
+                  .replace(/\\\//g, "/")
+                  .replace(/\\u003d/g, "=")
+                  .replace(/\\u0026/g, "&")
+                  .replace(/&/g, "&");
+                if (!/^https:\/\//.test(image)) continue;
+                if (!/encrypted-tbn0\.gstatic\.com|\.(?:jpg|jpeg|png|webp)(?:\?|$)/i.test(image)) continue;
+                if (/logo|branding|gstatic\.com\/images\/branding/i.test(image)) continue;
+                push(image, "Google · " + term);
+                n += 1;
+                if (n >= 6) break;
+              }
+            }
+          } catch {
+            /* Google miss is not fatal */
+          }
+          return Response.json({ query: term, results });
+        }
         if (url.searchParams.get("source") === "film") {
           const modality = url.searchParams.get("modality") || "ct";
           const asJson = url.searchParams.get("format") === "json";
