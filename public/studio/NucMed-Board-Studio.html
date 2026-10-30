@@ -2133,6 +2133,9 @@ body.view-rru #rruFrame {
   height: 100% !important;
   min-height: 0 !important;
 }
+body.view-hj .stage { display:flex; flex-direction:column; min-height:0; height:100%; padding:0; }
+body.view-hj .hj-host { flex:1; min-height:0; display:flex; flex-direction:column; background:#0c1210; }
+body.view-hj .hj-host iframe { flex:1; width:100%; min-height:0; border:0; background:#0c1210; }
 body.tabs-up .app-tabs,
 body.tabs-up #homeBtn,
 body.tabs-up #layoutBtn,
@@ -2182,6 +2185,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
       <button type="button" data-view="radatlas">Rad Atlas</button>
       <button type="button" data-view="rrultimate">RAD REVIEW Ultimate</button>
       <button type="button" data-view="metaimage">Meta Image</button>
+      <button type="button" data-view="hjmed">HJ Med</button>
     </div>
     <button type="button" id="homeBtn">Home</button>
     <button type="button" id="layoutBtn" class="pill">Layout: Classic</button>
@@ -4413,7 +4417,8 @@ const state = {
   playAll: false,
   para: 0,
   rate: 1,
-  progress: (function(){ try { return JSON.parse(localStorage.getItem("nmb_progress") || "{}"); } catch (e) { return {}; } })()
+  progress: (function(){ try { return JSON.parse(localStorage.getItem("nmb_progress") || "{}"); } catch (e) { return {}; } })(),
+  hjYear: (function(){ try { return localStorage.getItem("nmb_hj_year") === "1"; } catch (e) { return false; } })()
 };
 
 function saveProgress() {
@@ -4585,6 +4590,9 @@ function renderNav() {
     </button>
     <button class="nav-item ${state.view === "metaimage" ? "active" : ""}" data-view="metaimage">
       <span class="idx">MI</span><span class="meta"><b>Meta Image</b><s>112,120 chest · 347,302 CT · 316,774 MRI · 220,264 PET</s></span>
+    </button>
+    <button class="nav-item ${state.view === "hjmed" ? "active" : ""}" data-view="hjmed">
+      <span class="idx">HJ</span><span class="meta"><b>HJ Med</b><s>Their site. Our atlas beside it.</s></span>
     </button>
     <div class="nav-sec">Course map · NM</div>` + nm.map(item).join("") +
     `<div class="nav-sec">Residency & fellowships</div>` + res.map(item).join("") +
@@ -7679,11 +7687,30 @@ function renderHome() {
     </div>`;
   $("#startBtn").onclick = () => openModule("welcome");
   const resBtn = $("#resBtn");
-  if (resBtn) resBtn.onclick = () => openModule("res-year");
+  if (resBtn) resBtn.onclick = () => startHjYear();
   $("#playerInfo").innerHTML = `<b>NucMed Board Studio</b><span>Select a module and press play</span>`;
   $("#playBtn").onclick = () => { if (state.view === "home") openModule("welcome"); };
 }
 
+function startHjYear(){
+  state.hjYear = true;
+  try { localStorage.setItem("nmb_hj_year", "1"); } catch (e) {}
+  state.view = "hjmed";
+  render();
+}
+function renderHjMed(){
+  const stage = $("#stage");
+  if (!state.hjYear) {
+    stage.innerHTML = `<div class="home-grid"><div class="hero-card"><div class="badge">HJ Med inside Grok 11</div><h2>Start the residency year</h2><p>The programs, lectures, and boards stay on hj-med.vercel.app. That site keeps its own atlas. In this window the atlas beside the page is the Grok 11 atlas.</p><div class="pager"><button class="primary" id="hjStart">Start residency year</button></div></div></div>`;
+    const go = document.getElementById("hjStart");
+    if (go) go.onclick = startHjYear;
+    return;
+  }
+  stage.innerHTML = `<section class="hj-host"><div class="panel-bar" data-panel="hj"><b>HJ Med</b><span>Page is still hj-med.vercel.app. Atlas in this window is the Grok 11 atlas.</span><span><button type="button" id="hjAtlas">Grok 11 atlas</button></span></div><iframe title="HJ Med" src="https://hj-med.vercel.app/" referrerpolicy="no-referrer-when-downgrade"></iframe></section>`;
+  const btn = document.getElementById("hjAtlas");
+  if (btn) btn.onclick = () => openAtlasDrawer(state.atlasKey || "nuclear");
+  openAtlasDrawer(state.atlasKey || "nuclear");
+}
 function renderVolume() {
   const atlas = COURSE.atlas.map(sec => `
     <section class="atlas-sec">
@@ -12808,6 +12835,7 @@ function render() {
     b.classList.toggle("on", on);
   });
   document.body.classList.toggle("view-rru", state.view === "rrultimate");
+  document.body.classList.toggle("view-hj", state.view === "hjmed");
   document.body.classList.toggle("lesson-audio", state.view === "module");
   const chromeLabel = document.getElementById("chromeLabel");
   if (chromeLabel) {
@@ -12852,6 +12880,9 @@ function render() {
   } else if (state.view === "metaimage") {
     crumb.innerHTML = "Studio / <b>Meta Image</b>";
     renderMetaImage();
+  } else if (state.view === "hjmed") {
+    crumb.innerHTML = "Studio / <b>HJ Med</b>";
+    renderHjMed();
   } else if (state.view === "exam") {
     crumb.innerHTML = "Studio / <b>Mixed quiz</b>";
     if (!state.examBank) {
