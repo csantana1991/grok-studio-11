@@ -2183,6 +2183,23 @@ body.medb-full #capRail {
 }
 body.medb-full #capRail .cap-tag { color: #fff; }
 body.medb-full #capPop { bottom: 108px; }
+#vidPills { display: none; position: fixed; z-index: 210; gap: 8px; overflow-x: auto; padding: 4px 2px; pointer-events: auto; }
+body.hj-full #vidPills, body.medb-full #vidPills { display: flex; }
+#vidPills[hidden] { display: none !important; }
+#vidPills button { flex: 0 0 auto; border: 1.5px solid #1e3a5f; background: #fff; color: #12315c; border-radius: 999px; padding: 8px 14px; font-weight: 750; font-size: 14px; white-space: nowrap; }
+#vidPills button.on { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+#vidLift { display: none; position: fixed; z-index: 216; overflow: auto; background: #f7f4ee; color: #102033; border-radius: 16px; box-shadow: 0 12px 36px rgba(0,0,0,.35); }
+#vidLift.on { display: flex; flex-direction: column; }
+#vidLift .vl-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; background: #102033; color: #fff; border-radius: 16px 16px 0 0; position: sticky; top: 0; }
+#vidLift .vl-bar button { border: 0; border-radius: 999px; background: #e8f2f7; color: #102033; font-weight: 800; padding: 4px 10px; }
+#vidLift .vl-body { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+#vidLift .vl-card { display: flex; gap: 8px; align-items: center; text-align: left; border: 0; border-radius: 12px; background: #fff; color: #102033; padding: 6px; box-shadow: 0 1px 0 rgba(16,32,51,.08); }
+#vidLift .vl-card img { width: 92px; height: 64px; object-fit: cover; border-radius: 8px; background: #0b1c2c; flex: 0 0 auto; }
+#vidLift .vl-card b { display: block; font-size: 13px; }
+#vidLift .vl-card span { font-size: 12px; line-height: 1.3; }
+#vidLift .vl-dark { background: #071b21; color: #e8fffa; }
+#vidLift .vl-dark .vl-card { background: #0e2a32; color: #e8fffa; }
+#vidLift iframe { width: 100%; height: 280px; border: 0; border-radius: 10px; background: #0a0a0a; }
 #capRail {
   display: none; position: fixed; left: 0; right: 0; bottom: 52px; z-index: 86;
   height: 78px; padding: 6px 8px; gap: 8px; align-items: center;
@@ -2228,6 +2245,17 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 <div class="rru-exitbar" id="rruBar"><b>RAD REVIEW Ultimate</b><span>Full-page 33,000-case worklist · Image QA · live PubMed · same features as RAD REVIEW</span><button type="button" id="rruExit">Exit to Board Studio</button></div>
 <div id="capRail"><span class="cap-tag">Image</span><div id="capRow"></div></div>
 <div id="capPop"><button type="button" id="capPopX">Close</button><img alt="" referrerpolicy="no-referrer"><p></p></div>
+<div id="vidPills" hidden>
+  <button type="button" data-lift="studio">Board Studio</button>
+  <button type="button" data-lift="radreview">RAD REVIEW</button>
+  <button type="button" data-lift="academy">Academy widget</button>
+  <button type="button" data-lift="iqa">Image QA agent</button>
+  <button type="button" data-lift="caseqa">Case Q+A</button>
+  <button type="button" data-lift="radatlas">Rad Atlas</button>
+  <button type="button" data-lift="rrultimate">RAD REVIEW Ultimate</button>
+  <button type="button" data-lift="metaimage">Meta Image</button>
+</div>
+<div id="vidLift"><div class="vl-bar"><b id="vidLiftTitle">Images</b><button type="button" id="vidLiftX">Close</button></div><div class="vl-body" id="vidLiftBody"></div></div>
 <div class="rru-exitbar hj-exitbar" id="hjBar"><b>HJ Med</b><span>Live page</span><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
 <div class="rru-exitbar" id="mbBar"><b>Med-b</b><span>Live page</span><button type="button" id="mbAtlas">Atlas</button><button type="button" id="mbExit">Exit</button></div>
 <div id="hjAtlasSheet" aria-label="Grok 11 atlas"></div>
@@ -5233,6 +5261,163 @@ const CapRail = {
     if (hit && hit.text) this.note(hit.text);
   }
 };
+const VidLift = {
+  kind: "",
+  box: null,
+  esc(s) { return String(s || "").replace(/[&<>"]/g, (c) => ({ "&": "&", "<": "<", ">": ">", "\"": """ }[c])); },
+  query() {
+    const raw = [CapRail.topic, CapRail.tail, CapRail.last].filter(Boolean).join(" ");
+    return raw.replace(/\s+/g, " ").trim().slice(0, 180);
+  },
+  hits(q) {
+    let rows = [];
+    try { rows = rrGenerate(2026) || []; } catch (e) { rows = []; }
+    const words = String(q || "").toLowerCase().split(/[^a-z0-9+]+/).filter((w) => w.length > 3 && !/^(this|that|with|from|have|been|were|they|them|your|into|about|their|there|what|when|where|which|would|could|should|nuclear|medicine|webinar|lecture|monday|basic)$/.test(w));
+    const scored = [];
+    for (let i = 0; i < rows.length; i++) {
+      let s = 0;
+      const hay = rows[i].search || "";
+      for (let w = 0; w < words.length; w++) if (hay.indexOf(words[w]) >= 0) s += 1;
+      if (s) scored.push({ r: rows[i], s: s });
+    }
+    scored.sort((a, b) => b.s - a.s);
+    if (scored.length) return scored.slice(0, 6).map((x) => x.r);
+    const mod = CapRail.modality(q);
+    return rows.filter((r) => (r.search || "").indexOf(mod) >= 0 || (mod === "pet" && /pet|fdg|positron/.test(r.search || ""))).slice(0, 6);
+  },
+  card(r, dark) {
+    const src = r.plate && typeof plateSrc === "function" ? plateSrc(r.plate) : "";
+    const img = src ? `<img src="${this.esc(src)}" alt="">` : "";
+    return `<button type="button" class="vl-card" data-src="${this.esc(src)}" data-cap="${this.esc(r.finding)}">${img}<span><b>${this.esc(r.accession || r.studyKey || "")}</b>${this.esc(r.finding)} · ${this.esc(r.stationName || "")}</span></button>`;
+  },
+  place(box) {
+    if (box) this.box = box;
+    const pills = document.getElementById("vidPills");
+    const lift = document.getElementById("vidLift");
+    const frame = document.getElementById("mbFrame") || document.getElementById("hjFrame");
+    if (!pills || !frame) return;
+    if (!(document.body.classList.contains("hj-full") || document.body.classList.contains("medb-full"))) {
+      pills.hidden = true;
+      if (lift) lift.classList.remove("on");
+      return;
+    }
+    pills.hidden = false;
+    const fr = frame.getBoundingClientRect();
+    const b = this.box;
+    const hj = document.body.classList.contains("hj-full");
+    let top = fr.top + (hj ? 96 : Math.min(280, fr.height * 0.55));
+    let left = fr.left + 8;
+    let width = Math.max(120, fr.width - 16);
+    if (b && b.width) {
+      top = fr.top + b.top + b.height - 48;
+      left = fr.left + b.left;
+      width = b.width;
+    }
+    top = Math.max(fr.top + 8, Math.min(top, fr.bottom - 52));
+    pills.style.top = top + "px";
+    pills.style.left = left + "px";
+    pills.style.width = width + "px";
+    if (lift && lift.classList.contains("on")) {
+      const pr = pills.getBoundingClientRect();
+      lift.style.left = pr.left + "px";
+      lift.style.width = pr.width + "px";
+      lift.style.bottom = (window.innerHeight - pr.top + 8) + "px";
+      lift.style.top = "auto";
+      lift.style.maxHeight = Math.max(140, pr.top - 12) + "px";
+    }
+  },
+  open(kind) {
+    const lift = document.getElementById("vidLift");
+    const pills = document.getElementById("vidPills");
+    if (!lift) return;
+    if (this.kind === kind && lift.classList.contains("on")) {
+      this.kind = "";
+      lift.classList.remove("on");
+      if (pills) pills.querySelectorAll("button").forEach((b) => b.classList.remove("on"));
+      return;
+    }
+    this.kind = kind;
+    if (pills) pills.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.lift === kind));
+    const names = { studio: "Board Studio", radreview: "RAD REVIEW", academy: "Academy", iqa: "Image QA", caseqa: "Case Q+A", radatlas: "Rad Atlas", rrultimate: "RAD REVIEW Ultimate", metaimage: "Meta Image" };
+    const title = document.getElementById("vidLiftTitle");
+    if (title) title.textContent = names[kind] || "Images";
+    lift.classList.add("on");
+    lift.classList.toggle("vl-dark", kind === "rrultimate" || kind === "metaimage");
+    this.place(this.box);
+    this.fill(kind);
+  },
+  fill(kind) {
+    const body = document.getElementById("vidLiftBody");
+    if (!body) return;
+    const q = this.query();
+    const say = q || "Play the lesson. The captions land here.";
+    if (kind === "metaimage") {
+      body.innerHTML = `<p>${this.esc(say)}</p><iframe id="vidMeta" title="Meta Image" src="/meta-image/index.html?v=112120&embed=1"></iframe>`;
+      const frame = document.getElementById("vidMeta");
+      const send = () => { try { frame.contentWindow.postMessage({ type: "meta-search", q: q || "pet" }, location.origin); } catch (e) {} };
+      if (frame) frame.onload = send;
+      setTimeout(send, 600);
+      return;
+    }
+    if (kind === "radatlas") {
+      body.innerHTML = `<p>Rad Atlas · ${this.esc(say)}</p>`;
+      const mod = CapRail.modality(q);
+      fetch("/api/pmc/match?source=openi-page&modality=" + encodeURIComponent(mod) + "&it=" + encodeURIComponent(q.slice(0, 80)) + "&n=4&m=1")
+        .then((r) => r.json())
+        .then((data) => {
+          if (this.kind !== "radatlas") return;
+          const cards = (data.list || []).slice(0, 4).map((row) => `<button type="button" class="vl-card" data-src="${this.esc(row.url)}" data-cap="${this.esc(row.caption || row.label)}"><img src="${this.esc(row.url)}" alt=""><span><b>Rad Atlas</b>${this.esc(row.caption || row.label || q)}</span></button>`).join("");
+          body.innerHTML = `<p>Rad Atlas · ${this.esc(say)}</p>` + (cards || "<p>No figure for that line yet.</p>");
+          this.bind(body);
+        })
+        .catch(() => {});
+      return;
+    }
+    const rows = this.hits(q);
+    if (kind === "caseqa") {
+      const r = rows[0];
+      let desk = null;
+      try { desk = r && typeof deskForCase === "function" ? deskForCase(r) : null; } catch (e) {}
+      const qtext = (desk && desk.q) || "What does this caption describe?";
+      const choices = (desk && desk.choices) || ["The finding named in the caption", "An unrelated study", "A diagram only"];
+      body.innerHTML = `<p>${this.esc(say)}</p><div class="vl-card"><span><b>${this.esc(qtext)}</b>${choices.map((c) => this.esc(c)).join("<br>")}</span></div>` + rows.slice(0, 3).map((row) => this.card(row)).join("");
+      this.bind(body);
+      return;
+    }
+    if (kind === "academy") {
+      try { nbaGenerate(); } catch (e) {}
+      body.innerHTML = `<p>Academy · ${this.esc(say)}</p>` + rows.map((r) => {
+        const src = r.plate && typeof plateSrc === "function" ? plateSrc(r.plate) : "";
+        return `<button type="button" class="vl-card" data-src="${this.esc(src)}" data-cap="${this.esc(r.finding)}">${src ? `<img src="${this.esc(src)}" alt="">` : ""}<span><b>${this.esc(r.track || "DR")} · ${this.esc(r.modality || "")}</b>${this.esc(r.finding)}</span></button>`;
+      }).join("") || "<p>No academy case for that line yet.</p>";
+      this.bind(body);
+      return;
+    }
+    if (kind === "iqa") {
+      body.innerHTML = `<p>Image QA · checked against the caption</p>` + rows.map((r) => this.card(r)).join("") || `<p>${this.esc(say)}</p>`;
+      this.bind(body);
+      return;
+    }
+    if (kind === "studio") {
+      const imgs = Array.from(document.querySelectorAll("#capRow img")).slice(-6);
+      const cards = imgs.map((img) => `<button type="button" class="vl-card" data-src="${this.esc(img.src)}" data-cap="${this.esc(img.alt || q)}"><img src="${this.esc(img.src)}" alt=""><span><b>Board Studio</b>${this.esc(q)}</span></button>`).join("");
+      body.innerHTML = `<p>${this.esc(say)}</p>` + (cards || rows.slice(0, 4).map((r) => this.card(r)).join(""));
+      this.bind(body);
+      return;
+    }
+    const label = kind === "rrultimate" ? "RAD REVIEW Ultimate" : "RAD REVIEW";
+    body.innerHTML = `<p>${label} · ${this.esc(say)}</p>` + (rows.map((r) => this.card(r)).join("") || "<p>No case for that line yet.</p>");
+    this.bind(body);
+  },
+  bind(body) {
+    body.querySelectorAll(".vl-card").forEach((b) => {
+      b.onclick = () => {
+        const src = b.getAttribute("data-src");
+        if (src) CapRail.pop(src, b.getAttribute("data-cap") || "");
+      };
+    });
+  }
+};
 async function depictParagraph(text) {
   const s = String(text || "").replace(/\s+/g, " ").trim();
   if (s.split(/\s+/).length < 5) return;
@@ -7884,6 +8069,7 @@ function renderHjMed(){
   const stage = $("#stage");
   stage.innerHTML = `<iframe id="hjFrame" title="HJ Med" src="https://hj-med.vercel.app/" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" style="width:100%;height:100%;border:0;display:block;background:#0c1210"></iframe>`;
   if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>HJ Med</b><span>Whole site inside Grok 11</span>`;
+  if (typeof VidLift !== "undefined") { VidLift.box = null; VidLift.place(null); }
 }
 function startMedB(){
   state.view = "medb";
@@ -7905,6 +8091,7 @@ function renderMedB(){
   const tag = rail && rail.querySelector(".cap-tag");
   if (tag) tag.textContent = "Images";
   if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>Med-b</b><span>333 modules, live page</span>`;
+  if (typeof VidLift !== "undefined") { VidLift.box = null; VidLift.place(null); }
 }
 function renderVolume() {
   const atlas = COURSE.atlas.map(sec => `
@@ -13093,6 +13280,10 @@ function render() {
   }
   if (state.view !== "hjmed" && state.view !== "medb") {
     document.body.classList.remove("hj-atlas");
+    const pills = document.getElementById("vidPills");
+    const lift = document.getElementById("vidLift");
+    if (pills) pills.hidden = true;
+    if (lift) lift.classList.remove("on");
   }
   document.body.classList.toggle("lesson-audio", state.view === "module");
   const chromeLabel = document.getElementById("chromeLabel");
@@ -13477,6 +13668,7 @@ window.addEventListener("message", (e) => {
   if (!e.data || e.data.source !== "hj-caption") return;
   if (e.origin !== "https://hj-med.vercel.app" && e.origin !== "https://noardstudiomannus.vercel.app" && e.origin !== location.origin) return;
   const data = e.data;
+  if (data.box && typeof VidLift !== "undefined") VidLift.place(data.box);
   if (data.videoId && data.videoId !== CapRail.videoId && /^[A-Za-z0-9_-]{6,15}$/.test(data.videoId)) {
     CapRail.videoId = data.videoId;
     CapRail.cues = [];
@@ -13489,6 +13681,18 @@ window.addEventListener("message", (e) => {
   else if (data.cc && data.text) CapRail.note(data.text);
 });
 document.getElementById("capPopX").onclick = () => document.getElementById("capPop").classList.remove("on");
+document.getElementById("vidPills").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-lift]");
+  if (!b) return;
+  e.preventDefault();
+  VidLift.open(b.dataset.lift);
+});
+document.getElementById("vidLiftX").onclick = () => {
+  VidLift.kind = "";
+  document.getElementById("vidLift").classList.remove("on");
+  document.querySelectorAll("#vidPills button").forEach((b) => b.classList.remove("on"));
+};
+window.addEventListener("resize", () => { if (typeof VidLift !== "undefined") VidLift.place(VidLift.box); });
 window.addEventListener("message", (e) => {
   if (e.origin !== location.origin || !e.data) return;
   if (e.data.type === "meta-ready") {

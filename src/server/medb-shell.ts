@@ -71,7 +71,15 @@ const BRIDGE = `(function(){
       if (s.length > 18 && s !== titleSent && !/board studio|independent specialty|harvard:john|catalogue/i.test(s)) { titleSent = s; post(s); break; }
     }
   }
-  setInterval(tick, 1000);
+  function postBox(){
+    var el = document.querySelector("iframe[src*='youtube'], video");
+    if (!el) return;
+    var r = el.getBoundingClientRect();
+    if (r.width < 40 || r.height < 40) return;
+    try { parent.postMessage({ source: "hj-caption", box: { top: r.top, left: r.left, width: r.width, height: r.height } }, "*"); } catch (e) {}
+  }
+  window.addEventListener("scroll", postBox, true);
+  setInterval(function(){ tick(); postBox(); }, 1000);
 })();`;
 
 export async function medbDocument() {
