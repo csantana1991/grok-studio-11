@@ -5362,36 +5362,10 @@ const CapRail = {
   },
   note(text) {
     const bit = String(text || "").replace(/\s+/g, " ").trim();
-    if (bit.length < 3) return;
-    const tag = document.querySelector("#capRail .cap-tag");
-    if (tag) tag.textContent = bit.slice(0, 48);
-    const said = document.getElementById("hjSaid");
-    if (said && document.activeElement !== said) said.value = bit.slice(0, 90);
-    const host = document.getElementById("wikiTop");
-    if (host) {
-      host.classList.add("on");
-      document.body.classList.add("wiki-top");
-      let mark = host.querySelector("[data-q]");
-      if (!mark) {
-        mark = document.createElement("b");
-        mark.dataset.q = "1";
-        mark.style.cssText = "flex:0 0 auto;color:#57d6c4;font-size:12px;max-width:180px";
-        host.prepend(mark);
-      }
-      mark.textContent = bit.slice(0, 80);
-    }
-    this.live(bit);
-    document.querySelectorAll("iframe").forEach((frame) => {
-      try { frame.contentWindow.postMessage({ source: "caption-line", text: bit.slice(0, 120) }, "*"); } catch (e) {}
-    });
-    if (!this.topic && bit.length > 28) this.topic = bit.slice(0, 90);
-    this.tail = ((this.tail || "") + " " + bit).trim().split(/\s+/).slice(-12).join(" ");
-    const s = ((this.topic || "") + " " + this.tail).replace(/\s+/g, " ").trim();
-    if (s.length < 12 || s === this.last) return;
-    this.last = s;
-    const seq = ++this.seq;
-    clearTimeout(this._t);
-    this._t = setTimeout(() => { if (seq === this.seq) this.pull(s, seq); }, 400);
+    if (bit.length < 3 || /turn size|meta image|widget|atlas|academy/i.test(bit)) return;
+    if (!this.understand(bit)) return;
+    this.line = bit;
+    this.readScreen();
   },
   async pull(text, seq) {
     const modality = this.modality(text);
@@ -5461,6 +5435,10 @@ const CapRail = {
   understand(text) {
     const t = String(text || "").toLowerCase();
     const concepts = [
+      ["hydrogen nuclei", /nuclei|proton|hydrogen/],
+      ["MR signal", /\bsignal\b/],
+      ["precession", /precess/],
+      ["Tesla", /\btesla\b/],
       ["gradient echo", /gradient\s*echo/],
       ["spin echo", /spin\s*echo/],
       ["fat saturation", /fat\s*sat/],
@@ -5650,8 +5628,9 @@ const CapRail = {
     }
   },
   async wikiNet(text) {
-    const q = this.understand(text);
-    if (!q) return;
+    const idea = this.understand(text);
+    if (!idea) return;
+    const q = /mri|magnetic/i.test(idea) ? idea : idea + " MRI";
     if (this.wikiNetKey === q) return;
     this.wikiNetKey = q;
     const host = document.getElementById("wikiTop");
@@ -5694,8 +5673,9 @@ const CapRail = {
     this.pushWidgets(q);
   },
   async slideNet(text) {
-    const q = this.understand(text);
-    if (!q) return;
+    const idea = this.understand(text);
+    if (!idea) return;
+    const q = /mri|magnetic/i.test(idea) ? idea : idea + " MRI";
     if (this.slideKey === q) return;
     this.slideKey = q;
     const row = document.getElementById("capRow");
