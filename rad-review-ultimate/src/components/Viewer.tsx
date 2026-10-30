@@ -549,7 +549,7 @@ export default function Viewer({
             </div>
           )}
 
-          {!showAtlas && <div className="rr-grid pointer-events-none absolute inset-0" />}
+          {showAtlas && <div className="rr-grid pointer-events-none absolute inset-0" />}
 
           {showAtlas && (
           <div

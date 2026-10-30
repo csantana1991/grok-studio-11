@@ -24,7 +24,7 @@ const META_MRI = [
   'mri-cor-12.webp','mri-cor-13.webp','mri-sag-06.webp','mri-sag-11c.webp',
 ].map((f) => META + f)
 const META_XR = [
-  'xpa-a.webp','xpa-c.webp','x10-a.webp','x10-c.webp','xpna-a.webp','xpna-c.webp',
+  'xpa-a.webp','xpa-c.webp','xpna-a.webp','xpna-c.webp',
   'xlat-a.webp','xlat-b.webp','xjh-a.webp','xjh-b.webp',
 ].map((f) => META + f)
 const META_PET = [
@@ -113,7 +113,7 @@ function categoryFilm(categoryId: string): string {
 export function plateKind(finding: string, categoryId: string): string | null {
   const f = finding.toLowerCase()
   const cat = categoryId.toLowerCase()
-  if (/\bmuga\b|gated blood|equilibrium radionuclide|\berna\b/.test(f)) return categoryFilm(cat)
+  if (/\bmuga\b|gated blood|equilibrium radionuclide|\berna\b/.test(f)) return null
   // nm-pyp.jpg also contains a sestamibi polar map, and pyp-1.jpg is not a readable PYP study.
   if (/\bpyp\b|pyrophosphate/.test(f)) return categoryFilm(cat)
   if (/parathyroid/.test(f)) return categoryFilm(cat)
@@ -225,7 +225,11 @@ function pick(finding: string, _stationId: string, categoryId: string, idx = 0):
   if (key === 'mpi') return '/studio/assets/images/cardiac-ac.jpg'
   if (key === 'cardiacMri') return CARDIAC_MRI[Math.abs(idx) % CARDIAC_MRI.length]
   if (key === 'cardiacCt') return CARDIAC_CT[Math.abs(idx) % CARDIAC_CT.length]
-  if (key === 'xrChest') return META_XR[Math.abs(idx) % META_XR.length]
+  if (key === 'xrChest') {
+    const n = NIH_FILES.length
+    if (n) return `/library/nih/${NIH_FILES[Math.abs(idx) % n]}`
+    return META_XR[Math.abs(idx) % META_XR.length]
+  }
   if (key === 'ctChest' || key === 'ctBody') return META_CT[Math.abs(idx) % META_CT.length]
   if (key === 'mriBrain') return META_MRI[Math.abs(idx) % META_MRI.length]
   if (key === 'pet' || key === 'petBrain') return META_PET[Math.abs(idx) % META_PET.length]
@@ -246,7 +250,7 @@ export function imageLabel(c: { finding: string; categoryId: string; idx?: numbe
   if (!key) return 'No matched case image'
   const label =
     key === 'xrChest'
-      ? 'Meta Image chest radiograph. Not this row’s own film'
+      ? 'NIH ChestX-ray14. Credit the NIH Clinical Center. Not this row’s own film.'
       : key === 'ctChest' || key === 'ctBody'
         ? 'CT reference film. Not a downloaded TCIA series'
         : key === 'mriBrain'
@@ -354,8 +358,10 @@ export function teachingPlateFor(c: Pick<Encounter, 'finding' | 'stationId' | 'c
   caption: string
 } {
   const url = pick(c.finding, c.stationId, c.categoryId, c.idx ?? 0)
-  const shown = url.includes('/films/x')
-    ? 'Meta Image chest radiograph'
+  const shown = url.includes('/library/nih/')
+    ? 'NIH ChestX-ray14'
+    : url.includes('/films/x')
+    ? 'Chest radiograph reference'
     : url.includes('/films/ct-')
       ? 'Meta Image CT'
       : url.includes('/films/mri-')

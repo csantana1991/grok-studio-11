@@ -7,7 +7,7 @@ import { imageLabel } from '../data/teachingPlate'
 import { reportsSuv, statedSuv, studyKind } from '../data/caseDossier'
 import { displayUrl } from '../data/liveMatch'
 
-export const ROW_H = 128
+export const ROW_H = 188
 const OVERSCAN = 6
 
 interface Props {
@@ -103,11 +103,11 @@ function Row({
       style={{ height }}
       data-selected={selected ? '1' : undefined}
       className={
-        'flex w-full items-center gap-2 border-b border-rr-line px-3 text-left transition-colors ' +
+        'flex w-full items-stretch gap-2 overflow-hidden border-b border-rr-line px-2 text-left transition-colors ' +
         (selected ? 'bg-rr-blue/20' : 'hover:bg-[#141419]')
       }
     >
-      <span className="relative h-[78%] w-[34%] max-w-[240px] shrink-0 overflow-hidden rounded border border-rr-line bg-black">
+      <span className="relative h-full w-[58%] max-w-[520px] shrink-0 overflow-hidden bg-black">
         {thumb ? (
           <FullThumb c={c} src={thumb} plain className="absolute inset-0 h-full w-full" />
         ) : (
@@ -209,7 +209,7 @@ export default function CaseList({
   const scrollRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportH, setViewportH] = useState(720)
-  const [filmH, setFilmH] = useState(300)
+  const [filmH, setFilmH] = useState(420)
   const [rowH, setRowH] = useState(ROW_H)
 
   const onScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -251,7 +251,7 @@ export default function CaseList({
   const filmRef = useRef<HTMLDivElement>(null)
   const [filmLeft, setFilmLeft] = useState(0)
   const [filmW, setFilmW] = useState(480)
-  const thumbW = Math.max(160, Math.min(340, Math.round(filmH * 1.15)))
+  const thumbW = Math.max(240, Math.min(560, Math.round(filmH * 1.25)))
   const THUMB = thumbW + 6
 
   useEffect(() => {
@@ -265,6 +265,13 @@ export default function CaseList({
 
   const filmStart = Math.max(0, Math.floor(filmLeft / THUMB) - 6)
   const filmEnd = Math.min(cases.length, filmStart + Math.ceil(filmW / THUMB) + 12)
+  const withFilm: Encounter[] = []
+  const withoutFilm: Encounter[] = []
+  for (const c of cases) {
+    if (thumbFor(c)) withFilm.push(c)
+    else withoutFilm.push(c)
+  }
+  const strip = withFilm.length ? withFilm.concat(withoutFilm) : cases
 
   return (
     <aside className="flex h-full min-h-0 w-full flex-col border-r border-rr-line bg-rr-panel">
@@ -299,12 +306,12 @@ export default function CaseList({
             className="rr-scroll overflow-x-scroll"
             style={{ height: filmH }}
           >
-            <div style={{ width: cases.length * THUMB, height: '100%', position: 'relative' }}>
+            <div style={{ width: strip.length * THUMB, height: '100%', position: 'relative' }}>
               <div
                 className="absolute top-0 flex h-full"
                 style={{ left: filmStart * THUMB, gap: 6 }}
               >
-                {cases.slice(filmStart, filmEnd).map((c) => {
+                {strip.slice(filmStart, filmEnd).map((c) => {
                   const src = thumbFor(c)
                   const label = src ? imageLabel(c) : 'No match'
                   return (
@@ -313,15 +320,15 @@ export default function CaseList({
                       type="button"
                       title={label}
                       onClick={() => onSelect(c)}
-                      className="relative flex h-full shrink-0 flex-col overflow-hidden rounded border border-rr-line bg-black"
+                      className="relative h-full shrink-0 overflow-hidden rounded border border-rr-line bg-black"
                       style={{ width: thumbW }}
                     >
-                      <span className="relative min-h-0 flex-1">
-                        {src ? <FullThumb c={c} src={src} plain className="absolute inset-0 h-full w-full" /> : (
-                          <span className="flex h-full items-center px-1 text-center text-[11px] font-bold text-[#ffe14a]">No match</span>
-                        )}
-                      </span>
-                      <span className="block h-5 shrink-0 truncate bg-black px-1 text-left text-[10px] leading-5 text-white">{label}</span>
+                      {src ? (
+                        <FullThumb c={c} src={src} plain className="absolute inset-x-0 top-0 bottom-6 h-auto w-full" />
+                      ) : (
+                        <span className="absolute inset-x-0 top-0 bottom-6 flex items-center justify-center px-1 text-center text-[11px] font-bold text-[#ffe14a]">No match</span>
+                      )}
+                      <span className="absolute inset-x-0 bottom-0 h-6 truncate bg-black/80 px-1 text-left text-[10px] leading-6 text-white">{label}</span>
                     </button>
                   )
                 })}

@@ -1,28 +1,28 @@
 import { useEffect, useRef, type CSSProperties } from 'react'
-import { useFilledPlate } from '../data/plateCrop'
 
 export default function PlateImg({
   src,
   alt,
   className,
   onError,
-  plain = false,
 }: {
   src: string
   stationId: string
   alt?: string
   className?: string
   onError?: () => void
-  /** Small thumbs: show the whole picture, don't crop it out of the box. */
+  /** Kept so callers can still pass it. Thumbs and the viewer both fill the frame. */
   plain?: boolean
 }) {
-  const fill = useFilledPlate(plain ? '' : src)
-  const style: CSSProperties = plain
-    ? { objectFit: 'contain', width: '100%', height: '100%', left: 0, top: 0 }
-    : {
-        objectFit: 'contain',
-        ...fill,
-      }
+  const style: CSSProperties = {
+    objectFit: 'cover',
+    objectPosition: 'center center',
+    width: '100%',
+    height: '100%',
+    left: 0,
+    top: 0,
+    filter: 'contrast(1.72) brightness(1.05)',
+  }
   const err = useRef(onError)
   err.current = onError
   const timer = useRef(0)
