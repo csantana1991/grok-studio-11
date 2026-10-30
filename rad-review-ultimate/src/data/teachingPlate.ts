@@ -9,6 +9,7 @@
 import type { Encounter } from './generateCases'
 import type { LiveMatch } from './liveMatch'
 import type { StudyKind } from './caseDossier'
+import { US_PLATES } from './us-plates'
 
 const DR = '/studio/assets/dr/'
 
@@ -65,7 +66,8 @@ export function plateKind(finding: string, categoryId: string): string | null {
   const f = finding.toLowerCase()
   const cat = categoryId.toLowerCase()
   if (/\bmuga\b|gated blood|equilibrium radionuclide|\berna\b/.test(f)) return null
-  if (/\bpyp\b|pyrophosphate/.test(f)) return 'pyp'
+  // nm-pyp.jpg also contains a sestamibi polar map, and pyp-1.jpg is not a readable PYP study.
+  if (/\bpyp\b|pyrophosphate/.test(f)) return null
   if (/parathyroid/.test(f)) return null
   if (/\becho\b/.test(f)) return null
   if (/sestamibi|tetrofosmin|myocardial perfusion|\bmibi\b|stress pet myocardial|thallium viability/.test(f)) {
@@ -154,6 +156,7 @@ const FILE_KIND: [string, StudyKind][] = [
 /** Kind of a checked local file, or null when the file is not an allow-listed plate. */
 export function knownPlateKind(url: string): StudyKind | null {
   const u = url.toLowerCase()
+  if (u.includes('ultrasound_scan_nd') || u.includes('case-us-')) return 'us'
   for (const [file, kind] of FILE_KIND) {
     if (u.endsWith(file)) return kind
   }
@@ -161,11 +164,17 @@ export function knownPlateKind(url: string): StudyKind | null {
 }
 
 /** The finding's checked modality plate, or '' when no plate is this study type. */
-function pick(finding: string, _stationId: string, categoryId: string): string {
+function pick(finding: string, _stationId: string, categoryId: string, idx = 0): string {
   const key = plateKind(finding, categoryId)
   if (!key) return ''
   if (key === 'mpi') return '/studio/assets/images/cardiac-ac.jpg'
   if (key === 'cardiacMri') return '/studio/assets/dr/ct-396.jpg'
+  if (key === 'us') {
+    const pool = US_PLATES
+    if (!pool.length) return ''
+    const n = pool[Math.abs(idx) % pool.length]
+    return n
+  }
   const pool = POOLS[key]
   if (!pool) return ''
   const name = pool.find((file) => !NOT_MEDICAL.has(file))
@@ -276,7 +285,7 @@ export function teachingPlateFor(c: Pick<Encounter, 'finding' | 'stationId' | 'c
   url: string
   caption: string
 } {
-  const url = pick(c.finding, c.stationId, c.categoryId)
+  const url = pick(c.finding, c.stationId, c.categoryId, c.idx ?? 0)
   const key = plateKind(c.finding, c.categoryId)
   const label = !key
     ? ''
