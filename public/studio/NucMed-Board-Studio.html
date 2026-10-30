@@ -6692,6 +6692,26 @@ async function liveSearchTerm(term){
   }
   if (fail || !data) {
     try {
+      const pics = await fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(q) + "&n=8").then(function(r){ return r.json(); });
+      const rows = (pics && pics.results) || [];
+      if (rows.length && seq === state._liveSeq && document.getElementById("livePopGrid")) {
+        const esc = function(s){
+          return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){
+            if (c === "&") return "&" + "amp;";
+            if (c === "<") return "&" + "lt;";
+            if (c === ">") return "&" + "gt;";
+            return "&" + "quot;";
+          });
+        };
+        grid.innerHTML = rows.filter(function(row){ return row && row.url; }).map(function(row){
+          if (typeof CapRail !== "undefined") CapRail.add(row.url, row.caption || row.title || q);
+          return "<figure style=\"margin:0;background:#0e1c28;border-radius:10px;overflow:hidden\"><img alt=\"\" referrerpolicy=\"no-referrer\" src=\"" + esc(row.url) + "\" style=\"width:100%;height:160px;object-fit:cover;display:block;background:#000\"><figcaption style=\"padding:6px 8px;font-size:12px;line-height:1.3\">" + esc(row.caption || row.title || q) + "</figcaption></figure>";
+        }).join("");
+        if (stat) stat.textContent = rows.length + " images · Open-i · finished";
+        return;
+      }
+    } catch (e) {}
+    try {
       const pm = await fetchPubMedPapers(q);
       if (seq !== state._liveSeq) return;
       if (!document.getElementById("livePopGrid")) return;
@@ -12592,12 +12612,27 @@ function raTciaPack(query){
     }))
   };
 }
+async function raSearchOpeni(query){
+  const started = Date.now();
+  try {
+    const res = await fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(query) + "&n=8");
+    if (!res.ok) throw new Error("openi " + res.status);
+    const data = await res.json();
+    const figures = (data.results || []).filter(function(r){ return r && r.url; }).map(function(r, i){
+      return { id:"openi-" + i, title: r.title || query, caption: r.caption || r.title || query, imageUrl: r.url, articleUrl: "https://openi.nlm.nih.gov/", pmcid: r.pmcid || "Open-i", modality: "pet", badge: "Open-i" };
+    });
+    return { figures: figures, status: { source:"openi", state: figures.length ? "ok" : "empty", count: figures.length, latencyMs: Date.now() - started } };
+  } catch (e) {
+    return { figures: [], status: { source:"openi", state:"error", count:0, latencyMs: Date.now() - started, message:"failed" } };
+  }
+}
 async function raSearch(query, withOn){
   const t0 = Date.now();
-  const [pmc, tcia, on] = await Promise.all([
+  const [pmc, tcia, on, openi] = await Promise.all([
     raTimeout(raSearchPmc(query), 9000, { figures: [], status: { source:"wiki", state:"error", count:0, latencyMs:9000, message:"timeout" } }),
     raTimeout(raSearchTcia(query), 8000, { previews: [], studies: [], status: { source:"tcia", state:"error", count:0, latencyMs:8000, message:"timeout" } }),
-    withOn ? raTimeout(raSearchOpenNeuro(query), 6000, { studies: [], status: { source:"openneuro", state:"error", count:0, latencyMs:6000 } }) : Promise.resolve({ studies: [], status: { source:"openneuro", state:"disabled", count:0, latencyMs:0, message:"Off" } })
+    withOn ? raTimeout(raSearchOpenNeuro(query), 6000, { studies: [], status: { source:"openneuro", state:"error", count:0, latencyMs:6000 } }) : Promise.resolve({ studies: [], status: { source:"openneuro", state:"disabled", count:0, latencyMs:0, message:"Off" } }),
+    raTimeout(raSearchOpeni(query), 9000, { figures: [], status: { source:"openi", state:"error", count:0, latencyMs:9000, message:"timeout" } })
   ]);
   if (!window.META_TCIA && window.__metaTciaP) {
     try { await raTimeout(window.__metaTciaP, 4000, []); } catch (e) {}
@@ -12605,9 +12640,9 @@ async function raSearch(query, withOn){
   const packed = raMetaPack(query);
   const uploaded = raTciaPack(query);
   const nihFigs = await raNihFigures(query);
-  const liveFigs = uploaded.figures.concat(nihFigs).concat(packed.figures).concat(pmc.figures || []).slice(0, 12);
+  const liveFigs = (openi.figures || []).concat(uploaded.figures).concat(nihFigs).concat(packed.figures).concat(pmc.figures || []).slice(0, 12);
   const livePrev = uploaded.previews.concat(packed.previews).concat((tcia.previews) || []).slice(0, 12);
-  const providers = [pmc.status, tcia.status, on.status];
+  const providers = [openi.status, pmc.status, tcia.status, on.status];
   const metaCount = uploaded.figures.length + nihFigs.length + packed.figures.length;
   if (metaCount) {
     providers.push({ source:"meta", state:"ok", count: metaCount, message: uploaded.figures.length ? "Uploaded Meta Image films" : (nihFigs.length ? "NIH ChestX-ray14 via Meta Image" : "Meta Image library") });
