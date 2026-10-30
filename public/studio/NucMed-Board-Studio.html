@@ -5362,8 +5362,7 @@ const CapRail = {
   },
   note(text) {
     const bit = String(text || "").replace(/\s+/g, " ").trim();
-    if (bit.length < 3 || /turn size|meta image|widget|atlas|academy/i.test(bit)) return;
-    if (!this.understand(bit)) return;
+    if (bit.length < 3 || /turn size|meta image|widget/i.test(bit)) return;
     this.line = bit;
     this.readScreen();
   },
@@ -5600,7 +5599,7 @@ const CapRail = {
     this._spin = 0;
     this.seenTop = this.seenTop || {};
     this.screenWords = this.screenWords || [];
-    this._follow = setInterval(() => { this.readScreen(); }, 5000);
+    this._follow = setInterval(() => { this.readScreen(); }, 1000);
     this.readScreen();
   },
   nextScreenPhrase() {
@@ -5612,25 +5611,23 @@ const CapRail = {
     return "";
   },
   async readScreen() {
-    if (this._step) return;
-    this._step = true;
-    try {
-      this.watchPlayers();
-      if (this.videoId) {
-        const names = ["sd1", "sd2", "sd3", "hq1", "hq2", "hq3"];
-        const name = names[(this._shot || 0) % names.length];
-        this._shot = (this._shot || 0) + 1;
-        await this.ocrFrame("https://i.ytimg.com/vi/" + this.videoId + "/" + name + ".jpg");
-      }
-      if (this.line) await this.wikiNet(this.line);
-    } finally {
-      this._step = false;
+    this.watchPlayers();
+    if (this.videoId && !this._shotBusy) {
+      const names = ["hqdefault", "sddefault", "0", "1", "2", "3", "sd1", "sd2", "sd3", "hq1", "hq2", "hq3", "maxresdefault"];
+      const name = names[(this._shot || 0) % names.length];
+      this._shot = (this._shot || 0) + 1;
+      this._shotBusy = true;
+      this.ocrFrame("https://i.ytimg.com/vi/" + this.videoId + "/" + name + ".jpg").finally(() => { this._shotBusy = false; });
     }
+    if (this.line) this.wikiNet(this.line);
+  },
+  captionWords(text) {
+    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|them|then|just|like|gonna|going|know|yeah|okay|well|meta|image|images|turn|size|widget|atlas)$/i;
+    return String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !stop.test(w)).slice(0, 8).join(" ");
   },
   async wikiNet(text) {
-    const idea = this.understand(text);
-    if (!idea) return;
-    const q = /mri|magnetic/i.test(idea) ? idea : idea + " MRI";
+    const q = this.captionWords(text);
+    if (!q || q.length < 4 || /meta image|turn size/i.test(q)) return;
     if (this.wikiNetKey === q) return;
     this.wikiNetKey = q;
     const host = document.getElementById("wikiTop");
@@ -5649,7 +5646,7 @@ const CapRail = {
       host.innerHTML = "";
       host.dataset.q = q;
     }
-    pages.filter((p) => p && p.title && this.onTopic(p.title)).slice(0, 2).forEach((p) => {
+    pages.filter((p) => p && p.title && p.thumbnail && (this.onTopic(p.title) || this.captionWords(p.title).split(" ").some((w) => w.length > 4 && q.indexOf(w) >= 0))).slice(0, 3).forEach((p) => {
       const href = p.fullurl || ("https://en.wikipedia.org/wiki/" + encodeURIComponent(p.title.replace(/ /g, "_")));
       if (host.querySelector('[data-wiki="' + href.replace(/"/g, "") + '"]')) return;
       const src = p.thumbnail && p.thumbnail.source;
@@ -5673,9 +5670,8 @@ const CapRail = {
     this.pushWidgets(q);
   },
   async slideNet(text) {
-    const idea = this.understand(text);
-    if (!idea) return;
-    const q = /mri|magnetic/i.test(idea) ? idea : idea + " MRI";
+    const q = this.captionWords(text);
+    if (!q || q.length < 4 || /meta image|turn size/i.test(q)) return;
     if (this.slideKey === q) return;
     this.slideKey = q;
     const row = document.getElementById("capRow");
@@ -5693,7 +5689,7 @@ const CapRail = {
       row.innerHTML = "";
       row.dataset.q = q;
     }
-    pages.filter((p) => p && p.title && p.thumbnail && this.onTopic(p.title)).slice(0, 3).forEach((p) => {
+    pages.filter((p) => p && p.title && p.thumbnail && (this.onTopic(p.title) || this.captionWords(p.title).split(" ").some((w) => w.length > 4 && q.indexOf(w) >= 0))).slice(0, 4).forEach((p) => {
       this.add(p.thumbnail.source, "Slide · " + p.title);
     });
   },
@@ -5798,10 +5794,11 @@ const CapRail = {
       const found = String((out && out.data && out.data.text) || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3);
       found.forEach((w) => { if (this.screenWords.indexOf(w) < 0 && this.screenWords.length < 40) this.screenWords.push(w); });
       if (!found.length) return;
-      const phrase = this.understand(found.join(" "));
+      const phrase = found.join(" ");
       if (!phrase) return;
+      this.slideText = phrase;
       this.slideKey = "";
-      this.slideNet(found.join(" "));
+      this.slideNet(phrase);
     } catch (e) {}
   },
   scrub(lines, title) {
