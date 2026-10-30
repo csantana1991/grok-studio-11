@@ -5994,29 +5994,10 @@ async function fetchPubMedPapersNow(query){
   if (q.length < 3) return { ok:false, error:"Query too short", count:"0", papers:[], query:q };
   const hit = PUBMED_CACHE[q];
   if (hit && Date.now() - hit.ts < 10 * 60 * 1000) return hit.data;
-  const base = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/";
-  const tool = "tool=NucleusBoardAcademy&retmode=json";
-  const searchUrl = base + "esearch.fcgi?db=pubmed&retmax=8&sort=relevance&" + tool + "&term=" + encodeURIComponent(q);
-  const res = await fetch(searchUrl, { signal: AbortSignal.timeout(12000) });
+  const res = await fetch("/api/pubmed?q=" + encodeURIComponent(q), { signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error("HTTP " + res.status);
-  const search = await res.json();
-  const ids = (search.esearchresult && search.esearchresult.idlist) || [];
-  const count = String((search.esearchresult && search.esearchresult.count) || "0");
-  if (!ids.length) {
-    const data = { ok:true, count, papers:[], query:q };
-    PUBMED_CACHE[q] = { ts: Date.now(), data };
-    return data;
-  }
-  const sumUrl = base + "esummary.fcgi?db=pubmed&" + tool + "&id=" + ids.join(",");
-  const sumRes = await fetch(sumUrl, { signal: AbortSignal.timeout(12000) });
-  if (!sumRes.ok) throw new Error("summary HTTP " + sumRes.status);
-  const summary = await sumRes.json();
-  const result = (summary && summary.result) || {};
-  const papers = ids.map(function(id){
-    const r = result[id] || {};
-    return { pmid:id, title:r.title || "Untitled", journal:r.source || "", date:r.pubdate || "", doi:r.elocationid || "" };
-  });
-  const data = { ok:true, count, papers, query:q };
+  const data = await res.json();
+  if (!data || data.ok === false) throw new Error((data && data.error) || "failed");
   PUBMED_CACHE[q] = { ts: Date.now(), data };
   return data;
 }
@@ -11773,65 +11754,35 @@ async function raPubmedSearch(q){
   const query = String(q || "").replace(/\b(mrn|ssn|dob|accession)\b[:\s#-]*[a-z0-9-]*/gi, " ").trim().slice(0, 120);
   if (query.length < 3) { grid.innerHTML = "<p>Type a PubMed query. Nothing was sent.</p>"; return; }
   grid.innerHTML = "<p>Searching PubMed…</p>";
-  const searchUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=12&sort=relevance&tool=BoardStudioTeaching&term=" + encodeURIComponent(query);
-  let search = null;
-  let err = "";
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const res = await fetch(searchUrl, { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      search = await res.json();
-      err = "";
-      break;
-    } catch (e) {
-      err = (e && e.message) || "failed";
-      if (attempt === 0) await new Promise(function(r){ setTimeout(r, 800); });
-    }
-  }
-  if (!search) {
-    grid.innerHTML = "<p>PubMed did not respond after one retry (" + raEsc(err) + "). No papers were added. Open-i, Europe PMC, Wikimedia Commons, and TCIA are a separate image search. Radiopaedia, MedPix, Eurorad, and the other libraries were not queried: they have no permitted search API for this app.</p>";
-    return;
-  }
-  const ids = (search.esearchresult && search.esearchresult.idlist) || [];
-  const count = (search.esearchresult && search.esearchresult.count) || "0";
-  const seen = {};
-  const unique = ids.filter(function(id){ if (seen[id]) return false; seen[id] = 1; return true; });
-  if (!unique.length) {
-    grid.innerHTML = "<p>PubMed responded. " + raEsc(count) + " matches, and none are listed here. The search is finished.</p>";
-    return;
-  }
-  let summary = null;
+  let data = null;
   try {
-    const sumUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&tool=BoardStudioTeaching&id=" + unique.join(",");
-    const res = await fetch(sumUrl, { signal: AbortSignal.timeout(12000) });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    summary = await res.json();
+    data = await fetchPubMedPapers(query);
   } catch (e) {
-    grid.innerHTML = "<p>PubMed found " + unique.length + " PMIDs, but the summary did not load. " + unique.map(function(id){ return "<a href=\"https://pubmed.ncbi.nlm.nih.gov/" + id + "/\" target=\"_blank\" rel=\"noopener\">PMID " + id + "</a>"; }).join(" · ") + "</p>";
+    grid.innerHTML = "<p>PubMed did not respond (" + raEsc((e && e.message) || "failed") + "). The search is finished. <a href=\"https://pubmed.ncbi.nlm.nih.gov/?term=" + encodeURIComponent(query) + "\" target=\"_blank\" rel=\"noopener\">Open this query on PubMed</a></p>";
     return;
   }
-  const result = (summary && summary.result) || {};
+  const papers = (data && data.papers) || [];
+  const count = (data && data.count) || "0";
   const tokens = query.toLowerCase().split(/[^a-z0-9]+/).filter(function(t){ return t.length >= 3; });
   const strict = tokens.length <= 1;
-  const matched = unique.filter(function(id){
+  const listed = papers.filter(function(p){
     if (!strict) return true;
-    const title = String((result[id] && result[id].title) || "").toLowerCase();
+    const title = String(p.title || "").toLowerCase();
     if (!tokens.every(function(t){ return title.indexOf(t) >= 0; })) return false;
     if (tokens[0] === "muga" && !/scan|cardiac|ventric|heart|gated|radionuclide|nuclear|scint|ejection|patient|imaging/.test(title)) return false;
     return true;
-  });
-  const listed = matched.slice(0, 5);
-  const skipped = unique.length - matched.length;
+  }).slice(0, 5);
   if (!listed.length) {
-    grid.innerHTML = "<p>PubMed responded (" + raEsc(count) + " matches). None of the first " + unique.length + " had the query in the title, so they are not listed. The search is finished.</p>";
+    grid.innerHTML = "<p>PubMed responded (" + raEsc(count) + " matches). None of the returned titles contained the query, so they are not listed. The search is finished.</p>";
     return;
   }
-  grid.innerHTML = "<p>Live PubMed · " + raEsc(count) + " matches · showing " + listed.length + (skipped > 0 ? " · " + skipped + " omitted because the title did not match the query" : "") + ". These are citations, not images.</p><ol class=\"ra-cites\">" + listed.map(function(id){
-    const r = result[id] || {};
-    const title = raEsc(r.title || "Untitled");
-    const journal = raEsc(r.source || "");
-    const date = raEsc(r.pubdate || "");
-    const doi = raEsc(r.elocationid || "");
+  const skipped = papers.length - listed.length;
+  grid.innerHTML = "<p>Live PubMed · " + raEsc(count) + " matches · showing " + listed.length + (skipped > 0 ? " · " + skipped + " omitted because the title did not match the query" : "") + ". These are citations, not images.</p><ol class=\"ra-cites\">" + listed.map(function(p){
+    const title = raEsc(p.title || "Untitled");
+    const journal = raEsc(p.journal || "");
+    const date = raEsc(p.date || "");
+    const doi = raEsc(p.doi || "");
+    const id = raEsc(p.pmid || "");
     return "<li><a href=\"https://pubmed.ncbi.nlm.nih.gov/" + id + "/\" target=\"_blank\" rel=\"noopener\">PMID " + id + "</a> · " + title + "<br><span>" + journal + " · " + date + (doi ? " · " + doi : "") + "</span></li>";
   }).join("") + "</ol>";
 }
