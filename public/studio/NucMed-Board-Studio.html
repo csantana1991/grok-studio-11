@@ -2244,8 +2244,10 @@ body.hj-full .work,
 body.hj-full.film-widget .work { left: 0 !important; right: 0 !important; bottom: 118px !important; }
 body.hj-full .stage,
 body.hj-full #hjFrame { width: 100% !important; max-width: none !important; }
-body.medb-full .work { left: 210px !important; right: 210px !important; bottom: 86px !important; }
-body.medb-full.film-widget .work { right: 480px !important; }
+body.medb-full #filmLeft,
+body.medb-full #filmRight { display: none !important; }
+body.medb-full .work,
+body.medb-full.film-widget .work { left: 0 !important; right: 0 !important; bottom: 118px !important; }
 #filmLeft button { display: block; width: 100%; padding: 0 0 6px; border: 0; border-radius: 10px; background: #123044; color: #e8f2f7; text-align: left; cursor: pointer; }
 #filmLeft img { width: 100%; height: 120px; object-fit: cover; border-radius: 10px 10px 0 0; display: block; background: #000; }
 #filmLeft span { display: block; max-height: 2.6em; overflow: hidden; padding: 4px 6px 0; font-size: 11px; line-height: 1.3; }
@@ -2258,6 +2260,8 @@ body.medb-full.film-widget .work { right: 480px !important; }
   body.hj-full .work, body.medb-full .work { left: 0 !important; }
   body.hj-full.film-widget #filmRight, body.medb-full.film-widget #filmRight { width: min(480px, 48vw); }
   body.hj-full.film-widget .work, body.medb-full.film-widget .work { right: min(480px, 48vw) !important; }
+  body.medb-full.film-widget .work { right: 0 !important; }
+  body.medb-full #filmRight { display: none !important; }
 }
 #capRail .cap-tag { flex: 0 0 auto; color: #9fc8c0; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
 #capRow { display: flex; gap: 8px; align-items: center; }
