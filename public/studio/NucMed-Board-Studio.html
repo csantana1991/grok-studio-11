@@ -2133,11 +2133,29 @@ body.view-rru #rruFrame {
   height: 100% !important;
   min-height: 0 !important;
 }
-body.hj-full .hj-exitbar { display:flex; }
-body.hj-full .app { grid-template-columns: 1fr; padding-top:44px; height:100vh; }
-body.hj-full .sidebar, body.hj-full .topbar, body.hj-full #colSplit, body.hj-full .player, body.hj-full #winBar, body.hj-full #dockHandle, body.hj-full #atlasDrawer, body.hj-full #atlasSplit { display:none !important; }
-body.hj-full .work { position:fixed; inset:44px 0 0 0; }
-body.hj-full .stage, body.hj-full #hjFrame { width:100%; height:100%; min-height:0; }
+body.hj-full .hj-exitbar { display:flex !important; height:40px; min-height:40px; overflow:hidden; flex-wrap:nowrap; z-index:200; }
+body.hj-full .hj-exitbar button { padding:6px 10px; font-size:13px; white-space:nowrap; }
+@media (max-width: 700px) {
+  body.hj-full .hj-exitbar span { display:none !important; }
+}
+body.hj-full .app { display:block !important; height:100dvh !important; padding:0 !important; margin:0 !important; }
+body.hj-full .sidebar, body.hj-full .topbar, body.hj-full #colSplit, body.hj-full .player, body.hj-full #playerDock, body.hj-full #winBar, body.hj-full #dockHandle, body.hj-full #atlasDrawer, body.hj-full #atlasSplit, body.hj-full #bootSplash { display:none !important; }
+body.hj-full .main { display:flex !important; flex-direction:column !important; height:100dvh !important; min-height:0 !important; overflow:hidden !important; padding:0 !important; }
+body.hj-full .work {
+  position:fixed !important; top:40px !important; left:0 !important; right:0 !important; bottom:0 !important;
+  width:100% !important; height:auto !important; max-height:none !important; min-height:0 !important;
+  margin:0 !important; padding:0 !important; display:flex !important; flex-direction:column !important;
+  overflow:hidden !important; background:#0c1210 !important;
+}
+body.hj-full .stage {
+  flex:1 1 auto !important; width:100% !important; height:100% !important; min-height:0 !important; max-height:none !important;
+  margin:0 !important; padding:0 !important; overflow:hidden !important; display:flex !important; flex-direction:column !important;
+  background:#0c1210 !important;
+}
+body.hj-full #hjFrame {
+  flex:1 1 auto !important; width:100% !important; height:100% !important; min-height:100% !important;
+  border:0 !important; display:block !important; background:#0c1210 !important;
+}
 #hjAtlasSheet { display:none; position:fixed; top:44px; right:0; bottom:0; width:min(560px,100%); z-index:85; overflow:auto; background:#0e1c28; box-shadow:-12px 0 32px rgba(0,0,0,.35); }
 body.hj-atlas #hjAtlasSheet { display:block; }
 body.tabs-up .app-tabs,
@@ -2163,7 +2181,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 </div>
 <div class='backdrop' id='backdrop'></div>
 <div class="rru-exitbar" id="rruBar"><b>RAD REVIEW Ultimate</b><span>Full-page 33,000-case worklist · Image QA · live PubMed · same features as RAD REVIEW</span><button type="button" id="rruExit">Exit to Board Studio</button></div>
-<div class="rru-exitbar hj-exitbar" id="hjBar"><b>HJ Med</b><span>Whole site, inside Grok 11</span><button type="button" id="hjAtlas">Grok 11 atlas</button><button type="button" id="hjExit">Exit to Board Studio</button></div>
+<div class="rru-exitbar hj-exitbar" id="hjBar"><b>HJ Med</b><span>Live page</span><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
 <div id="hjAtlasSheet" aria-label="Grok 11 atlas"></div>
 <div class='app'>
 <aside class='sidebar panel-wrap' id='sidebar' data-panel-body='nav'>
