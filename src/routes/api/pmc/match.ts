@@ -48,6 +48,32 @@ function petParts(text: string) {
   return { tracer, hybrid, plane, label: plane ? head + ", " + plane : head };
 }
 
+async function loadCaptions(id: string) {
+  const heads = { "User-Agent": "Mozilla/5.0", Accept: "application/json,text/vtt,*/*" };
+  const urls = [
+    "https://www.youtube.com/api/timedtext?v=" + id + "&lang=en&fmt=json3&kind=asr",
+    "https://www.youtube.com/api/timedtext?v=" + id + "&lang=en&fmt=json3",
+    "https://www.youtube.com/api/timedtext?v=" + id + "&lang=en-US&fmt=json3&kind=asr",
+  ];
+  for (const href of urls) {
+    try {
+      const res = await fetch(href, { signal: AbortSignal.timeout(10000), headers: heads });
+      if (!res.ok) continue;
+      const data = (await res.json()) as { events?: { tStartMs?: number; segs?: { utf8?: string }[] }[] };
+      const lines = (data.events || [])
+        .map((ev) => ({
+          t: (ev.tStartMs || 0) / 1000,
+          text: (ev.segs || []).map((seg) => seg.utf8 || "").join("").replace(/\s+/g, " ").trim(),
+        }))
+        .filter((line) => line.text.length > 1);
+      if (lines.length) return lines;
+    } catch {
+      /* try the next track */
+    }
+  }
+  return [] as { t: number; text: string }[];
+}
+
 export const Route = createFileRoute("/api/pmc/match")({
   server: {
     handlers: {
@@ -57,20 +83,8 @@ export const Route = createFileRoute("/api/pmc/match")({
         if (url.searchParams.get("source") === "captions") {
           const id = url.searchParams.get("v") || "";
           if (!/^[A-Za-z0-9_-]{6,15}$/.test(id)) return Response.json({ lines: [] });
-          try {
-            const res = await fetch("https://www.youtube.com/api/timedtext?v=" + id + "&lang=en&fmt=json3", {
-              signal: AbortSignal.timeout(12000),
-              headers: { "User-Agent": "BoardStudio/1.0 (teaching)" },
-            });
-            const data = (await res.json()) as { events?: { tStartMs?: number; segs?: { utf8?: string }[] }[] };
-            const lines = (data.events || []).map((ev) => ({
-              t: (ev.tStartMs || 0) / 1000,
-              text: (ev.segs || []).map((seg) => seg.utf8 || "").join("").replace(/\s+/g, " ").trim(),
-            })).filter((line) => line.text && line.text !== "\n");
-            return Response.json({ lines });
-          } catch {
-            return Response.json({ lines: [] });
-          }
+          const lines = await loadCaptions(id);
+          return Response.json({ lines });
         }
         if (url.searchParams.get("source") === "live") {
           const words = q.split(/[^A-Za-z0-9+-]+/).filter((w) => w.length >= 3).slice(0, 6);
