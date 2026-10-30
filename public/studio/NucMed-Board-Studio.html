@@ -9999,14 +9999,14 @@ const CaseQA = {
       seen[src] = 1;
       items.push({ src, cap: it.title || it.cap || it.raw || "live" });
     });
+    const google = `<p>Google Images for this same search stays on Google. <a href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(qs[0] || "chest x-ray")}" target="_blank" rel="noopener">Open Google Images</a></p>`;
     if (!items.length) {
-      host.innerHTML = `<p>No live hits in this browser. Teaching correlates above still stand.
-        <a href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(qs[0] || "chest CT mediastinal node")}" target="_blank" rel="noopener">Google Images</a> ·
+      host.innerHTML = google + `<p>No live hits in this browser. Teaching correlates above still stand.
         <a href="https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(qs[0] || "mediastinal lymph node CT")}" target="_blank" rel="noopener">PubMed</a></p>`;
       if (stat) stat.textContent = "0 live hits";
       return;
     }
-    host.innerHTML = items.slice(0, 24).map(it => `<figure><img src="${it.src}" alt="" referrerpolicy="no-referrer"><figcaption>${String(it.cap).slice(0,90).replace(/</g,"")}</figcaption></figure>`).join("");
+    host.innerHTML = google + items.slice(0, 24).map(it => `<figure><img src="${it.src}" alt="" referrerpolicy="no-referrer"><figcaption>${String(it.cap).slice(0,90).replace(/</g,"")}</figcaption></figure>`).join("");
     if (stat) stat.textContent = items.length + " live images · " + qs[0];
     if (typeof liveSearchTerm === "function") liveSearchTerm(qs[0]);
   }

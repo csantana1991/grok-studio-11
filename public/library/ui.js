@@ -28,6 +28,10 @@
     '.imgCard b{font-size:13px}',
     '.imgCard small{display:block;color:#cbd5e1;margin-top:3px}',
     '.imgCard a{color:#93c5fd}',
+    '.readCard{border:1px solid #334155;border-radius:10px;padding:10px;margin:10px 0;background:#0f172a}',
+    '.readCard img{width:100%;max-height:280px;object-fit:contain;background:#000;border-radius:8px}',
+    '.readCard h4{margin:8px 0 4px;font:700 16px system-ui,sans-serif;color:#fff}',
+    '.readCard p{margin:0 0 6px;color:#fff}',
   ].join('')
   document.head.appendChild(css)
 
@@ -111,6 +115,9 @@
       '<select id="imgLibMod" aria-label="Modality"><option value="">All modalities</option><option>CT</option><option>PT</option><option>DX</option><option>MR</option><option>NM</option></select>',
       '</div>',
       '<div id="imgLibHits"><p>' + (recordsError || 'Ledger search loads when you type.') + '</p></div>',
+      '<h3 style="font:700 15px system-ui,sans-serif;margin:16px 0 6px">How to read an X-ray or CT</h3>',
+      '<p>Each lesson uses one licensed image already in this library. The Google link searches that same diagnosis. Google does not allow those pictures to be copied into this app, so the search opens in a new tab.</p>',
+      '<div id="imgLibRead"><p>Loading reading lessons…</p></div>',
       '<h3 style="font:700 15px system-ui,sans-serif;margin:16px 0 6px">Live search</h3>',
       '<p>Queries Open-i, Europe PMC, Wikimedia Commons, and the TCIA collection catalogue. Other sources are checked for reachability only. Nothing here is added to the verified count.</p>',
       '<div id="imgLibFind">',
@@ -137,11 +144,41 @@
     liveGo.addEventListener('click', runLive)
     live.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') runLive() })
     health.addEventListener('click', checkHealth)
+    paintReads()
   }
 
   function displaySrc(url) {
     if (/^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(url)) return '/api/pmc/img?src=' + encodeURIComponent(url)
     return url
+  }
+
+  function paintReads() {
+    var box = document.getElementById('imgLibRead')
+    if (!box) return
+    fetch('/library/read-lessons.json')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json() })
+      .then(function (lessons) {
+        if (!Array.isArray(lessons) || !lessons.length) {
+          box.innerHTML = '<p>No reading lessons are in the catalog.</p>'
+          return
+        }
+        box.innerHTML = lessons.map(function (lesson) {
+          var q = encodeURIComponent(lesson.query || lesson.label || 'radiology')
+          return (
+            '<article class="readCard">' +
+            '<img alt="" src="' + esc(displaySrc(lesson.imageUrl)) + '">' +
+            '<h4>' + esc(lesson.label) + '</h4>' +
+            '<p>' + esc(lesson.how) + '</p>' +
+            '<p><small>' + esc(lesson.license) + ' · ' + esc(lesson.title) + '</small></p>' +
+            '<p><a href="' + esc(lesson.pageUrl) + '" target="_blank" rel="noopener">Open the source file</a>' +
+            ' · <a href="https://www.google.com/search?tbm=isch&q=' + q + '" target="_blank" rel="noopener">Google Images: ' + esc(lesson.query) + '</a></p>' +
+            '</article>'
+          )
+        }).join('')
+      })
+      .catch(function (err) {
+        box.innerHTML = '<p>Reading lessons did not load (' + esc(err.message) + ').</p>'
+      })
   }
 
   function hitCard(r) {
@@ -158,7 +195,8 @@
       '<small>' + esc(r.attribution) + '</small>' +
       '<small>Load: ' + esc(r.loadStatus) + ' · Use: ' + esc(r.permittedUse) + '</small>' +
       (r.diagnosis ? '<small>Source diagnosis: ' + esc(r.diagnosis) + '</small>' : '') +
-      '<small><a href="' + esc(r.pageUrl) + '" target="_blank" rel="noopener">Open source</a></small></div></article>'
+      '<small><a href="' + esc(r.pageUrl) + '" target="_blank" rel="noopener">Open source</a>' +
+      ' · <a href="https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(String(r.title || 'radiology') + ' radiology') + '" target="_blank" rel="noopener">Google Images for this finding</a></small></div></article>'
     )
   }
 
