@@ -107,7 +107,60 @@ const BRIDGE = `(function(){
       el.src = next;
     }
   }
+  function widgetSrc(view, title){
+    return "https://teaching-studios.vercel.app/studio/NucMed-Board-Studio.html?view=" + encodeURIComponent(view) + "&embed=1&q=" + encodeURIComponent(title || "");
+  }
+  function mountDock(){
+    var player = document.querySelector(".media-player");
+    if (!player) return;
+    var titleEl = player.querySelector(".player-caption strong");
+    var title = titleEl ? (titleEl.textContent || "").replace(/\\s+/g, " ").trim() : "lecture";
+    var dock = player.querySelector(".studio-widgets");
+    if (!dock) {
+      dock = document.createElement("section");
+      dock.className = "studio-widgets";
+      dock.style.marginTop = "12px";
+      var bar = document.createElement("div");
+      bar.className = "inline-actions";
+      bar.style.flexWrap = "wrap";
+      bar.style.marginBottom = "8px";
+      var kinds = [["radreview","RAD REVIEW"],["radatlas","Rad Atlas"],["caseqa","Q+A"],["rrultimate","RAD REVIEW Ultimate"],["academy","Academy"],["nucleus","Nucleus"]];
+      kinds.forEach(function(pair){
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = pair[0] === "radatlas" ? "button button-crimson" : "button button-quiet";
+        b.textContent = pair[1];
+        b.setAttribute("data-view", pair[0]);
+        b.addEventListener("click", function(){
+          dock.setAttribute("data-view", pair[0]);
+          var buttons = bar.querySelectorAll("button");
+          for (var n = 0; n < buttons.length; n++) {
+            buttons[n].className = buttons[n].getAttribute("data-view") === pair[0] ? "button button-crimson" : "button button-quiet";
+          }
+          var frame = dock.querySelector("iframe");
+          var current = dock.getAttribute("data-title") || title;
+          if (frame) frame.src = widgetSrc(pair[0], current);
+        });
+        bar.appendChild(b);
+      });
+      var frame = document.createElement("iframe");
+      frame.id = "studioWidget";
+      frame.title = "Grok 11 widgets";
+      frame.setAttribute("allow", "autoplay");
+      frame.style.cssText = "width:100%;height:68vh;border:0;border-radius:12px;background:#0b1220";
+      dock.appendChild(bar);
+      dock.appendChild(frame);
+      dock.setAttribute("data-view", "radatlas");
+      player.appendChild(dock);
+    }
+    if (dock.getAttribute("data-title") === title) return;
+    dock.setAttribute("data-title", title);
+    var view = dock.getAttribute("data-view") || "radatlas";
+    var live = dock.querySelector("iframe");
+    if (live) live.src = widgetSrc(view, title);
+  }
   function tick(){
+    mountDock();
     document.querySelectorAll("video, audio, track, source").forEach(retarget);
     var videos = document.querySelectorAll("video");
     for (var i = 0; i < videos.length; i++) {

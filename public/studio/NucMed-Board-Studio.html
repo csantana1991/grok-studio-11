@@ -13667,8 +13667,8 @@ try {
   }
   window.addEventListener("message", (e) => {
     if (!e.data || e.data.type !== "studio-query") return;
-    const fromHj = String(e.origin || "").indexOf("hj-med.vercel.app") >= 0;
-    if (!fromHj && e.origin !== location.origin) return;
+    const fromStudio = String(e.origin || "").indexOf("hj-med.vercel.app") >= 0 || String(e.origin || "").indexOf("noardstudiomannus.vercel.app") >= 0;
+    if (!fromStudio && e.origin !== location.origin) return;
     applyStudioQuery(e.data.q);
   });
   try {
