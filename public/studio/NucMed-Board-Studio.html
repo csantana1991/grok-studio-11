@@ -676,6 +676,12 @@ body.sheet-min #widgetSheet { height: 44px; overflow: hidden; }
 .case-assert ul { margin:6px 0 0; padding-left:18px; }
 .case-tools { display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:12px; }
 .case-tools button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 10px; font-weight:700; }
+#casePubmedBtn[disabled] { opacity:.65; }
+.case-pubmed-out { flex:1 0 100%; color:#111; background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-size:12px; line-height:1.4; }
+.case-pubmed-out ol { margin:6px 0 0; padding-left:18px; }
+.case-pubmed-out li { margin:5px 0; }
+.case-pubmed-out a { color:#1d4ed8; font-weight:700; }
+.case-pubmed-out .pm-meta { color:#334155; font-weight:500; }
 .rr-plate { display:flex; gap:8px; align-items:stretch; width:100%; }
 .rr-plate svg { flex:0 0 48px; }
 
@@ -5959,6 +5965,115 @@ function raPaintLessonHits(term, data){
   const hp = document.getElementById("raHitsPlay");
   if (hp) hp.onclick = () => { RAD_ATLAS.shown = null; narrateLiveView(); };
 }
+const PUBMED_CACHE = {};
+let pubmedChain = Promise.resolve();
+function pubmedQueryFor(enc){
+  const finding = String((enc && enc.finding) || "").replace(/\s+/g, " ").trim();
+  let region = "";
+  try { region = (anatomyOf(enc).id || "").replace(/[_-]+/g, " "); } catch (e) {}
+  const mod = String((enc && (enc.modality || enc.categoryId)) || "");
+  return [finding, region, mod].filter(Boolean).join(" ").replace(/\s+/g, " ").trim().slice(0, 160);
+}
+async function fetchPubMedPapersNow(query){
+  const q = String(query || "").replace(/\s+/g, " ").trim().slice(0, 160);
+  if (q.length < 3) return { ok:false, error:"Query too short", count:"0", papers:[], query:q };
+  const hit = PUBMED_CACHE[q];
+  if (hit && Date.now() - hit.ts < 10 * 60 * 1000) return hit.data;
+  const base = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/";
+  const tool = "tool=NucleusBoardAcademy&retmode=json";
+  const searchUrl = base + "esearch.fcgi?db=pubmed&retmax=8&sort=relevance&" + tool + "&term=" + encodeURIComponent(q);
+  const res = await fetch(searchUrl, { signal: AbortSignal.timeout(12000) });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const search = await res.json();
+  const ids = (search.esearchresult && search.esearchresult.idlist) || [];
+  const count = String((search.esearchresult && search.esearchresult.count) || "0");
+  if (!ids.length) {
+    const data = { ok:true, count, papers:[], query:q };
+    PUBMED_CACHE[q] = { ts: Date.now(), data };
+    return data;
+  }
+  const sumUrl = base + "esummary.fcgi?db=pubmed&" + tool + "&id=" + ids.join(",");
+  const sumRes = await fetch(sumUrl, { signal: AbortSignal.timeout(12000) });
+  if (!sumRes.ok) throw new Error("summary HTTP " + sumRes.status);
+  const summary = await sumRes.json();
+  const result = (summary && summary.result) || {};
+  const papers = ids.map(function(id){
+    const r = result[id] || {};
+    return { pmid:id, title:r.title || "Untitled", journal:r.source || "", date:r.pubdate || "", doi:r.elocationid || "" };
+  });
+  const data = { ok:true, count, papers, query:q };
+  PUBMED_CACHE[q] = { ts: Date.now(), data };
+  return data;
+}
+function fetchPubMedPapers(query){
+  const run = function(){ return fetchPubMedPapersNow(query); };
+  const p = pubmedChain.then(run, run);
+  pubmedChain = p.then(function(){}, function(){});
+  return p;
+}
+function paintCasePubMed(slot){
+  const out = document.getElementById("casePubmedOut");
+  const btn = document.getElementById("casePubmedBtn");
+  const count = document.getElementById("caseCount");
+  const pm = slot && slot.pubmed;
+  if (btn) {
+    btn.disabled = !!(pm && pm.loading);
+    btn.textContent = (pm && pm.loading) ? "Searching PubMed…" : (pm && pm.done ? "Search PubMed again" : "Search PubMed");
+  }
+  if (count && pm) {
+    const fig = slot.loading ? "Loading figures" : ((slot.items ? slot.items.length : 0) + " images for this case");
+    const qa = (typeof IQA !== "undefined" && IQA.label) ? (" · QA " + IQA.label()) : "";
+    const line = pm.loading ? "Searching PubMed…" : (pm.error ? ("PubMed unavailable · " + pm.error) : ("PubMed live · " + Number(pm.count || 0).toLocaleString() + " papers"));
+    count.textContent = fig + " · " + line + qa;
+  }
+  if (!out) return;
+  if (!pm || (!pm.loading && !pm.done)) {
+    out.innerHTML = "<p>Press Search PubMed. This queries NCBI live for this case. Nothing is cached until the search returns.</p>";
+    return;
+  }
+  if (pm.loading) {
+    out.innerHTML = "<p>Searching PubMed for “" + escTxt(pm.query || "") + "”…</p>";
+    return;
+  }
+  if (pm.error) {
+    const q = encodeURIComponent(pm.query || "");
+    out.innerHTML = "<p>PubMed did not respond (" + escTxt(pm.error) + "). The search is finished. <a href=\"https://pubmed.ncbi.nlm.nih.gov/?term=" + q + "\" target=\"_blank\" rel=\"noopener\">Open this query on PubMed</a></p>";
+    return;
+  }
+  if (!pm.papers || !pm.papers.length) {
+    out.innerHTML = "<p>PubMed responded. " + escTxt(pm.count || "0") + " matches, and none are listed. The search is finished.</p>";
+    return;
+  }
+  const q = encodeURIComponent(pm.query || "");
+  out.innerHTML = "<p>Live PubMed · " + escTxt(Number(pm.count || 0).toLocaleString()) + " matches · showing " + pm.papers.length + ". <a href=\"https://pubmed.ncbi.nlm.nih.gov/?term=" + q + "\" target=\"_blank\" rel=\"noopener\">Open all on PubMed</a></p><ol>" + pm.papers.map(function(p){
+    return "<li><a href=\"https://pubmed.ncbi.nlm.nih.gov/" + escTxt(p.pmid) + "/\" target=\"_blank\" rel=\"noopener\">PMID " + escTxt(p.pmid) + "</a> · " + escTxt(p.title) + "<br><span class=\"pm-meta\">" + escTxt(p.journal) + (p.date ? " · " + escTxt(p.date) : "") + (p.doi ? " · " + escTxt(p.doi) : "") + "</span></li>";
+  }).join("") + "</ol>";
+}
+function ensureCasePubMed(enc, force){
+  const key = caseKey(enc);
+  const slot = CASE_IMG[key];
+  if (!slot || !enc) return;
+  const q = pubmedQueryFor(enc);
+  if (!force && slot.pubmed && slot.pubmed.query === q && (slot.pubmed.loading || slot.pubmed.done)) {
+    paintCasePubMed(slot);
+    return;
+  }
+  slot.pubmed = { query:q, loading:true, done:false, papers:[], count:"0", error:"" };
+  slot.pubmedSeq = (slot.pubmedSeq || 0) + 1;
+  const seq = slot.pubmedSeq;
+  paintCasePubMed(slot);
+  fetchPubMedPapers(q).then(function(data){
+    if (!CASE_IMG[key] || CASE_IMG[key].pubmedSeq !== seq) return;
+    CASE_IMG[key].pubmed = { query:q, loading:false, done:true, papers:data.papers || [], count:data.count || "0", error: data.ok === false ? (data.error || "failed") : "" };
+    const gal = document.querySelector(".case-gal");
+    if (gal && gal.dataset.key === key) paintCasePubMed(CASE_IMG[key]);
+  }).catch(function(err){
+    if (!CASE_IMG[key] || CASE_IMG[key].pubmedSeq !== seq) return;
+    CASE_IMG[key].pubmed = { query:q, loading:false, done:true, papers:[], count:"0", error:(err && err.message) || "failed" };
+    const gal = document.querySelector(".case-gal");
+    if (gal && gal.dataset.key === key) paintCasePubMed(CASE_IMG[key]);
+  });
+}
 async function liveSearchTerm(term){
   const q = String(term || "").replace(/\s+/g, " ").trim().slice(0, 90);
   if (q.length < 3) return;
@@ -6002,9 +6117,22 @@ async function liveSearchTerm(term){
     return;
   }
   if (fail || !data) {
-    grid.innerHTML = '<p style="grid-column:1/-1;color:#111">Search unavailable. It is not still running.</p>';
-    if (stat) stat.textContent = "Unavailable · not still searching";
-    return;
+    try {
+      const pm = await fetchPubMedPapers(q);
+      if (seq !== state._liveSeq) return;
+      if (!document.getElementById("livePopGrid")) return;
+      const n = Number(pm.count || 0).toLocaleString();
+      const list = (pm.papers || []).map(function(p){
+        return "<li><a href=\"https://pubmed.ncbi.nlm.nih.gov/" + escTxt(p.pmid) + "/\" target=\"_blank\" rel=\"noopener\">PMID " + escTxt(p.pmid) + "</a> · " + escTxt(p.title) + "<br><span>" + escTxt(p.journal) + " · " + escTxt(p.date) + "</span></li>";
+      }).join("");
+      grid.innerHTML = "<p style=\"grid-column:1/-1;color:#111\">Live PubMed · " + escTxt(n) + " papers from NCBI. The image-library route is not on this server, so these are citations, not pixels.</p>" + (list ? "<ol style=\"grid-column:1/-1;color:#111;padding-left:18px\">" + list + "</ol>" : "<p style=\"grid-column:1/-1;color:#111\">PubMed returned no titles for this query.</p>");
+      if (stat) stat.textContent = "PubMed live · " + n + " papers · finished";
+      return;
+    } catch (e) {
+      grid.innerHTML = "<p style=\"grid-column:1/-1;color:#111\">PubMed did not respond (" + escTxt((e && e.message) || "failed") + "). The search is finished.</p>";
+      if (stat) stat.textContent = "PubMed failed · not still searching";
+      return;
+    }
   }
   const hits = data.results || [];
   const sources = (data.sources || []).map(function(s){ return (s.name || s.id) + " " + s.state; }).join(" · ");
@@ -9229,7 +9357,7 @@ async function keepWorkingImages(items){
 }
 async function fetchPmcFigures(query, page){
   const url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=" + encodeURIComponent("HAS_FT:Y AND OPEN_ACCESS:Y AND (" + query + ")") + "&resultType=core&pageSize=8&format=json&page=" + (page || 1);
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error("pmc " + res.status);
   const data = await res.json();
   const papers = (data.resultList && data.resultList.result) || [];
@@ -9347,8 +9475,7 @@ async function fetchOpenverse(query){
   })).filter(x => x.thumb);
 }
 async function fetchPmcLinked(query, page){
-  const url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=" + encodeURIComponent("HAS_FT:Y AND OPEN_ACCESS:Y AND (" + query + ")") + "&resultType=lite&pageSize=6&format=json&page=" + (page || 1);
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error("pmc " + res.status);
   const data = await res.json();
   const papers = (data.resultList && data.resultList.result) || [];
@@ -9388,12 +9515,15 @@ async function loadCaseImages(enc, more){
   const q = qs[(slot.qIndex || 0) % qs.length] || qs[0];
   slot.qIndex = (slot.qIndex || 0) + 1;
   try {
-    await Promise.all([
-      fetchCommons(q, slot.offset).then(r => pushLive(slot, enc, (r || []).slice(0, 24), "commons", "Wikimedia Commons · open medical image")).catch(() => {}),
-      fetchWikiImages(q).then(r => pushLive(slot, enc, r, "wiki", "Wikipedia / Wikimedia medical article")).catch(() => {}),
-      more && typeof fetchOpenverse === "function"
-        ? fetchOpenverse(q).then(r => pushLive(slot, enc, r, "openverse", "Openverse CC licensed image")).catch(() => {})
-        : Promise.resolve()
+    await Promise.race([
+      Promise.all([
+        fetchCommons(q, slot.offset).then(r => pushLive(slot, enc, (r || []).slice(0, 24), "commons", "Wikimedia Commons · open medical image")).catch(() => {}),
+        fetchWikiImages(q).then(r => pushLive(slot, enc, r, "wiki", "Wikipedia / Wikimedia medical article")).catch(() => {}),
+        more && typeof fetchOpenverse === "function"
+          ? fetchOpenverse(q).then(r => pushLive(slot, enc, r, "openverse", "Openverse CC licensed image")).catch(() => {})
+          : Promise.resolve()
+      ]),
+      new Promise(function(_, rej){ setTimeout(function(){ rej(new Error("timeout")); }, 10000); })
     ]);
     slot.offset += 20;
     fetchCaseFigures(enc, 0).then(batch => {
@@ -9415,10 +9545,16 @@ async function loadCaseImages(enc, more){
       if (gal && gal.dataset.key === key) bindCaseGallery(enc);
     }).catch(() => {});
   } catch (e) {}
-  slot.items = await keepWorkingImages(slot.items);
-  finalizeCaseItems(enc, slot, more);
+  try {
+    slot.items = await Promise.race([
+      keepWorkingImages(slot.items),
+      new Promise(function(resolve){ setTimeout(function(){ resolve(slot.items); }, 8000); })
+    ]);
+  } catch (e) {}
+  try { finalizeCaseItems(enc, slot, more); } catch (e) {}
   slot.fetched = true;
   slot.loading = false;
+  try { paintCasePubMed(slot); } catch (e) {}
   const pmcPage = slot.pmcPage;
   Promise.all([
     fetchPmcLinked(q, pmcPage).then(r => pushLive(slot, enc, r, "pmc", "PubMed/PMC OA literature-linked image")).catch(() => {}),
@@ -9498,7 +9634,9 @@ function caseGalleryHTML(enc){
         <button type="button" id="caseZoomIn">+</button>
         <button type="button" id="caseBigger">Magnify</button>
         <span id="caseCount">${items.length} images for this case</span>
+        <button type="button" id="casePubmedBtn">Search PubMed</button>
         <button type="button" id="caseMore">Next 50</button>
+        <div class="case-pubmed-out" id="casePubmedOut"><p>Searching PubMed for this case…</p></div>
       </div>
     </div>`;
 }
@@ -10266,7 +10404,13 @@ function bindCaseGallery(enc){
       strip.querySelectorAll(".case-th").forEach(x => x.classList.toggle("on", x === b));
       applyPlateCrop(main, enc);
     });
-    if (count) count.textContent = (slot.loading ? "Searching PubMed…" : (items.length + " images for this case")) + (typeof IQA !== "undefined" && IQA.label ? " · QA " + IQA.label() : "");
+    if (count) {
+      const pm = slot.pubmed;
+      const fig = slot.loading ? "Loading figures" : (items.length + " images for this case");
+      const qa = (typeof IQA !== "undefined" && IQA.label) ? (" · QA " + IQA.label()) : "";
+      const line = (pm && pm.done && !pm.error) ? ("PubMed live · " + Number(pm.count || 0).toLocaleString() + " papers") : ((pm && pm.error) ? ("PubMed unavailable · " + pm.error) : "Searching PubMed…");
+      count.textContent = fig + " · " + line + qa;
+    }
     const more = $("#caseMore");
     if (more) {
       const busy = more.dataset.busy === "1";
@@ -10329,17 +10473,20 @@ function bindCaseGallery(enc){
           more.dataset.added = String(fresh.length);
           more.textContent = slot.moreNote || "Next 50";
           const countNow = $("#caseCount");
-          if (countNow) countNow.textContent = (slot.items || []).length + " images for this case";
+          if (typeof paintCasePubMed === "function") paintCasePubMed(slot);
+          else if (countNow) countNow.textContent = (slot.items || []).length + " images for this case";
         }
       };
     }
     try { paintAtlasFilm(); } catch (e) {}
+    const pmBtn = $("#casePubmedBtn");
+    if (pmBtn) pmBtn.onclick = () => ensureCasePubMed(enc, true);
+    try { paintCasePubMed(slot); } catch (e) {}
   };
   const slot = CASE_IMG[key] || (CASE_IMG[key] = { items: localCaseImages(enc, 2), offset: 0, pmcPage: 1, loading: false, fetched: false, query: caseQuery(enc) });
   paint(slot, false);
+  ensureCasePubMed(enc, false);
   if (!slot.fetched && !slot.loading) {
-    const countEl = $("#caseCount");
-    if (countEl) countEl.textContent = ((slot.items || []).length) + " images for this case · still looking";
     loadCaseImages(enc, false).then(() => {
       const gal = document.querySelector(".case-gal");
       if (gal && gal.dataset.key && gal.dataset.key !== key) return;
