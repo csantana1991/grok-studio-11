@@ -27,7 +27,8 @@
     '.imgCard img{width:96px;height:96px;object-fit:cover;background:#111;border-radius:6px}',
     '.imgCard b{font-size:13px}',
     '.imgCard small{display:block;color:#cbd5e1;margin-top:3px}',
-    '.imgCard a{color:#93c5fd}',
+    '#imgLibOffered{overflow-x:auto}',
+    '#imgLibOffered td{vertical-align:top;white-space:normal;min-width:120px}',
     '.readCard{border:1px solid #334155;border-radius:10px;padding:10px;margin:10px 0;background:#0f172a}',
     '.readCard img{width:100%;max-height:280px;object-fit:contain;background:#000;border-radius:8px}',
     '.readCard h4{margin:8px 0 4px;font:700 16px system-ui,sans-serif;color:#fff}',
@@ -109,6 +110,9 @@
       '<table id="imgLibTable"><thead><tr><th>Source</th><th>Usable</th><th>Imported</th><th>Restricted</th><th>Failed</th><th>Pending</th><th>Duplicate</th><th>Skipped</th><th>Access and license</th></tr></thead><tbody>',
       sourceRows(),
       '</tbody></table>',
+      '<h3 style="font:700 15px system-ui,sans-serif;margin:16px 0 6px">Sources from your list</h3>',
+      '<p>These links were checked. A download page is not the same as an image this app is allowed to show. None of the counts below were added to the verified total.</p>',
+      '<div id="imgLibOffered"><p>Loading source list…</p></div>',
       '<div id="imgLibFind">',
       '<input id="imgLibQ" type="search" placeholder="Search the verified ledger" aria-label="Search the indexed library">',
       '<select id="imgLibKind" aria-label="Record kind"><option value="">All kinds</option><option value="image" selected>Images</option><option value="series">Series</option><option value="collection">Collections</option></select>',
@@ -145,11 +149,31 @@
     live.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') runLive() })
     health.addEventListener('click', checkHealth)
     paintReads()
+    paintOffered()
   }
 
   function displaySrc(url) {
     if (/^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(url)) return '/api/pmc/img?src=' + encodeURIComponent(url)
     return url
+  }
+
+  function paintOffered() {
+    var box = document.getElementById('imgLibOffered')
+    if (!box) return
+    fetch('/library/offered-sources.json')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json() })
+      .then(function (rows) {
+        var group = ''
+        box.innerHTML = '<table><thead><tr><th>Source</th><th>What it is</th><th>In this app</th><th>Why</th></tr></thead><tbody>' +
+          rows.map(function (row) {
+            var head = row.group === group ? '' : (group = row.group, '<tr><td colspan="4"><b>' + esc(row.group) + '</b></td></tr>')
+            return head + '<tr><td><a href="' + esc(row.href) + '" target="_blank" rel="noopener">' + esc(row.name) + '</a></td>' +
+              '<td>' + esc(row.statedSize) + '</td><td>' + esc(row.access) + '</td><td>' + esc(row.why) + '</td></tr>'
+          }).join('') + '</tbody></table>'
+      })
+      .catch(function (err) {
+        box.innerHTML = '<p>The source list did not load (' + esc(err.message) + ').</p>'
+      })
   }
 
   function paintReads() {

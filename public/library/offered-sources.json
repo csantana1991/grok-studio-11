@@ -1,0 +1,170 @@
+[
+  {
+    "group": "X-ray",
+    "name": "NIH ChestX-ray14",
+    "href": "https://nihcc.app.box.com/v/ChestXray-NIHCC",
+    "statedSize": "112,120 frontal chest X-rays",
+    "access": "Not hosted here",
+    "why": "NIH says use is unrestricted if you link this download, cite the CVPR 2017 paper, and name the NIH Clinical Center. The files are a large download, so none were copied into this app."
+  },
+  {
+    "group": "X-ray",
+    "name": "MIMIC-CXR",
+    "href": "https://physionet.org/content/mimic-cxr/",
+    "statedSize": "Credentialed chest X-rays and reports",
+    "access": "Cannot be shown here",
+    "why": "PhysioNet requires an approved data-use agreement. That agreement forbids sharing the images on a public website."
+  },
+  {
+    "group": "X-ray",
+    "name": "CheXpert",
+    "href": "https://stanfordmlgroup.github.io/competitions/chexpert/",
+    "statedSize": "Research-use chest X-rays",
+    "access": "Cannot be shown here",
+    "why": "Stanford’s research license does not allow this public app to copy or modify the images."
+  },
+  {
+    "group": "X-ray",
+    "name": "Open-i",
+    "href": "https://openi.nlm.nih.gov/",
+    "statedSize": "Search index, not a license grant",
+    "access": "Search and link only",
+    "why": "Open-i does not grant permission to copy figures. Copyright stays with each journal."
+  },
+  {
+    "group": "CT",
+    "name": "The Cancer Imaging Archive",
+    "href": "https://www.cancerimagingarchive.net/",
+    "statedSize": "CT, MRI, and PET collections",
+    "access": "Collection links only",
+    "why": "Each collection has its own license. Series already indexed here are not counted as single images."
+  },
+  {
+    "group": "CT",
+    "name": "LIDC-IDRI lung CT",
+    "href": "https://www.cancerimagingarchive.net/collection/lidc-idri/",
+    "statedSize": "Lung CT collection on TCIA",
+    "access": "Not hosted here",
+    "why": "The files are DICOM volumes, not single web images, and were not downloaded."
+  },
+  {
+    "group": "CT",
+    "name": "NIH DeepLesion",
+    "href": "https://nihcc.app.box.com/v/DeepLesion",
+    "statedSize": "CT lesion bookmarks",
+    "access": "Not hosted here",
+    "why": "The download is a research CT set. No files from that Box folder were copied."
+  },
+  {
+    "group": "CT",
+    "name": "Visible Human",
+    "href": "https://www.nlm.nih.gov/research/visible/visible_human.html",
+    "statedSize": "CT and MRI of two cadavers",
+    "access": "Cannot be shown here",
+    "why": "NLM requires its own license. The scans were not copied."
+  },
+  {
+    "group": "MRI",
+    "name": "OpenNeuro",
+    "href": "https://openneuro.org/",
+    "statedSize": "Brain MRI and fMRI datasets",
+    "access": "Not hosted here",
+    "why": "Each dataset has its own license and the files are not ordinary web images."
+  },
+  {
+    "group": "MRI",
+    "name": "OASIS Brains",
+    "href": "https://www.oasis-brains.org/",
+    "statedSize": "Brain MRI",
+    "access": "Cannot be shown here",
+    "why": "Download requires a data-use agreement. Nothing was copied."
+  },
+  {
+    "group": "MRI",
+    "name": "IXI brain MRI",
+    "href": "https://brain-development.org/ixi-dataset/",
+    "statedSize": "Brain MRI volumes",
+    "access": "Not hosted here",
+    "why": "The files are volume data, not pictures this viewer can open. None were converted or copied."
+  },
+  {
+    "group": "PET",
+    "name": "TCIA PET-CT collections",
+    "href": "https://www.cancerimagingarchive.net/collections/",
+    "statedSize": "PET-CT collections",
+    "access": "Collection links only",
+    "why": "Open the collection page. A collection is not counted as an image until a permitted picture file is verified."
+  },
+  {
+    "group": "PET",
+    "name": "ADNI",
+    "href": "https://adni.loni.usc.edu/",
+    "statedSize": "PET and MRI, application required",
+    "access": "Cannot be shown here",
+    "why": "ADNI requires an application and does not allow these scans to be posted on a public site."
+  },
+  {
+    "group": "Teaching cases",
+    "name": "Radiopaedia",
+    "href": "https://radiopaedia.org/",
+    "statedSize": "Cases with diagnoses",
+    "access": "Link only",
+    "why": "The license is non-commercial and the terms forbid copying the images into this app."
+  },
+  {
+    "group": "Teaching cases",
+    "name": "MedPix",
+    "href": "https://medpix.nlm.nih.gov/",
+    "statedSize": "Teaching cases",
+    "access": "Link only",
+    "why": "No public image file with a confirmed reuse license was imported."
+  },
+  {
+    "group": "Teaching cases",
+    "name": "Stanford AIMI datasets",
+    "href": "https://aimi.stanford.edu/datasets",
+    "statedSize": "Dataset list",
+    "access": "Link only",
+    "why": "This page lists datasets. It does not provide one pack of images this app can copy."
+  },
+  {
+    "group": "Teaching cases",
+    "name": "Kaggle medical imaging",
+    "href": "https://www.kaggle.com/datasets?search=medical+imaging",
+    "statedSize": "Mixed datasets, account required",
+    "access": "Not hosted here",
+    "why": "Each dataset has its own license and Kaggle requires a login. None were copied."
+  },
+  {
+    "group": "Teaching cases",
+    "name": "Project Imaging-X",
+    "href": "https://huggingface.co/datasets/General-Medical-AI/Project-Imaging-X",
+    "statedSize": "A list of other datasets",
+    "access": "Not an image set",
+    "why": "This is a catalogue of datasets, not image files."
+  },
+  {
+    "group": "Viewers",
+    "name": "RadiAnt",
+    "href": "https://www.radiantviewer.com/",
+    "statedSize": "DICOM viewer",
+    "access": "Not an image source",
+    "why": "This opens a viewer program. It does not add images."
+  },
+  {
+    "group": "Viewers",
+    "name": "Horos",
+    "href": "https://horosproject.org/",
+    "statedSize": "Mac DICOM viewer",
+    "access": "Not an image source",
+    "why": "This is a viewer, not a library of scans."
+  },
+  {
+    "group": "Viewers",
+    "name": "3D Slicer",
+    "href": "https://www.slicer.org/",
+    "statedSize": "CT, MRI, and PET viewer",
+    "access": "Not an image source",
+    "why": "This is a viewer for volumes you already have. It does not add images."
+  }
+]
