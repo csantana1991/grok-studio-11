@@ -132,7 +132,7 @@ function petParts(text){
   let tracer = "PET";
   if (/PSMA/i.test(t)) tracer = "PSMA";
   else if (/DOTATATE|DOTATOC|DOTANOC/i.test(t)) tracer = "DOTATATE";
-  else if (/FDG|fluorodeoxyglucose/i.test(t)) tracer = "FDG";
+  else if (!/non[- ]?fluorodeoxyglucose|non[- ]?FDG/i.test(t) && /FDG|fluorodeoxyglucose/i.test(t)) tracer = "FDG";
   else if (/FAPI/i.test(t)) tracer = "FAPI";
   else if (/\bNaF\b|sodium fluoride/i.test(t)) tracer = "NaF";
   else if (/amyloid|florbetapir|flutemetamol|florbetaben/i.test(t)) tracer = "Amyloid";
