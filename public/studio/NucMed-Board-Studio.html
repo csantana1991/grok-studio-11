@@ -5218,17 +5218,16 @@ const CapRail = {
     const words = String(text).toLowerCase().replace(/[^a-z0-9+ ]/g, " ").split(/\s+/).filter(w => w.length > 3 && !stop.test(w));
     const picked = words.filter(w => clinical.test(w));
     const it = (picked.length ? picked : words).slice(0, 3).join(" ") || modality;
-    try {
-      const res = await fetch("/api/pmc/match?source=openi-page&modality=" + modality + "&it=" + encodeURIComponent(it) + "&m=1&n=4");
-      if (!res.ok || seq !== this.seq) return;
-      const data = await res.json();
-      if (seq !== this.seq) return;
-      const keys = it.split(" ").filter(w => w.length > 3);
-      const rows = (data.list || []).filter(row => row && row.url);
-      const matched = rows.filter(row => keys.some(k => String(row.caption || row.label || "").toLowerCase().indexOf(k) >= 0));
-      (matched.length ? matched : rows).slice(0, 4).forEach(row => {
-        this.add(row.url, row.caption || row.label || text);
+    if (typeof VidLift !== "undefined") {
+      VidLift.hits(text).forEach(r => {
+        const src = r.plate && typeof plateSrc === "function" ? plateSrc(r.plate) : "";
+        if (src) this.add(src, r.finding);
       });
+    }
+    try {
+      const figs = typeof VidLift !== "undefined" ? await VidLift.figures(text) : [];
+      if (seq !== this.seq) return;
+      figs.forEach(row => { if (row && row.url) this.add(row.url, row.caption || text); });
     } catch (e) {}
   },
   add(src, cap) {
@@ -5282,21 +5281,91 @@ const VidLift = {
     const raw = [CapRail.topic, CapRail.tail, CapRail.last].filter(Boolean).join(" ");
     return raw.replace(/\s+/g, " ").trim().slice(0, 180);
   },
+  concepts(text) {
+    const low = String(text || "").toLowerCase();
+    const groups = [
+      { re: /positron|annihilation|\bfdg\b|\bpet\b|fluorine|fluorodeoxy|coincidence|\b511\b/, q: "FDG positron emission tomography", keys: ["fdg", "pet", "positron", "fluor", "tomograph", "annihilation"], mod: "pet" },
+      { re: /shock|hypotens|sepsis|septic|vasodilat|cardiogenic/, q: "cardiogenic shock", keys: ["shock", "sepsis", "hypotension", "cardiogenic"], mod: "ct" },
+      { re: /dotatate|somatostatin|neuroendocrine/, q: "DOTATATE PET", keys: ["dotatate", "somatostatin", "neuroendocrine", "pet"], mod: "dota" },
+      { re: /\bpsma\b|lutetium/, q: "PSMA PET", keys: ["psma", "prostate", "lutetium"], mod: "psma" },
+      { re: /thyroid|radioiodine|graves|goiter/, q: "thyroid scintigraphy", keys: ["thyroid", "iodine", "graves", "radioiodine"], mod: "thyroid" },
+      { re: /bone scan|scintigraphy|osteomyelitis|skeleton/, q: "bone scintigraphy", keys: ["bone", "skeletal", "scintigraph"], mod: "bone" },
+      { re: /myocardial|sestamibi|ischemi/, q: "myocardial perfusion", keys: ["myocardial", "perfusion", "sestamibi", "ischemi"], mod: "mpi" }
+    ];
+    const hit = [];
+    for (let i = 0; i < groups.length; i++) if (groups[i].re.test(low)) hit.push(groups[i]);
+    if (!hit.length) return null;
+    const keys = [];
+    hit.forEach((g) => g.keys.forEach((k) => { if (keys.indexOf(k) < 0) keys.push(k); }));
+    return { q: hit[0].q, keys: keys, mod: hit[0].mod };
+  },
+  figCache: {},
+  async figures(text) {
+    const c = this.concepts(text);
+    if (!c) return [];
+    if (this.figCache[c.q]) return this.figCache[c.q];
+    const out = [];
+    const seen = {};
+    const take = (url, caption) => {
+      if (!url || seen[url]) return;
+      const hay = String(caption || "").toLowerCase();
+      if (c.keys.length && !c.keys.some((k) => hay.indexOf(k) >= 0)) return;
+      seen[url] = 1;
+      out.push({ url: url, caption: caption || c.q });
+    };
+    try {
+      const res = await fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(c.q) + "&n=6");
+      const data = await res.json();
+      (data.results || []).forEach((row) => take(row.url, row.caption || row.title || ""));
+    } catch (e) {}
+    if (!out.length && c.mod !== "ct") {
+      try {
+        const res = await fetch("/api/pmc/match?source=film&format=json&modality=" + encodeURIComponent(c.mod) + "&m=3");
+        const data = await res.json();
+        if (data && data.image) {
+          seen[data.image] = 1;
+          out.push({ url: data.image, caption: data.caption || c.q });
+        }
+      } catch (e) {}
+    }
+    this.figCache[c.q] = out;
+    return out;
+  },
   hits(q) {
+    const c = this.concepts(q);
+    if (!c) return [];
     let rows = [];
     try { rows = rrGenerate(2026) || []; } catch (e) { rows = []; }
-    const words = String(q || "").toLowerCase().split(/[^a-z0-9+]+/).filter((w) => w.length > 3 && !/^(this|that|with|from|have|been|were|they|them|your|into|about|their|there|what|when|where|which|would|could|should|nuclear|medicine|webinar|lecture|monday|basic)$/.test(w));
     const scored = [];
+    const seen = {};
     for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const hay = ((r.finding || "") + " " + (r.categoryId || "")).toLowerCase();
       let s = 0;
-      const hay = rows[i].search || "";
-      for (let w = 0; w < words.length; w++) if (hay.indexOf(words[w]) >= 0) s += 1;
-      if (s) scored.push({ r: rows[i], s: s });
+      for (let k = 0; k < c.keys.length; k++) if (hay.indexOf(c.keys[k]) >= 0) s += 1;
+      if (!s || seen[r.finding]) continue;
+      seen[r.finding] = 1;
+      scored.push({ r: r, s: s });
     }
     scored.sort((a, b) => b.s - a.s);
-    if (scored.length) return scored.slice(0, 6).map((x) => x.r);
-    const mod = CapRail.modality(q);
-    return rows.filter((r) => (r.search || "").indexOf(mod) >= 0 || (mod === "pet" && /pet|fdg|positron/.test(r.search || ""))).slice(0, 6);
+    return scored.slice(0, 6).map((x) => x.r);
+  },
+  attachFigs(kind, body, q) {
+    this.figures(q).then((figs) => {
+      if (this.kind !== kind || !body || !body.isConnected) return;
+      const have = {};
+      body.querySelectorAll("img").forEach((img) => { have[img.getAttribute("src")] = 1; });
+      const html = (figs || []).filter((f) => f.url && !have[f.url]).map((f) => {
+        return `<button type="button" class="vl-card" data-src="${this.esc(f.url)}" data-cap="${this.esc(f.caption)}"><img src="${this.esc(f.url)}" alt=""><span><b>Caption</b>${this.esc(f.caption)}</span></button>`;
+      }).join("");
+      if (html) body.insertAdjacentHTML("beforeend", html);
+      else if (!body.querySelector("img") && !body.querySelector("iframe")) {
+        const note = document.createElement("p");
+        note.textContent = "No matching figure for that line yet.";
+        body.appendChild(note);
+      }
+      this.bind(body);
+    }).catch(() => {});
   },
   card(r, dark) {
     const src = r.plate && typeof plateSrc === "function" ? plateSrc(r.plate) : "";
@@ -5365,25 +5434,23 @@ const VidLift = {
     const q = this.query();
     const say = q || "Play the lesson. The captions land here.";
     if (kind === "metaimage") {
+      const c = this.concepts(q);
+      const mq = (c && c.q) || q || "pet";
       body.innerHTML = `<p>${this.esc(say)}</p><iframe id="vidMeta" title="Meta Image" src="/meta-image/index.html?v=112120&embed=1"></iframe>`;
       const frame = document.getElementById("vidMeta");
-      const send = () => { try { frame.contentWindow.postMessage({ type: "meta-search", q: q || "pet" }, location.origin); } catch (e) {} };
+      const send = () => { try { frame.contentWindow.postMessage({ type: "meta-search", q: mq }, location.origin); } catch (e) {} };
       if (frame) frame.onload = send;
       setTimeout(send, 600);
       return;
     }
     if (kind === "radatlas") {
       body.innerHTML = `<p>Rad Atlas · ${this.esc(say)}</p>`;
-      const mod = CapRail.modality(q);
-      fetch("/api/pmc/match?source=openi-page&modality=" + encodeURIComponent(mod) + "&it=" + encodeURIComponent(q.slice(0, 80)) + "&n=4&m=1")
-        .then((r) => r.json())
-        .then((data) => {
-          if (this.kind !== "radatlas") return;
-          const cards = (data.list || []).slice(0, 4).map((row) => `<button type="button" class="vl-card" data-src="${this.esc(row.url)}" data-cap="${this.esc(row.caption || row.label)}"><img src="${this.esc(row.url)}" alt=""><span><b>Rad Atlas</b>${this.esc(row.caption || row.label || q)}</span></button>`).join("");
-          body.innerHTML = `<p>Rad Atlas · ${this.esc(say)}</p>` + (cards || "<p>No figure for that line yet.</p>");
-          this.bind(body);
-        })
-        .catch(() => {});
+      this.figures(q).then((figs) => {
+        if (this.kind !== "radatlas") return;
+        const cards = (figs || []).slice(0, 4).map((row) => `<button type="button" class="vl-card" data-src="${this.esc(row.url)}" data-cap="${this.esc(row.caption)}"><img src="${this.esc(row.url)}" alt=""><span><b>Rad Atlas</b>${this.esc(row.caption || q)}</span></button>`).join("");
+        body.innerHTML = `<p>Rad Atlas · ${this.esc(say)}</p>` + (cards || "<p>No figure for that line yet.</p>");
+        this.bind(body);
+      }).catch(() => {});
       return;
     }
     const rows = this.hits(q);
@@ -5395,6 +5462,7 @@ const VidLift = {
       const choices = (desk && desk.choices) || ["The finding named in the caption", "An unrelated study", "A diagram only"];
       body.innerHTML = `<p>${this.esc(say)}</p><div class="vl-card"><span><b>${this.esc(qtext)}</b>${choices.map((c) => this.esc(c)).join("<br>")}</span></div>` + rows.slice(0, 3).map((row) => this.card(row)).join("");
       this.bind(body);
+      this.attachFigs(kind, body, q);
       return;
     }
     if (kind === "academy") {
@@ -5402,13 +5470,15 @@ const VidLift = {
       body.innerHTML = `<p>Academy · ${this.esc(say)}</p>` + rows.map((r) => {
         const src = r.plate && typeof plateSrc === "function" ? plateSrc(r.plate) : "";
         return `<button type="button" class="vl-card" data-src="${this.esc(src)}" data-cap="${this.esc(r.finding)}">${src ? `<img src="${this.esc(src)}" alt="">` : ""}<span><b>${this.esc(r.track || "DR")} · ${this.esc(r.modality || "")}</b>${this.esc(r.finding)}</span></button>`;
-      }).join("") || "<p>No academy case for that line yet.</p>";
+      }).join("");
       this.bind(body);
+      this.attachFigs(kind, body, q);
       return;
     }
     if (kind === "iqa") {
-      body.innerHTML = `<p>Image QA · checked against the caption</p>` + rows.map((r) => this.card(r)).join("") || `<p>${this.esc(say)}</p>`;
+      body.innerHTML = `<p>Image QA · checked against the caption</p>` + rows.map((r) => this.card(r)).join("");
       this.bind(body);
+      this.attachFigs(kind, body, q);
       return;
     }
     if (kind === "studio") {
@@ -5416,11 +5486,13 @@ const VidLift = {
       const cards = imgs.map((img) => `<button type="button" class="vl-card" data-src="${this.esc(img.src)}" data-cap="${this.esc(img.alt || q)}"><img src="${this.esc(img.src)}" alt=""><span><b>Board Studio</b>${this.esc(q)}</span></button>`).join("");
       body.innerHTML = `<p>${this.esc(say)}</p>` + (cards || rows.slice(0, 4).map((r) => this.card(r)).join(""));
       this.bind(body);
+      this.attachFigs(kind, body, q);
       return;
     }
     const label = kind === "rrultimate" ? "RAD REVIEW Ultimate" : "RAD REVIEW";
-    body.innerHTML = `<p>${label} · ${this.esc(say)}</p>` + (rows.map((r) => this.card(r)).join("") || "<p>No case for that line yet.</p>");
+    body.innerHTML = `<p>${label} · ${this.esc(say)}</p>` + rows.map((r) => this.card(r)).join("");
     this.bind(body);
+    this.attachFigs(kind, body, q);
   },
   bind(body) {
     body.querySelectorAll(".vl-card").forEach((b) => {

@@ -1,6 +1,38 @@
 const HOST = "https://noardstudiomannus.vercel.app";
 
 const BRIDGE = `(function(){
+  var OWN = "https://noardstudiomannus.vercel.app";
+  function rewrite(url){
+    if (typeof url !== "string" || !url) return url;
+    var path = url;
+    if (url.indexOf("http") === 0) {
+      try {
+        var u = new URL(url);
+        if (u.origin !== location.origin) return url;
+        path = u.pathname + u.search;
+      } catch (e) { return url; }
+    }
+    if (path.charAt(0) !== "/") return url;
+    if (path.indexOf("/api/trpc") === 0 || path.indexOf("/api/content") === 0 || path.indexOf("/api/platform") === 0 || path.indexOf("/api/oembed") === 0 || path.indexOf("/api/oauth") === 0 || path.indexOf("/medical-source") === 0 || path.indexOf("/manus-storage") === 0) return OWN + path;
+    return url;
+  }
+  var ofetch = window.fetch;
+  window.fetch = function(input, init){
+    try {
+      if (typeof input === "string") input = rewrite(input);
+      else if (input && input.url) {
+        var next = rewrite(input.url);
+        if (next !== input.url) input = new Request(next, input);
+      }
+    } catch (e) {}
+    return ofetch.call(this, input, init);
+  };
+  var origOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function(method, url){
+    var args = Array.prototype.slice.call(arguments);
+    args[1] = rewrite(String(url || ""));
+    return origOpen.apply(this, args);
+  };
   var videoId = "";
   var cues = [];
   var last = "";

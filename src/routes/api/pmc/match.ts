@@ -257,26 +257,32 @@ export const Route = createFileRoute("/api/pmc/match")({
                 "&m=" +
                 start +
                 "&it=x,c,m,p,u";
-              const res = await fetch(search, { signal: AbortSignal.timeout(8000) });
+              const res = await fetch(search, { signal: AbortSignal.timeout(18000) });
               if (!res.ok) continue;
               const data = (await res.json()) as {
-                list?: { title?: string; imgLarge?: string; journal?: string }[];
+                list?: { title?: string; imgLarge?: string; journal?: string; image?: { caption?: string } }[];
               };
               const results = (data.list || [])
                 .filter((row) => row.imgLarge && !JUNK.test(row.title || "") && !/e-poster|poster session/i.test(row.title || ""))
                 .slice(0, take)
-                .map((row) => ({
-                  url: "https://openi.nlm.nih.gov" + row.imgLarge,
-                  caption: row.title || q,
-                  relevance: 2,
-                  pmcid: "",
-                  title: row.title || q,
-                  authors: "Open-i",
-                  journal: row.journal || "Open-i",
-                  year: "",
-                  doi: "",
-                  license: "CC BY",
-                }));
+                .map((row) => {
+                  const clean = (value: string) =>
+                    value.replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/gi, " ").replace(/\s+/g, " ").trim();
+                  const title = clean(row.title || q).slice(0, 180);
+                  const caption = clean((row.title || "") + " " + (row.image?.caption || "")).slice(0, 240) || title;
+                  return {
+                    url: "https://openi.nlm.nih.gov" + row.imgLarge,
+                    caption,
+                    relevance: 2,
+                    pmcid: "",
+                    title,
+                    authors: "Open-i",
+                    journal: row.journal || "Open-i",
+                    year: "",
+                    doi: "",
+                    license: "CC BY",
+                  };
+                });
               if (results.length) return Response.json({ query: q, results });
             }
             return Response.json({ query: q, results: [] });
