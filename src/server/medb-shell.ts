@@ -194,7 +194,7 @@ const BRIDGE = `(function(){
       for (var n = 0; n < nodes.length; n++) {
         var s = (nodes[n].textContent || "").replace(/\\s+/g, " ").trim();
         if (s.length < 8 || s.length > 90) continue;
-        if (/acgme|case-in-point|youtube|public viewing|disclaimer|board studio|independent|reproduction/i.test(s)) continue;
+        if (/acgme|case-in-point|youtube|public viewing|disclaimer|board studio|independent|reproduction|meta image|rad atlas|rad review|academy|nucleus|ultimate/i.test(s)) continue;
         lesson = s;
         break;
       }
