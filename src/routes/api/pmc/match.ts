@@ -54,6 +54,50 @@ export const Route = createFileRoute("/api/pmc/match")({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const q = (url.searchParams.get("q") || "").slice(0, 300);
+        if (url.searchParams.get("source") === "film") {
+          const modality = url.searchParams.get("modality") || "ct";
+          const asJson = url.searchParams.get("format") === "json";
+          const caps: Record<string, number> = { ct: 347302, mri: 316774, pet: 220264, xray: 112120 };
+          const cap = caps[modality] || 347302;
+          const m = (Math.max(0, Number(url.searchParams.get("m") || 1) || 1) - 1) % cap + 1;
+          const send = (image: string, caption: string) => {
+            if (!image) return Response.json({ image: "", caption }, { status: 404 });
+            if (asJson) return Response.json({ image, caption, m, modality });
+            return Response.redirect(image, 302);
+          };
+          try {
+            if (modality === "xray") {
+              const train = 86524;
+              const split = m <= train ? "train" : "test";
+              const offset = split === "train" ? m - 1 : m - train - 1;
+              const rowUrl =
+                "https://datasets-server.huggingface.co/rows?dataset=timm/nih-chest-xray-14&config=default&split=" +
+                split +
+                "&offset=" +
+                offset +
+                "&length=1";
+              const res = await fetch(rowUrl, { signal: AbortSignal.timeout(20000), headers: { "User-Agent": "BoardStudio/1.0 (teaching)" } });
+              if (!res.ok) return send("", "NIH chest radiograph");
+              const data = (await res.json()) as { rows?: { row?: { image?: { src?: string }; label_names?: string[] | string } }[] };
+              const row = data.rows?.[0]?.row;
+              const names = Array.isArray(row?.label_names) ? row.label_names : row?.label_names ? [row.label_names] : [];
+              const caption = (names.filter(Boolean).join(", ") || "No finding") + ". NIH ChestX-ray14, CC0.";
+              return send(row?.image?.src || "", caption);
+            }
+            const specQ = modality === "mri" ? "magnetic resonance imaging" : modality === "pet" ? '"positron emission tomography"' : "computed tomography";
+            const search = "https://openi.nlm.nih.gov/api/search?coll=pmc&query=" + encodeURIComponent(specQ) + "&m=" + m + "&n=1";
+            const res = await fetch(search, { signal: AbortSignal.timeout(20000), headers: { "User-Agent": "BoardStudio/1.0 (teaching)" } });
+            if (!res.ok) return send("", modality.toUpperCase() + " figure");
+            const data = (await res.json()) as { list?: { title?: string; imgLarge?: string; image?: { caption?: string } }[] };
+            const row = (data.list || []).find((item) => item.imgLarge);
+            const raw = (row?.image?.caption || row?.title || specQ).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 220);
+            const pet = modality === "pet" ? petParts(raw) : null;
+            const caption = pet?.label ? pet.label + ". " + raw : raw;
+            return send(row?.imgLarge ? "https://openi.nlm.nih.gov" + row.imgLarge : "", caption);
+          } catch {
+            return send("", "Library figure");
+          }
+        }
         if (url.searchParams.get("source") === "openi-page") {
           const modality = url.searchParams.get("modality") || "ct";
           const spec =

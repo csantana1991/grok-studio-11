@@ -2277,7 +2277,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
   </div>
 </div>
 <script src="stem-plates.js"></script>
-<script src="shared-case.js?v=metafill1"></script>
+<script src="shared-case.js?v=library2"></script>
 <script>
 const COURSE = {
   title: "NucMed Board Studio",
@@ -3666,7 +3666,7 @@ function rrFixStations(rows){
         r.slice = st.start + ((r.slice || 0) % span);
       }
     }
-    r.plate = plateForRow(r.finding, r.stationId, r.categoryId, 0) || "";
+    r.plate = plateForRow(r.finding, r.stationId, r.categoryId, (r.idx || 0) + 1) || "";
     if (window.SharedCase) {
       const k = SharedCase.studyKind(r.finding, r.categoryId);
       r.suv = SharedCase.reportsSuv(k) ? SharedCase.statedSuv(r.finding) : null;
@@ -3797,7 +3797,7 @@ function rrVerifyPlates(rows){
   return {ok, n:(rows||[]).length, missing: missing.slice(0,12)};
 }
 function rrGenerate(seed){
-  if (RR_CACHE.seed===seed&&RR_CACHE.rows&&RR_CACHE.v===15) return RR_CACHE.rows;
+  if (RR_CACHE.seed===seed&&RR_CACHE.rows&&RR_CACHE.v===16) return RR_CACHE.rows;
   const rng=rrMulberry(seed);const rows=[];let acc=100000;
   RR_CATS.forEach(cat=>{
     const pool=RR_POOLS[cat.id];
@@ -3818,11 +3818,11 @@ function rrGenerate(seed){
       const mrn="MRN"+String(1000000+Math.floor(rng()*8000000));
       const date=year+"-"+String(1+Math.floor(rng()*12)).padStart(2,"0")+"-"+String(1+Math.floor(rng()*28)).padStart(2,"0");
       const search=(accession+" "+finding+" "+st.name+" "+cat.name+" "+mrn).toLowerCase();
-      const plate=plateForRow(finding, st.id, cat.id, 0);
+      const plate=plateForRow(finding, st.id, cat.id, rows.length + 1);
       rows.push({idx:rows.length,accession,mrn,age,sex,categoryId:cat.id,finding,stationId:st.id,stationName:st.name,slice,suv,status,priority,acgme:cat.acgme,date,search,plate});
     }
   });
-  RR_CACHE={seed,rows,v:15}; rrFixStations(rows); return rows;
+  RR_CACHE={seed,rows,v:16}; rrFixStations(rows); return rows;
 }
 function rrRunAssertions(rows){
   const out=[]; const hits=Array(101).fill(null); let contig=true;
@@ -4584,7 +4584,7 @@ function renderNav() {
       <span class="idx">RU</span><span class="meta"><b>RAD REVIEW Ultimate</b><s>Full-page app · Exit to Studio</s></span>
     </button>
     <button class="nav-item ${state.view === "metaimage" ? "active" : ""}" data-view="metaimage">
-      <span class="idx">MI</span><span class="meta"><b>Meta Image</b><s>112,120 NIH chest films</s></span>
+      <span class="idx">MI</span><span class="meta"><b>Meta Image</b><s>112,120 chest · 347,302 CT · 316,774 MRI · 220,264 PET</s></span>
     </button>
     <div class="nav-sec">Course map · NM</div>` + nm.map(item).join("") +
     `<div class="nav-sec">Residency & fellowships</div>` + res.map(item).join("") +
@@ -8568,7 +8568,7 @@ function plateSrc(name) {
   const n = String(name || "");
   if (!n) return "";
   if (/^(https?:|\/|data:|nih:)/i.test(n)) return n;
-  if ((n.indexOf("tcia:") === 0 || n.indexOf("films:") === 0) && window.SharedCase && SharedCase.resolveMetaToken) {
+  if ((n.indexOf("tcia:") === 0 || n.indexOf("films:") === 0 || n.indexOf("oi:") === 0 || n.indexOf("nih:") === 0) && window.SharedCase && SharedCase.resolveMetaToken) {
     return SharedCase.resolveMetaToken(n) || "";
   }
   return resolveAsset("assets/dr/" + n) || resolveAsset("assets/thumbs/" + n) || ("assets/thumbs/" + n);
@@ -10644,8 +10644,23 @@ function paintCaseDock(enc){
   });
   try { rememberCaseSearch(enc); } catch (e) {}
 }
+function fillLibraryCaption(enc){
+  const plate = String((enc && enc.plate) || "");
+  if (!/^(oi:|nih:)/.test(plate) || !window.SharedCase || !SharedCase.resolveMetaToken) return;
+  const src = SharedCase.resolveMetaToken(plate);
+  if (!src) return;
+  const key = caseKey(enc);
+  fetch(src + "&format=json").then(r => r.ok ? r.json() : null).then(data => {
+    if (!data || !data.caption) return;
+    const gal = document.querySelector(".case-gal");
+    const cap = document.getElementById("caseCap");
+    if (!gal || !cap || gal.dataset.key !== key) return;
+    cap.textContent = data.caption + " Not this row's scan.";
+  }).catch(() => {});
+}
 function bindCaseGallery(enc){
   if (!enc) return;
+  fillLibraryCaption(enc);
   const key = caseKey(enc);
   const paint = (slot, keep) => {
     const gal = document.querySelector(".case-gal");

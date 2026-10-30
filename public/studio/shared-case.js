@@ -186,30 +186,14 @@
   function metaFamily(finding, categoryId, kindOpt) {
     var kind = kindOpt || studyKind(finding, categoryId);
     var f = String(finding || "").toLowerCase();
-    if (kind === "muga" || kind === "pyp" || kind === "bone" || kind === "thyroid" || kind === "vq" || kind === "hida" || kind === "renal" || kind === "mpi" || kind === "us" || kind === "mammo" || kind === "pet-psma" || kind === "pet-dota") return "";
-    if (kind === "ct") {
-      if (isHeadCt(f)) return "";
-      if (/knee|ankle|talus|calcaneus|toe|lisfranc|patella|femoral|thigh|\bhip\b/.test(f) && !isAbdCtText(f) && !isChestCtText(f)) return "";
-      if (isChestCtText(f) && !isAbdCtText(f)) return "tcia:ct";
-      if (isAbdCtText(f) && !isChestCtText(f)) return "films:ct-abd";
-      if (isChestCtText(f)) return "tcia:ct";
-      if (isAbdCtText(f)) return "films:ct-abd";
-      return "";
-    }
-    if (kind === "mri") {
-      if (/knee|menisc|\bacl\b|patella|spine|lumbar|disc|shoulder|breast|cardiac|myocard|mrcp|choledocho|biliary/.test(f)) return "";
-      if (/brain|vertex|skull|pituit|orbit|convexity|seizure|meningioma|perineural|cerebral|glioblast/.test(f)) return "tcia:mri";
-      return "";
-    }
-    if (kind === "pet-fdg") {
-      if (isBrainPetText(f)) return "";
-      return "tcia:pet";
-    }
-    if (kind === "radiograph" || kind === "other") {
+    if (kind === "ct") return "oi:ct";
+    if (kind === "mri") return "oi:mri";
+    if (kind === "pet-fdg") return "oi:pet";
+    if (kind === "radiograph") {
       var chestXr = /chest|lung|pneumonia|\bcxr\b|portable|\brib\b/.test(f)
         && !/\bct\b|\bmri\b|ultrasound|\bpet\b|\bfdg\b/.test(f)
         && !/knee|ankle|patella|calcaneus|pelvis|\bhip\b|skull|spine|abdominal|abdomen|foot|toe|wrist|elbow/.test(f);
-      if (chestXr && (kind === "radiograph" || /pneumonia|\bcxr\b|radiograph|portable/.test(f))) return "films:xr";
+      if (chestXr) return "nih";
     }
     return "";
   }
@@ -217,15 +201,24 @@
   function metaPlateFor(finding, stationId, categoryId, salt) {
     var family = metaFamily(finding, categoryId, null);
     if (!family) return "";
-    return family + ":" + Math.abs(Number(salt) || 0);
+    var n = Math.abs(parseInt(salt, 10) || 0);
+    if (!n) {
+      var s = String(finding || "") + "|" + (stationId || "") + "|" + (categoryId || "");
+      var h = 2166136261;
+      for (var i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      n = (h >>> 0) || 1;
+    }
+    return family + ":" + n;
   }
 
   function metaTokenFits(kind, finding, file) {
     var family = metaFamily(finding, "", kind);
     if (!family) return false;
     var raw = String(file || "").toLowerCase();
-    var got = raw.replace(/:\d+$/, "");
-    if (got === family) return true;
+    if (raw.indexOf(family + ":") === 0) return true;
     if (family === "tcia:ct" && (raw.indexOf("/meta-image/tcia/ct/") >= 0 || raw.indexOf("/meta-image/films/ct-th") >= 0 || raw.indexOf("/meta-image/films/ct-lung") >= 0)) return true;
     if (family === "tcia:mri" && (raw.indexOf("/meta-image/tcia/mri/") >= 0 || raw.indexOf("/meta-image/films/mri-") >= 0)) return true;
     if (family === "tcia:pet" && (raw.indexOf("/meta-image/tcia/pet/") >= 0 || raw.indexOf("/meta-image/films/pet-") >= 0)) return true;
@@ -235,6 +228,13 @@
   }
 
   function resolveMetaToken(token) {
+    var live = String(token || "").match(/^(oi:ct|oi:mri|oi:pet|nih):(\d+)$/);
+    if (live) {
+      var modality = live[1] === "oi:ct" ? "ct" : live[1] === "oi:mri" ? "mri" : live[1] === "oi:pet" ? "pet" : "xray";
+      var cap = modality === "ct" ? 347302 : modality === "mri" ? 316774 : modality === "pet" ? 220264 : 112120;
+      var m = (Number(live[2]) % cap) + 1;
+      return "/api/pmc/match?source=film&modality=" + modality + "&m=" + m;
+    }
     var m = String(token || "").match(/^(tcia:ct|tcia:mri|tcia:pet|films:ct-abd|films:xr):(\d+)$/);
     if (!m) return "";
     var list = m[1] === "tcia:ct" ? metaPool("ct")
@@ -248,6 +248,10 @@
 
   function metaCaption(token) {
     var t = String(token || "");
+    if (t.indexOf("oi:ct:") === 0) return "CT figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:mri:") === 0) return "MRI figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("oi:pet:") === 0) return "PET figure from the Meta Image library. Not this row's scan.";
+    if (t.indexOf("nih:") === 0) return "NIH chest radiograph from the Meta Image library. Not this row's scan.";
     if (t.indexOf("tcia:ct:") === 0) return "Axial chest CT, lung window. LIDC-IDRI. CC BY 3.0. Not this row's scan.";
     if (t.indexOf("tcia:mri:") === 0) return "Axial brain MRI. UPENN-GBM. CC BY 4.0. Not this row's scan.";
     if (t.indexOf("tcia:pet:") === 0) return "Axial FDG PET, one slice from a whole-body series. FDG-PET-CT-Lesions. CC BY 4.0. Not this row's scan.";
