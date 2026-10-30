@@ -65,9 +65,10 @@
   body.embed .sub, body.embed .stats, body.embed footer { font-size: 13px; }
   body.embed main { flex: 1 1 auto; min-height: 0; overflow: auto; display: flex; flex-direction: column; padding: 8px 12px 16px; }
   body.embed #nih, body.embed .scrub { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-  body.embed .hero { flex: 1 1 auto; min-height: 220px; display: flex; align-items: center; justify-content: center; }
-  body.embed .hero img { width: 100%; height: 100%; max-height: none; aspect-ratio: auto; object-fit: contain; }
-  body.embed .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body.embed header .stats, body.embed header h1, body.embed header .sub, body.embed footer, body.embed .grid, body.embed .pager, body.embed .hint { display: none !important; }
+  body.embed header { padding: 6px 10px; }
+  body.embed .hero { min-height: 62vh; background: #000; }
+  body.embed .hero img { width: 100% !important; height: 62vh !important; max-height: none !important; object-fit: contain; background: #000; }
 </style>
 </head>
 <body>
