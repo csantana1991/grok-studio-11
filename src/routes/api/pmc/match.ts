@@ -20,6 +20,34 @@ type Hit = {
 
 const JUNK = /bear|aircraft|portrait|biography|painting|football|soccer|album|song\b/i;
 
+function petParts(text: string) {
+  const t = text.replace(/<[^>]+>/g, " ");
+  let tracer = "PET";
+  if (/PSMA/i.test(t)) tracer = "PSMA";
+  else if (/DOTATATE|DOTATOC|DOTANOC/i.test(t)) tracer = "DOTATATE";
+  else if (/FDG|fluorodeoxyglucose/i.test(t)) tracer = "FDG";
+  else if (/FAPI/i.test(t)) tracer = "FAPI";
+  else if (/\bNaF\b|sodium fluoride/i.test(t)) tracer = "NaF";
+  else if (/amyloid|florbetapir|flutemetamol|florbetaben/i.test(t)) tracer = "Amyloid";
+  else if (/choline/i.test(t)) tracer = "Choline";
+  else if (/\bFLT\b/i.test(t)) tracer = "FLT";
+  else if (/Ga-?68|68Ga/i.test(t)) tracer = "Ga-68";
+  else if (/Cu-?64|64Cu/i.test(t)) tracer = "Cu-64";
+  else if (/Rb-?82/i.test(t)) tracer = "Rb-82";
+  else if (/C-?11|11C/i.test(t)) tracer = "C-11";
+  else if (/F-?18|18F/i.test(t)) tracer = "F-18";
+  const hybrid = /PET\s*[/-]\s*MR/i.test(t) ? "PET/MRI" : /PET\s*[/-]\s*CT/i.test(t) ? "PET/CT" : "PET";
+  const planes: string[] = [];
+  if (/\bMIP\b|maximum intensity/i.test(t)) planes.push("MIP");
+  if (/axial/i.test(t)) planes.push("axial");
+  if (/coronal/i.test(t)) planes.push("coronal");
+  if (/sagittal/i.test(t)) planes.push("sagittal");
+  if (/whole[- ]body/i.test(t)) planes.push("whole body");
+  const head = tracer === "PET" ? hybrid : tracer + " " + hybrid;
+  const plane = planes.slice(0, 2).join(", ");
+  return { tracer, hybrid, plane, label: plane ? head + ", " + plane : head };
+}
+
 export const Route = createFileRoute("/api/pmc/match")({
   server: {
     handlers: {
@@ -79,9 +107,14 @@ export const Route = createFileRoute("/api/pmc/match")({
                   .replace(/\s+/g, " ")
                   .trim()
                   .slice(0, 220);
+                const pet = modality === "pet" ? petParts(caption + " " + (row.title || "")) : null;
                 return {
                   url: "https://openi.nlm.nih.gov" + row.imgLarge,
                   caption: caption || spec.q,
+                  label: pet?.label || "",
+                  tracer: pet?.tracer || "",
+                  hybrid: pet?.hybrid || "",
+                  plane: pet?.plane || "",
                   pmcid: row.pmcid || "",
                   title: (row.title || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 180),
                 };

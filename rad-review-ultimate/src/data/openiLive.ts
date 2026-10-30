@@ -40,11 +40,14 @@ export async function resolveOpeni(token: string): Promise<OpeniFilm> {
         { signal: AbortSignal.timeout(12000) },
       )
       if (!res.ok) throw new Error('openi ' + res.status)
-      const data = (await res.json()) as { list?: { url?: string; caption?: string; pmcid?: string }[] }
+      const data = (await res.json()) as {
+        list?: { url?: string; caption?: string; label?: string; pmcid?: string }[]
+      }
       const row = data.list?.[0]
       if (!row?.url) throw new Error('empty')
       const kind = modality === 'ct' ? 'CT' : modality === 'mri' ? 'MRI' : 'PET'
       const caption =
+        (row.label ? row.label + '. ' : '') +
         row.caption +
         '. Open-i ' +
         kind +

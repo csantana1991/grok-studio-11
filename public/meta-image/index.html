@@ -127,6 +127,33 @@ const FILMS = [{"src": "films/ct-th-axi-10.webp", "credit": "Mikael Häggström,
 const NAMES = ["Atelectasis","Cardiomegaly","Consolidation","Edema","Effusion","Emphysema","Fibrosis","Hernia","Infiltration","Mass","Nodule","Pleural_Thickening","Pneumonia","Pneumothorax"];
 const PAGE = 36;
 const OPENI = { ct: { total: 112120 }, mri: { total: 112120 }, pet: { total: 112120 } };
+function petParts(text){
+  const t = String(text || "");
+  let tracer = "PET";
+  if (/PSMA/i.test(t)) tracer = "PSMA";
+  else if (/DOTATATE|DOTATOC|DOTANOC/i.test(t)) tracer = "DOTATATE";
+  else if (/FDG|fluorodeoxyglucose/i.test(t)) tracer = "FDG";
+  else if (/FAPI/i.test(t)) tracer = "FAPI";
+  else if (/\bNaF\b|sodium fluoride/i.test(t)) tracer = "NaF";
+  else if (/amyloid|florbetapir|flutemetamol|florbetaben/i.test(t)) tracer = "Amyloid";
+  else if (/choline/i.test(t)) tracer = "Choline";
+  else if (/\bFLT\b/i.test(t)) tracer = "FLT";
+  else if (/Ga-?68|68Ga/i.test(t)) tracer = "Ga-68";
+  else if (/Cu-?64|64Cu/i.test(t)) tracer = "Cu-64";
+  else if (/Rb-?82/i.test(t)) tracer = "Rb-82";
+  else if (/C-?11|11C/i.test(t)) tracer = "C-11";
+  else if (/F-?18|18F/i.test(t)) tracer = "F-18";
+  const hybrid = /PET\s*[/-]\s*MR/i.test(t) ? "PET/MRI" : /PET\s*[/-]\s*CT/i.test(t) ? "PET/CT" : "PET";
+  const planes = [];
+  if (/\bMIP\b|maximum intensity/i.test(t)) planes.push("MIP");
+  if (/axial/i.test(t)) planes.push("axial");
+  if (/coronal/i.test(t)) planes.push("coronal");
+  if (/sagittal/i.test(t)) planes.push("sagittal");
+  if (/whole[- ]body/i.test(t)) planes.push("whole body");
+  const head = tracer === "PET" ? hybrid : tracer + " " + hybrid;
+  const plane = planes.slice(0, 2).join(", ");
+  return { tracer, hybrid, plane, label: plane ? head + ", " + plane : head };
+}
 function isOpeni(v){ return v === "ct" || v === "mri" || v === "pet"; }
 const HF = "https://datasets-server.huggingface.co/rows?dataset=timm/nih-chest-xray-14&config=default&split=";
 let manifest = null, dv = null, view = "nih", finding = "all", q = "", cursor = 0, page = 1, results = null;
@@ -410,22 +437,24 @@ function drawGrid(){
         if (gen !== generation) return;
         (data.list || []).forEach(item => {
           const cap = item.caption || view.toUpperCase();
+          const pet = view === "pet" ? (item.label ? { tracer: item.tracer || "PET", hybrid: item.hybrid || "PET", plane: item.plane || "", label: item.label } : petParts(cap)) : null;
+          const title = pet ? pet.label : cap;
           const btn = document.createElement("button");
           btn.className = "card"; btn.type = "button";
-          btn.setAttribute("aria-label", cap);
+          btn.setAttribute("aria-label", title + ". " + cap);
           const shot = document.createElement("span"); shot.className = "shot";
           const img = document.createElement("img");
           img.src = "/api/pmc/img?src=" + encodeURIComponent(item.url);
-          img.alt = cap;
-          const b1 = document.createElement("span"); b1.className = "badge l"; b1.textContent = view.toUpperCase();
-          const b2 = document.createElement("span"); b2.className = "badge r"; b2.textContent = "Open-i";
+          img.alt = title;
+          const b1 = document.createElement("span"); b1.className = "badge l"; b1.textContent = pet ? pet.tracer : view.toUpperCase();
+          const b2 = document.createElement("span"); b2.className = "badge r"; b2.textContent = pet ? (pet.plane ? pet.hybrid + " · " + pet.plane : pet.hybrid) : "Open-i";
           shot.append(img, b1, b2);
           const capEl = document.createElement("span"); capEl.className = "cap";
-          const strong = document.createElement("b"); strong.textContent = cap;
-          const small = document.createElement("small"); small.textContent = item.pmcid || "PubMed Central";
+          const strong = document.createElement("b"); strong.textContent = title;
+          const small = document.createElement("small"); small.textContent = pet ? cap : (item.pmcid || "PubMed Central");
           capEl.append(strong, small);
           btn.append(shot, capEl);
-          btn.onclick = () => openFilm({ src: img.src, credit: "Open-i, U.S. National Library of Medicine. " + (item.pmcid || ""), page: "https://openi.nlm.nih.gov/" }, cap);
+          btn.onclick = () => openFilm({ src: img.src, credit: "Open-i, U.S. National Library of Medicine. " + (item.pmcid || ""), page: "https://openi.nlm.nih.gov/", note: pet ? cap : "" }, title);
           grid.append(btn);
         });
       })
@@ -526,7 +555,7 @@ function openFilm(film, cap){
   document.getElementById("dlgImg").alt = cap;
   document.getElementById("dlgTitle").textContent = cap;
   document.getElementById("dlgId").textContent = film.credit || "";
-  document.getElementById("dlgNote").textContent = "Open reference film. Not an NIH ChestX-ray14 study.";
+  document.getElementById("dlgNote").textContent = film.note || "Open reference film. Not an NIH ChestX-ray14 study.";
   const a = document.getElementById("dlgSrc");
   a.href = film.page || "https://openi.nlm.nih.gov/";
   a.textContent = film.credit || "Source";
