@@ -2011,7 +2011,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 <div class="rru-exitbar" id="rruBar"><b>RAD REVIEW Ultimate</b><span>Full-page 33,000-case worklist · Image QA · live PubMed · same features as RAD REVIEW</span><button type="button" id="rruExit">Exit to Board Studio</button></div>
 <div class='app'>
 <aside class='sidebar panel-wrap' id='sidebar' data-panel-body='nav'>
-  <div class='brand'><div class='panel-bar' data-panel='nav'><b>Course map</b><span><button type='button' data-act='min'>–</button><button type='button' data-act='max'>□</button></span></div><h1>GROK <span>studio 11</span></h1><p>Main app · Academy & RAD REVIEW are widgets</p></div>
+  <div class='brand'><div class='panel-bar' data-panel='nav'><b>Course map</b><span><button type='button' data-act='min'>–</button><button type='button' data-act='max'>□</button></span></div><h1>GROK <span>studio 11</span></h1><p>Main app · Academy, RAD REVIEW, and Meta Image are widgets</p></div>
   <div class='progress-wrap'><div class='progress-label'><span>Progress</span><span id='barLabel'>0 / 0</span></div><div class='bar'><i id='barFill'></i></div></div>
   <nav class='nav' id='nav'></nav>
 </aside>
@@ -2033,6 +2033,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
       <button type="button" data-view="caseqa">Case Q+A</button>
       <button type="button" data-view="radatlas">Rad Atlas</button>
       <button type="button" data-view="rrultimate">RAD REVIEW Ultimate</button>
+      <button type="button" data-view="metaimage">Meta Image</button>
     </div>
     <button type="button" id="homeBtn">Home</button>
     <button type="button" id="layoutBtn" class="pill">Layout: Classic</button>
@@ -4424,6 +4425,9 @@ function renderNav() {
     </button>
     <button class="nav-item ${state.view === "rrultimate" ? "active" : ""}" data-view="rrultimate">
       <span class="idx">RU</span><span class="meta"><b>RAD REVIEW Ultimate</b><s>Full-page app · Exit to Studio</s></span>
+    </button>
+    <button class="nav-item ${state.view === "metaimage" ? "active" : ""}" data-view="metaimage">
+      <span class="idx">MI</span><span class="meta"><b>Meta Image</b><s>33,000 films · named under each picture</s></span>
     </button>
     <div class="nav-sec">Course map · NM</div>` + nm.map(item).join("") +
     `<div class="nav-sec">Residency & fellowships</div>` + res.map(item).join("") +
@@ -11871,6 +11875,41 @@ function goRadUltimate() {
   window.location.assign("/rru/index.html");
 }
 
+
+function goMetaImage() {
+  window.location.assign("/meta-image/index.html");
+}
+function renderMetaImage(){
+  const phone = window.matchMedia("(max-width: 980px)").matches || /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+  if (phone) {
+    goMetaImage();
+    return;
+  }
+  document.body.classList.remove("rru-full");
+  const stage = $("#stage");
+  stage.classList.add("rru-stage");
+  stage.innerHTML = `
+    <section class="panel-wrap rru-host" data-panel-body="mi" style="display:flex;flex-direction:column;background:#0a0a0a;color:#f4f1ea;overflow:hidden;flex:1;min-height:0;height:100%">
+      <div class="panel-bar" data-panel="mi">
+        <b>Meta Image · 33,000 films</b>
+        <span>
+          <button type="button" id="miReload">Reload</button>
+          <button type="button" id="miOpenFull" class="pill" style="background:#d7b56d;color:#1a1408;font-weight:800">Open full page</button>
+          <button type="button" data-act="min">–</button>
+          <button type="button" data-act="max">□</button>
+        </span>
+      </div>
+      <iframe id="miFrame" title="Meta Image" src="/meta-image/index.html" style="flex:1;width:100%;height:100%;min-height:0;border:0;background:#0a0a0a"></iframe>
+    </section>`;
+  if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>Meta Image</b><span>Named films under each card</span>`;
+  bindPanelChrome(stage);
+  const frame = document.getElementById("miFrame");
+  const reload = document.getElementById("miReload");
+  if (reload && frame) reload.onclick = () => { frame.src = "/meta-image/index.html"; };
+  const full = document.getElementById("miOpenFull");
+  if (full) full.onclick = (e) => { e.preventDefault(); goMetaImage(); };
+}
+
 function renderRadUltimate(){
   const phone = window.matchMedia("(max-width: 980px)").matches || /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
   if (phone) {
@@ -11967,6 +12006,9 @@ function render() {
   } else if (state.view === "rrultimate") {
     crumb.innerHTML = "Studio / <b>RAD REVIEW Ultimate</b>";
     renderRadUltimate();
+  } else if (state.view === "metaimage") {
+    crumb.innerHTML = "Studio / <b>Meta Image</b>";
+    renderMetaImage();
   } else if (state.view === "exam") {
     crumb.innerHTML = "Studio / <b>Mixed quiz</b>";
     if (!state.examBank) {
