@@ -2163,6 +2163,13 @@ body.view-rru #rruFrame {
 }
 body.hj-full .hj-exitbar { display:flex !important; height:40px; min-height:40px; overflow:hidden; flex-wrap:nowrap; z-index:200; align-items:center; }
 body.hj-full #hjSaid { flex:1; min-width:0; height:28px; margin:0 8px; border:0; border-radius:999px; background:#f7f4ee; color:#1a1408; padding:0 12px; font:inherit; }
+#wikiTop { display:none; }
+#wikiTop.on { display:flex; gap:8px; align-items:center; position:fixed; top:40px; left:0; right:0; height:96px; z-index:210; overflow-x:auto; background:#0c1210; padding:8px 10px; }
+#wikiTop button { flex:0 0 auto; display:flex; flex-direction:column; gap:4px; width:132px; border:0; background:transparent; color:#e8f2f7; cursor:pointer; padding:0; text-align:left; }
+#wikiTop img { width:132px; height:72px; object-fit:cover; border-radius:6px; background:#07141f; }
+#wikiTop span { font-size:11px; line-height:1.2; max-height:2.4em; overflow:hidden; }
+body.hj-full.wiki-top .work,
+body.medb-full.wiki-top .work { top:136px !important; }
 body.hj-full .hj-exitbar button { padding:6px 10px; font-size:13px; white-space:nowrap; }
 @media (max-width: 700px) {
   body.hj-full .hj-exitbar span { display:none !important; }
@@ -2267,6 +2274,7 @@ body.medb-full.film-widget .work { left: 0 !important; right: 0 !important; bott
   body.medb-full #filmRight { display: none !important; }
 }
 #capRail .cap-tag { flex: 0 0 auto; color: #9fc8c0; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
+#atlasMute { flex: 0 0 auto; height: 28px; border: 0; border-radius: 999px; background: #1a1408; color: #f7f4ee; font-size: 12px; font-weight: 700; padding: 0 10px; cursor: pointer; }
 #capRow { display: flex; gap: 8px; align-items: center; }
 #capRow button { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; height: 64px; padding: 0 8px 0 0; border: 0; border-radius: 10px; background: #123044; color: #e8f2f7; cursor: pointer; }
 #capRow img { width: 96px; height: 64px; object-fit: cover; border-radius: 10px 0 0 10px; background: #07141f; }
@@ -2302,11 +2310,12 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 </div>
 <div class='backdrop' id='backdrop'></div>
 <div class="rru-exitbar" id="rruBar"><b>RAD REVIEW Ultimate</b><span>Full-page 33,000-case worklist · Image QA · live PubMed · same features as RAD REVIEW</span><button type="button" id="rruExit">Exit to Board Studio</button></div>
-<div id="capRail"><span class="cap-tag">Atlas · Meta</span><div id="capRow"></div></div>
+<div id="capRail"><span class="cap-tag">Atlas · Meta</span><button type="button" id="atlasMute">Mute figures</button><div id="capRow"></div></div>
 <aside id="filmLeft" aria-label="Lecture images"></aside>
 <aside id="filmRight" aria-label="Widget panel"></aside>
 <div id="capPop"><button type="button" id="capPopX">Close</button><img alt="" referrerpolicy="no-referrer"><p></p></div>
 <div class="rru-exitbar hj-exitbar" id="hjBar"><b>HJ Med</b><input id="hjSaid" type="search" placeholder="Live search of what is said" autocomplete="off"><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
+<div id="wikiTop" aria-label="Wikipedia images from the captions"></div>
 <div class="rru-exitbar" id="mbBar"><b>Med-b</b><span>Live page</span><button type="button" id="mbAtlas">Atlas</button><button type="button" id="mbExit">Exit</button></div>
 <div id="hjAtlasSheet" aria-label="Grok 11 atlas"></div>
 <div class='app'>
@@ -5360,13 +5369,37 @@ const CapRail = {
     const rail = document.getElementById("capRail");
     if (rail) rail.classList.add("on");
     const add = (src, cap) => { if (src) this.add(src, cap); };
-    try {
-      const wiki = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=6&prop=pageimages|info&inprop=url&pithumbsize=480&format=json&origin=*";
-      const data = await fetch(wiki).then((r) => r.json());
-      Object.values((data.query && data.query.pages) || {}).forEach((p) => {
-        const src = p && p.thumbnail && p.thumbnail.source;
-        if (src) add(src, "Wikipedia · " + (p.title || q));
+    const paintTop = (pages) => {
+      const host = document.getElementById("wikiTop");
+      if (!host) return;
+      const rows = (pages || []).filter((p) => p && p.thumbnail && p.thumbnail.source).slice(0, 6);
+      if (!rows.length) return;
+      host.innerHTML = "";
+      host.classList.add("on");
+      document.body.classList.add("wiki-top");
+      rows.forEach((p) => {
+        const src = p.thumbnail.source;
+        const cap = "Wikipedia · " + (p.title || q);
+        const b = document.createElement("button");
+        b.type = "button";
+        const img = document.createElement("img");
+        img.alt = "";
+        img.referrerPolicy = "no-referrer";
+        img.src = src;
+        const label = document.createElement("span");
+        label.textContent = p.title || q;
+        b.appendChild(img);
+        b.appendChild(label);
+        b.onclick = () => this.pop(src, cap);
+        host.appendChild(b);
+        add(src, cap);
+        if (typeof LiveHero !== "undefined") LiveHero.add({ src, cap, term: q, kind: "wiki-live", raw: p.title || q });
       });
+    };
+    try {
+      const wiki = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=6&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*";
+      const data = await fetch(wiki).then((r) => r.json());
+      paintTop(Object.values((data.query && data.query.pages) || {}));
     } catch (e) {}
     try {
       const res = await fetch("/api/pmc/match?source=live&q=" + encodeURIComponent(q) + "&n=6");
@@ -5404,7 +5437,7 @@ const CapRail = {
     }
     let hit = lines[0];
     for (let i = 0; i < lines.length; i++) if (lines[i].t <= t) hit = lines[i]; else break;
-    if (hit && hit.text) this.note(hit.text);
+    if (hit && hit.text) { this.note(hit.text); this.live(hit.text); }
   }
 };
 const VidLift = {
@@ -5752,6 +5785,9 @@ function stopSpeech() {
   speakGen += 1;
   state.speaking = false;
   state.spokenLine = "";
+  state.atlasTourStop = true;
+  state.atlasTour = false;
+  if (typeof SpeechHold !== "undefined") SpeechHold.stop();
   if (window.speechSynthesis) speechSynthesis.cancel();
   const btn = $("#playBtn");
   if (btn) btn.textContent = "▶";
@@ -9687,6 +9723,7 @@ function paintAtlasInto(root) {
     e.preventDefault();
     e.stopPropagation();
     stopAtlasAuto();
+    if (typeof stopSpeech === "function") stopSpeech();
   };
   atlasScrollLabel();
   bindAtlasInfinite(root);
@@ -13039,9 +13076,17 @@ async function raRun(){
 const SpeechHold = {
   pending: [],
   talking: false,
+  stopped: false,
+  stop() {
+    this.stopped = true;
+    this.pending = [];
+    this.talking = false;
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+  },
   push(text, keep) {
     const t = String(text || "").replace(/\s+/g, " ").trim();
     if (!t) return;
+    this.stopped = false;
     const box = document.getElementById("playerScript");
     if (box) box.textContent = t;
     const span = document.querySelector("#playerInfo span");
@@ -13057,15 +13102,15 @@ const SpeechHold = {
     this.kick();
   },
   kick() {
-    if (this.talking) return;
+    if (this.stopped || this.talking) return;
     const t = this.pending.shift();
     if (!t || !window.speechSynthesis) return;
     this.talking = true;
     state.speaking = true;
     const u = new SpeechSynthesisUtterance(t);
     u.rate = Math.min(state.rate || 0.7, 0.75);
-    u.onend = () => { this.talking = false; if (!this.pending.length) { state.speaking = false; const b = $("#playBtn"); if (b) b.textContent = "▶"; } this.kick(); };
-    u.onerror = () => { this.talking = false; this.kick(); };
+    u.onend = () => { this.talking = false; if (this.stopped) return; if (!this.pending.length) { state.speaking = false; const b = $("#playBtn"); if (b) b.textContent = "▶"; } this.kick(); };
+    u.onerror = () => { this.talking = false; if (!this.stopped) this.kick(); };
     speechSynthesis.speak(u);
     const b = $("#playBtn"); if (b) b.textContent = "❚❚";
   }
@@ -13360,6 +13405,7 @@ const SeriesCine = {
         <b id="cineLab">${this.i+1} / ${this.n}</b>
         <button type="button" id="cineSpeak">Dictate this slice</button>
         <button type="button" id="cineAll">Dictate remaining</button>
+        <button type="button" id="cineStop">Stop dictation</button>
         <button type="button" data-win="lung">Lung</button>
         <button type="button" data-win="med">Mediastinum</button>
         <button type="button" data-win="bone">Bone</button>
@@ -13375,28 +13421,29 @@ const SeriesCine = {
     const cv = document.getElementById("cineCv");
     const rng = document.getElementById("cineRange");
     const go = (i, speak) => this.show(i, speak);
-    rng.oninput = () => go(+rng.value, true);
-    document.getElementById("cinePrev").onclick = () => go(this.i - 1, true);
-    document.getElementById("cineNext").onclick = () => go(this.i + 1, true);
+    rng.oninput = () => go(+rng.value, false);
+    document.getElementById("cinePrev").onclick = () => go(this.i - 1, false);
+    document.getElementById("cineNext").onclick = () => go(this.i + 1, false);
     document.getElementById("cineSpeak").onclick = () => SpeechHold.push(this.script(this.i).text, false);
     document.getElementById("cineAll").onclick = () => {
       const parts = [];
       for (let k = this.i; k < this.n; k++) parts.push(this.script(k).text);
       speakQueue(parts);
     };
+    document.getElementById("cineStop").onclick = () => { if (typeof stopSpeech === "function") stopSpeech(); };
     host.querySelectorAll("[data-win]").forEach(b => b.onclick = () => { this.win = b.dataset.win; this.draw(cv, this.i); });
     document.getElementById("cineSplit").onclick = () => { this.split = !this.split; this.draw(cv, this.i); };
     document.getElementById("sliceNote").onblur = () => {
       this.notes[this.i] = document.getElementById("sliceNote").value;
       try { localStorage.setItem("cine-notes-v1", JSON.stringify(this.notes)); } catch (_) {}
     };
-    cv.onwheel = (e) => { e.preventDefault(); go(this.i + (e.deltaY > 0 ? 1 : -1), true); };
+    cv.onwheel = (e) => { e.preventDefault(); go(this.i + (e.deltaY > 0 ? 1 : -1), false); };
     let lastY = 0, drag = false;
     cv.onpointerdown = (e) => { drag = true; lastY = e.clientY; try { cv.setPointerCapture(e.pointerId); } catch(_){} };
     cv.onpointermove = (e) => {
       if (!drag) return;
       const dy = e.clientY - lastY;
-      if (Math.abs(dy) > 8) { lastY = e.clientY; go(this.i + (dy > 0 ? 1 : -1), true); }
+      if (Math.abs(dy) > 8) { lastY = e.clientY; go(this.i + (dy > 0 ? 1 : -1), false); }
     };
     cv.onpointerup = () => { drag = false; };
     const dock = $("#playBtn");
@@ -14058,6 +14105,7 @@ window.addEventListener("message", (e) => {
     const tag = document.querySelector("#capRail .cap-tag");
     if (tag) tag.textContent = String(data.text).replace(/\s+/g, " ").trim().slice(0, 48);
     CapRail.note(data.text);
+    CapRail.live(data.text);
     CapRail.atlas(data.text);
     SideFilm.pull(data.text);
     if (!CapRail.cues.length) CapRail.scrub([], data.text);
