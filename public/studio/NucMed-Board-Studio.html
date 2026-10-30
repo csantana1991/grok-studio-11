@@ -5263,6 +5263,7 @@ const VidLift = {
     const low = String(text || "").toLowerCase();
     const groups = [
       { re: /positron|annihilation|\bfdg\b|\bpet\b|fluorine|fluorodeoxy|coincidence|\b511\b/, q: "FDG positron emission tomography", keys: ["fdg", "pet", "positron", "fluor", "tomograph", "annihilation"], mod: "pet" },
+      { re: /nuclear medicine|hybrid imaging|\btracer\b|radionuclide|radiopharmacy/, q: "nuclear medicine tracer imaging", keys: ["nuclear", "tracer", "pet", "scintigraph", "spect"], mod: "pet" },
       { re: /shock|hypotens|sepsis|septic|vasodilat|cardiogenic/, q: "cardiogenic shock", keys: ["shock", "sepsis", "hypotension", "cardiogenic"], mod: "ct" },
       { re: /dotatate|somatostatin|neuroendocrine/, q: "DOTATATE PET", keys: ["dotatate", "somatostatin", "neuroendocrine", "pet"], mod: "dota" },
       { re: /\bpsma\b|lutetium/, q: "PSMA PET", keys: ["psma", "prostate", "lutetium"], mod: "psma" },

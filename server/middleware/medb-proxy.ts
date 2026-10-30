@@ -25,7 +25,7 @@ export default async function medbProxy(event: MedbEvent, next: () => unknown): 
   if (!PREFIXES.some((prefix) => path === prefix || path.startsWith(prefix + "/"))) return next();
   const method = (event.req.method || "GET").toUpperCase();
   const headers = new Headers();
-  for (const name of ["accept", "content-type", "authorization", "accept-language"]) {
+  for (const name of ["accept", "content-type", "authorization", "accept-language", "range"]) {
     const value = event.req.headers.get(name);
     if (value) headers.set(name, value);
   }

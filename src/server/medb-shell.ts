@@ -84,7 +84,31 @@ const BRIDGE = `(function(){
     if (info.videoData && info.videoData.video_id) loadCues(info.videoData.video_id);
     if (typeof info.currentTime === "number") lineAt(info.currentTime);
   });
+  function retarget(el){
+    if (!el || !el.tagName) return;
+    var abs = "";
+    try { abs = el.src || ""; } catch (e) {}
+    if (!abs) abs = el.getAttribute("src") || "";
+    if (!abs) return;
+    var u;
+    try { u = new URL(abs, location.href); } catch (e) { return; }
+    if (u.pathname.indexOf("/manus-storage/") !== 0 && u.pathname.indexOf("/medical-source/") !== 0) return;
+    if (u.origin === location.origin) return;
+    var next = location.origin + u.pathname + u.search;
+    if ((el.currentSrc || el.src) === next) return;
+    var tag = el.tagName;
+    if (tag === "VIDEO" || tag === "AUDIO") {
+      var t = el.currentTime || 0;
+      var playing = !el.paused;
+      el.src = next;
+      if (t > 0.2) { try { el.currentTime = t; } catch (e) {} }
+      if (playing) el.play().catch(function(){});
+    } else {
+      el.src = next;
+    }
+  }
   function tick(){
+    document.querySelectorAll("video, audio, track, source").forEach(retarget);
     var videos = document.querySelectorAll("video");
     for (var i = 0; i < videos.length; i++) {
       var v = videos[i];
