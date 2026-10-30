@@ -1,11 +1,11 @@
 {
-  "verifiedAt": "2026-10-30T02:31:57Z",
+  "verifiedAt": "2026-10-30T03:38:26Z",
   "target": 33000,
-  "usableImages": 206,
-  "gap": 32794,
-  "gapReason": "33,000 is not met. Teaching-row encounters are not images. Sources that forbid copying, hide the license, require a data-use agreement, or only offer DICOM were not padded into the image count.",
+  "usableImages": 29314,
+  "gap": 3686,
+  "gapReason": "Wikipedia/Commons medical categories did not contain 33,000 images with a display license. Fish CT, identification photos, and unlicensed files were not counted.",
   "counts": {
-    "images": 206,
+    "images": 29314,
     "series": 1736,
     "studies": 0,
     "collections": 1,
@@ -19,7 +19,7 @@
     "restricted": 3713,
     "failed": 1,
     "pending": 7,
-    "usable": 206
+    "usable": 29314
   },
   "sources": [
     {
@@ -296,23 +296,23 @@
       "id": "commons",
       "name": "Wikimedia Commons",
       "href": "https://commons.wikimedia.org/w/api.php",
-      "imported": 100,
+      "imported": 29208,
       "skipped": 0,
       "duplicate": 0,
       "restricted": 0,
       "failed": 0,
       "pending": 0,
-      "usable": 100,
+      "usable": 29208,
       "access": "MediaWiki imageinfo API. LicenseShortName checked per file.",
       "licenseSummary": "Only CC BY, CC BY-SA, CC BY-ND, CC0, and public domain. NC excluded.",
-      "note": "Each thumbnail was checked and returned an image. These are references, not case matches."
+      "note": "Each file is a Commons image with LicenseShortName allowing display and an image MIME type from the MediaWiki API. Non-medical categories were excluded."
     }
   ],
   "audit": {
     "manifest": "/library/audit-manifest.json",
     "completion": false,
-    "usableImages": 206,
-    "shortfall": 32794,
+    "usableImages": 29314,
+    "shortfall": 3686,
     "localRasterFiles": 1730,
     "uniqueLocalHashes": 1532,
     "duplicateExtraCopies": 198,
