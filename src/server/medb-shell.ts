@@ -122,7 +122,7 @@ const BRIDGE = `(function(){
       var bar = document.createElement("div");
       bar.className = "inline-actions";
       bar.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;margin-top:8px";
-      var kinds = [["radreview","RAD REVIEW"],["radatlas","Rad Atlas"],["caseqa","Q+A"],["rrultimate","RAD REVIEW Ultimate"],["academy","Academy"],["nucleus","Nucleus"]];
+      var kinds = [["radreview","RAD REVIEW"],["radatlas","Rad Atlas"],["caseqa","Q+A"],["rrultimate","RAD REVIEW Ultimate"],["metaimage","Meta Image"],["academy","Academy"],["nucleus","Nucleus"]];
       kinds.forEach(function(pair){
         var b = document.createElement("button");
         b.type = "button";

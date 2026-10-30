@@ -13735,6 +13735,10 @@ try {
       const input = document.getElementById("rrSearch");
       if (input) input.value = term;
       renderRadReview();
+    } else if (state.view === "metaimage") {
+      const frame = document.getElementById("miFrame");
+      const send = () => { try { frame.contentWindow.postMessage({ type: "meta-search", q: term }, location.origin); } catch (e) {} };
+      if (frame) { frame.addEventListener("load", send); setTimeout(send, 600); }
     }
   }
   window.addEventListener("message", (e) => {
@@ -13898,7 +13902,7 @@ const SideFilm = {
     if (!right.querySelector("iframe")) {
       right.innerHTML = '<div class="film-tabs"></div><iframe title="Widget" allow="autoplay"></iframe>';
       const tabs = right.querySelector(".film-tabs");
-      [["radreview","RAD REVIEW"],["radatlas","Rad Atlas"],["caseqa","Q+A"],["rrultimate","Ultimate"],["academy","Academy"],["nucleus","Nucleus"]].forEach((pair) => {
+      [["radreview","RAD REVIEW"],["radatlas","Rad Atlas"],["caseqa","Q+A"],["rrultimate","Ultimate"],["metaimage","Meta Image"],["academy","Academy"],["nucleus","Nucleus"]].forEach((pair) => {
         const b = document.createElement("button");
         b.type = "button";
         b.textContent = pair[1];
