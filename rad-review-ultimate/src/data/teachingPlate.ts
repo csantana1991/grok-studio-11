@@ -12,6 +12,7 @@ import type { StudyKind } from './caseDossier'
 import { US_PLATES } from './us-plates'
 import { nihToken } from './nihLive'
 import { openiToken } from './openiLive'
+import { TCIA, type TciaRow } from './tciaCatalog'
 
 const META = '/meta-image/films/'
 
@@ -242,6 +243,9 @@ export function knownPlateKind(url: string): StudyKind | null {
   if (u.startsWith('oi:ct:')) return 'ct'
   if (u.startsWith('oi:mri:')) return 'mri'
   if (u.startsWith('oi:pet:')) return 'pet-fdg'
+  if (u.includes('/meta-image/tcia/ct/')) return 'ct'
+  if (u.includes('/meta-image/tcia/mri/')) return 'mri'
+  if (u.includes('/meta-image/tcia/pet/')) return 'pet-fdg'
   if (u.includes('/library/nih/')) return 'radiograph'
   if (u.includes('patella-xr') || u.includes('calcaneus-xr')) return 'radiograph'
   if (u.includes('ct-subdural') || u.includes('/case-ct-')) return 'ct'
@@ -274,6 +278,10 @@ function filmLine(film: Film, extra?: string): string {
   return extra ? `${film.shows}. ${extra} Not this row’s scan.` : `${film.shows}. Not this row’s scan.`
 }
 
+function tciaPool(modality: TciaRow['modality'], anatomy?: string): TciaRow[] {
+  return TCIA.filter((row) => row.modality === modality && (!anatomy || row.anatomy === anatomy))
+}
+
 /** The finding's checked modality plate, or '' when no plate is this study type. */
 function pick(finding: string, _stationId: string, categoryId: string, idx = 0): string {
   const key = plateKind(finding, categoryId)
@@ -282,9 +290,25 @@ function pick(finding: string, _stationId: string, categoryId: string, idx = 0):
   if (key === 'cardiacMri') return CARDIAC_MRI[Math.abs(idx) % CARDIAC_MRI.length]
   if (key === 'cardiacCt') return CARDIAC_CT[Math.abs(idx) % CARDIAC_CT.length]
   if (key === 'xrChest') return nihToken(finding, idx)
-  if (key === 'ctChest' || key === 'ctBody') return openiToken('ct', idx)
-  if (key === 'mriBrain') return openiToken('mri', idx)
-  if (key === 'pet') return openiToken('pet', idx)
+  // LIDC-IDRI is chest CT only. Abdomen stays on the three checked abdomen films.
+  if (key === 'ctChest') {
+    const chest = tciaPool('ct', 'chest')
+    if (chest.length) return at(chest, idx).src
+    return openiToken('ct', idx)
+  }
+  if (key === 'ctBody') return at(CT_ABD, idx).src
+  // Knee, spine, breast, and MRCP keep their own checked plates. Only brain MRI uses UPENN-GBM.
+  if (key === 'mriBrain') {
+    const brain = tciaPool('mri', 'brain')
+    if (brain.length) return at(brain, idx).src
+    return openiToken('mri', idx)
+  }
+  // Brain PET keeps its checked plate. Body FDG uses one TCIA slice per patient.
+  if (key === 'pet') {
+    const pet = tciaPool('pet')
+    if (pet.length) return at(pet, idx).src
+    return openiToken('pet', idx)
+  }
   if (key === 'us') {
     const pool = US_PLATES
     if (pool.length) return pool[Math.abs(idx) % pool.length]
@@ -293,14 +317,6 @@ function pick(finding: string, _stationId: string, categoryId: string, idx = 0):
   const pool = (POOLS[key] || []).filter((file) => !NOT_MEDICAL.has(file))
   if (!pool.length) return ''
   return DR + pool[Math.abs(idx) % pool.length]
-}
-
-function ctFilms(finding: string): Film[] {
-  const f = finding.toLowerCase()
-  const abd = /abdomen|renal|liver|pancrea|bowel|colon|appendix|divertic|spleen|adrenal|urogram|enterography|stone|viscus/.test(f)
-  const chest = /chest|lung|pulmonary|\bpe\b|aort|pneumothorax|thymoma|bronch|emphysema|nodule|lymphang|miliary|covid|mediastin/.test(f)
-  if (abd && !chest) return CT_ABD
-  return CT_CHEST
 }
 
 export function imageLabel(c: { finding: string; categoryId: string; idx?: number }): string {
@@ -416,6 +432,21 @@ export function teachingPlateFor(c: { finding: string; categoryId: string; stati
   if (url.startsWith('oi:')) {
     const kind = url.startsWith('oi:mri:') ? 'MRI' : url.startsWith('oi:pet:') ? 'PET' : 'CT'
     return { url, caption: 'Open-i ' + kind + ' figure. Loading this figure’s caption. Not this row’s scan.' }
+  }
+  const tcia = TCIA.find((row) => row.src === url)
+  if (tcia) {
+    const f = c.finding.toLowerCase()
+    const headCt = (key === 'ctChest' || key === 'ctBody') && /head|brain|facial|sinus|intracran|skull/.test(f)
+    const limbMri = key === 'mriKnee' || key === 'mriShoulder' || key === 'mriSpine' || key === 'mrcp'
+    const extra = headCt
+      ? 'No head CT is in this library. This frame is a chest CT.'
+      : limbMri
+        ? 'No ' + (KIND_LABEL[key] || 'this MRI').replace(' example', '').toLowerCase() + ' is in this library. This frame is a brain MRI.'
+        : key === 'petBrain'
+          ? 'No dedicated brain PET is in this library. This frame is whole-body FDG PET.'
+          : undefined
+    const line = extra ? `${tcia.shows} ${extra}` : tcia.shows
+    return { url, caption: `${line} Not this row’s scan. ${tcia.license}.` }
   }
   const film = [...CT_CHEST, ...CT_ABD, ...MRI_BRAIN, ...PET_BODY].find((f) => f.src === url)
   if (film) {
