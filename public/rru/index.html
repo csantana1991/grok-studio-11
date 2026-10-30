@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RAD REVIEW ULTIMATE | Demo teaching log</title>
-    <script type="module" crossorigin src="./assets/index-2PKn1WiO.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BoXuU4qk.css">
+    <script type="module" crossorigin src="./assets/index-B6MOZLgO.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CX6tZtWL.css">
     <script src="./nucleus-fallback.js"></script>
     <style>
       /* Force a classic bar. The 33k list otherwise draws a thumb too small to see. */
@@ -133,12 +133,12 @@
           display: flex !important;
           flex-direction: column !important;
         }
-        #root main > div > section > div:nth-child(2) {
+        #root main > div.rr-viewcol > section > div:nth-child(2) {
           flex: none !important;
           height: 54vh !important;
           min-height: 300px !important;
         }
-        #root main > div > section > div:nth-child(2) > div {
+        #root main > div.rr-viewcol > section > div:nth-child(2) > div {
           min-height: 0 !important;
           height: 100% !important;
         }
@@ -154,9 +154,33 @@
         #root main > div > section [style*="calc(100% - 6px - 7.5rem)"] {
           width: calc(100% - 8px - 4.4rem) !important;
         }
-        #root main > div > section > div:nth-child(2) > div > .absolute.top-0.right-0 {
+        #root main > div.rr-viewcol > section > div:nth-child(2) > div > .absolute.top-0.right-0 {
           width: 4.4rem !important;
         }
+        #root main > div > section > div.overflow-x-scroll,
+        #root main > .rr-side > section > div:nth-child(2) {
+          height: auto !important;
+          min-height: 0 !important;
+          max-height: 40px !important;
+          flex: 0 0 auto !important;
+          align-items: center !important;
+        }
+        #root main > div > section > div.overflow-x-scroll > button,
+        #root main > .rr-side > section > div:nth-child(2) > button {
+          height: 26px !important;
+          max-height: 26px !important;
+          width: auto !important;
+          flex: 0 0 auto !important;
+          align-self: center !important;
+        }
+        #rrFetchedFigs {
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          padding: 6px 6px 8px;
+          background: #000;
+        }
+        #rrFetchedFigs img { width: 112px; height: 84px; object-fit: cover; background: #111; display: block; }
         #rru-sidebar {
           max-height: none !important;
           height: auto !important;
@@ -202,8 +226,92 @@
         }
       }
     </style>
+    <style>
+      /* The compiled sheet stacks the console under 1280px and locks it to
+         the frame height, so on a Chromebook (or a desktop with the course
+         map open) the reading panel sits below the frame and cannot scroll
+         into view. Use columns whenever the frame is wide enough, including
+         landscape phones. Narrow portrait keeps a stack the page can scroll. */
+      @media (min-width: 720px) {
+        #root > div.h-full,
+        #root > div.overflow-auto > div.flex {
+          height: 100% !important;
+          min-height: 0 !important;
+          overflow: hidden !important;
+        }
+        #root main {
+          flex: 1 1 auto !important;
+          flex-direction: row !important;
+          align-items: stretch !important;
+          min-height: 0 !important;
+          overflow: hidden !important;
+        }
+        #root main > .rr-list {
+          flex: 0 0 30% !important;
+          width: 30% !important;
+          max-width: 360px !important;
+          height: auto !important;
+          max-height: none !important;
+          min-height: 0 !important;
+          overflow: hidden !important;
+        }
+        #root main > .rr-viewcol {
+          flex: 1 1 auto !important;
+          min-width: 0 !important;
+          min-height: 0 !important;
+          height: auto !important;
+          max-height: none !important;
+        }
+        #root main > .rr-side {
+          flex: 0 0 240px !important;
+          width: 240px !important;
+          max-width: 34% !important;
+          height: auto !important;
+          max-height: none !important;
+          min-height: 0 !important;
+          overflow: auto !important;
+        }
+        #root main > div.z-10 {
+          flex: 0 0 8px !important;
+          width: 8px !important;
+          height: auto !important;
+          align-self: stretch !important;
+        }
+      }
+      @media (max-width: 719px) {
+        #root > div > div.flex {
+          height: auto !important;
+          min-height: 100% !important;
+          overflow: visible !important;
+        }
+        #root main {
+          flex: none !important;
+          overflow: visible !important;
+        }
+        #root main > .rr-list {
+          flex: 0 0 auto !important;
+          height: 200px !important;
+          max-height: 200px !important;
+        }
+        #root main > .rr-viewcol {
+          flex: 0 0 auto !important;
+          min-height: 280px !important;
+        }
+        #root main > .rr-side {
+          flex: 0 0 auto !important;
+          max-height: none !important;
+          height: auto !important;
+          overflow: visible !important;
+        }
+      }
+      @media (pointer: coarse) {
+        #root header button { min-height: 32px !important; }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <script src="./source-figs.js" defer></script>
+    <script src="/library/ui.js" defer></script>
   </body>
 </html>

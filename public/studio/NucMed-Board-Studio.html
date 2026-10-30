@@ -99,6 +99,39 @@ body.atlas-open .atlas-drawer {
 .nav-item .meta b { display: block; font-size: 13px; font-weight: 650; }
 .nav-item .meta s { display: block; color: var(--muted); font-size: 11px; text-decoration: none; }
 .nav-item.done .idx { background: #1d4a36; color: var(--good); }
+.oe-wrap { margin: 0 0 4px; }
+.oe-panel {
+  display: none;
+  margin: 0 4px 8px;
+  padding: 10px;
+  border: 1px solid #9eb4c9;
+  border-radius: 12px;
+  background: #fff;
+  color: #12315c;
+  max-height: min(46vh, 380px);
+  overflow: auto;
+}
+.oe-wrap.open .oe-panel { display: block; }
+.oe-note, .oe-panel label { display: block; font-size: 12px; line-height: 1.4; color: #24384a; margin: 0 0 8px; }
+.oe-panel textarea {
+  width: 100%; box-sizing: border-box; min-height: 72px; resize: vertical;
+  border: 1px solid #9eb4c9; border-radius: 10px; padding: 8px 10px;
+  font: 16px/1.4 inherit; color: #102033; background: #fff;
+}
+.oe-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.oe-actions button, .oe-actions a {
+  min-height: 44px; padding: 8px 12px; border-radius: 999px;
+  border: 1px solid #2451a3; background: #12315c; color: #fff;
+  font-size: 14px; font-weight: 700; text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.oe-actions button.oe-quiet { background: #fff; color: #12315c; }
+.oe-status { font-size: 13px; line-height: 1.45; color: #102033; margin: 0; }
+.oe-status a { color: #0b3f8a; }
+body.nav-min .oe-panel, .sidebar.is-min .oe-panel { display: none !important; }
+@media (max-width: 800px) {
+  .oe-actions button, .oe-actions a { flex: 1 1 calc(50% - 8px); }
+}
 
 .main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .topbar {
@@ -261,13 +294,15 @@ td code, .mono { font-family: var(--mono); color: var(--gold); }
 
 .flash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
 .flash {
-  background: #10232e; border: 1px solid var(--line); border-radius: 14px; padding: 16px; min-height: 140px; cursor: pointer;
+  background: #163044; border: 1px solid #8ec8dc; border-radius: 14px; padding: 16px; min-height: 140px; cursor: pointer;
+  color: #f7fbff; font-size: 16px;
 }
 .flash-photo { padding: 0 0 14px; overflow: hidden; min-height: 240px; }
 .flash-photo img { width: 100%; height: 140px; object-fit: cover; display: block; background: #08141c; }
 .flash-photo .front, .flash-photo .back { padding: 12px 14px 0; }
-.flash .front { color: var(--accent); font-weight: 700; }
-.flash .back { display: none; color: #e8f2f7; margin-top: 8px; line-height: 1.4; }
+.flash .front { color: #ffffff; font-weight: 700; font-size: 16px; }
+.flash .back { display: none; color: #f3f8fb; margin-top: 8px; line-height: 1.45; font-size: 16px; }
+.flash:focus { outline: 2px solid #f6e58d; outline-offset: 2px; }
 .flash.open .back { display: block; }
 .flash.open { border-color: var(--accent); }
 
@@ -664,7 +699,7 @@ body.sheet-min #widgetSheet { height: 44px; overflow: hidden; }
 .iqa-actions button { margin-right:8px; margin-top:8px; border-radius:999px; border:1px solid var(--line); padding:6px 12px; font-weight:700; background:#fff; }
 .iqa-actions .ok { background:#047857; color:#fff; border:0; }
 .iqa-actions .bad { background:#b91c1c; color:#fff; border:0; }
-.iqa-log { font-size:12px; color:#111; }
+.iqa-log { font-size:13px; color:#e7f2f8; line-height:1.4; }
 
 .cqa { background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px 16px 18px; margin:0 0 16px; color:#111; }
 .cqa h2 { margin:0 0 8px; color:#12315c; }
@@ -864,7 +899,10 @@ body.player-max .player { height:72vh !important; max-height:72vh; }
 .ra-grid { flex:1; min-height:0; }
 .ra-pubmed { flex:0 0 230px; display:flex; flex-direction:column; min-height:200px; border-top:3px solid #0f6e6e; background:#fff; }
 .ra-pubmed .ra-search { margin:8px 10px 0; }
-.ra-pubmed b { align-self:center; letter-spacing:.08em; }
+.ra-cites { margin: 8px 12px 16px; padding-left: 18px; color: #102033; }
+.ra-cites li { margin: 0 0 10px; line-height: 1.4; }
+.ra-cites a { color: #0b3f8a; }
+.ra-cites span { color: #24384a; font-size: 13px; }
 .ra-pmc-grid { display:flex; gap:8px; overflow-x:auto; padding:8px 10px 12px; min-height:140px; }
 .ra-pmc-grid figure { width:168px; flex:0 0 auto; margin:0; }
 .ra-pmc-grid img { width:168px; height:112px; object-fit:contain; background:#0b1c2c; border-radius:6px; }
@@ -1816,6 +1854,43 @@ body.clip-on #lessonMp4 { display: block !important; z-index: 7 !important; opac
     max-height: 116px !important;
   }
 }
+@media (max-width: 980px) {
+  .sidebar { visibility: hidden; }
+  body.nav-open .sidebar { visibility: visible; }
+  #topbarTools { visibility: hidden; }
+  body.chrome-open #topbarTools { visibility: visible; }
+  .topbar { position: relative; z-index: 40; }
+}
+@media (max-width: 980px) and (max-height: 520px) {
+  body.chrome-open #topbarTools {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    z-index: 60;
+    background: #fff;
+    max-height: min(68vh, 300px) !important;
+    overflow: auto !important;
+    box-shadow: 0 16px 36px rgba(8, 20, 40, .22);
+    border-bottom: 1px solid var(--line);
+  }
+}
+@media (min-width: 981px) {
+  body.view-rru .topbar-scroll,
+  body.view-rru .tools,
+  body.view-rru .app-tabs,
+  body.view-rru .type-tools {
+    flex-wrap: nowrap !important;
+  }
+  body.view-rru .topbar-scroll {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    max-height: 52px !important;
+    align-items: center !important;
+  }
+  body.view-rru .tools { min-width: max-content !important; }
+  body.view-rru .app-tabs { max-width: none !important; }
+}
 .chrome-toggle { display: none; }
 .stage > .pager { position: relative; z-index: 30; }
 body.lesson-audio .stage > .pager {
@@ -2051,6 +2126,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
   </div>
 </div>
 <script src="stem-plates.js"></script>
+<script src="shared-case.js"></script>
 <script>
 const COURSE = {
   title: "NucMed Board Studio",
@@ -3439,8 +3515,11 @@ function rrFixStations(rows){
         r.slice = st.start + ((r.slice || 0) % span);
       }
     }
-    const plate = plateForRow(r.finding, r.stationId, r.categoryId, 0);
-    if (plate) r.plate = plate;
+    r.plate = plateForRow(r.finding, r.stationId, r.categoryId, 0) || "";
+    if (window.SharedCase) {
+      const k = SharedCase.studyKind(r.finding, r.categoryId);
+      r.suv = SharedCase.reportsSuv(k) ? SharedCase.statedSuv(r.finding) : null;
+    }
   });
   return rows;
 }
@@ -3454,7 +3533,7 @@ peds:["pediatric CT head subdural","pediatric neck abscess","pediatric chest rou
 us:["thyroid ultrasound nodule","hepatic ultrasound lesion","renal ultrasound hydronephrosis","spleen ultrasound","pancreas ultrasound","mid abdomen appendix ultrasound","pelvic ultrasound ovary","bladder ultrasound","inguinal hernia ultrasound femoral neck region","popliteal fossa DVT ultrasound","ankle tendon ultrasound tibiotalar","forefoot Morton ultrasound","chest wall ultrasound","uterus ultrasound","iliac fossa collection US","patella tendon US","tibiotalar effusion US","calcaneal tendon US","MTP joint US","cervical node US","mesenteric adenopathy US","liver Doppler US","kidney Doppler US","porta hepatis US","hip effusion US femoral neck","adrenal ultrasound limited","carotid space ultrasound","pulmonary US chest wall","prostate US pelvis","skull soft-tissue US neck"],
 ct:["CT head subdural hematoma","CTA head and neck intracranial aneurysm","CT neck deep space infection","CT chest pulmonary embolism language plus nodule","CT liver multiphase HCC","CT kidneys stone protocol","CT adrenal washout","CT spleen laceration","CT pancreas protocol","CT mesenteric ischemia mid abdomen","CT pelvis acetabular fracture","CT bladder rupture","CT prostate fossa post-op","CT femoral neck fracture","CT thigh hematoma","CT knee tibial plateau","CT ankle talus fracture","CT calcaneus intraarticular","CT toes Lisfranc","CT skull base fracture","CT cerebral convexity mass","CT larynx trauma","CT pulmonary mass","CT mediastinal nodes","CT infrarenal aorta","CT iliac nodes","CT hip femoral neck","CT patella fracture","CT tibiotalar","CT metatarsal"],
 mri:["MRI brain convexity metastasis","MRI skull base perineural","MRI neck space","MRI chest wall","MRI liver hepatocyte agent","MRI kidneys tumor","MRI adrenal chemical shift","MRI spleen","MRI pancreas IPMN","MRI mesenteric mass","MRI pelvis prostate","MRI uterus fibroid","MRI bladder wall","MRI femoral neck edema","MRI thigh sarcoma","MRI knee meniscal tear","MRI knee ACL","MRI ankle tibiotalar osteochondral","MRI talus","MRI calcaneus","MRI forefoot Morton","MRI cerebral seizure protocol","MRI larynx","MRI acetabulum","MRI popliteal cyst","MRI patella cartilage","MRI iliac bone marrow","MRI hip labrum femoral neck","MRI mediastinum limited","MRI adrenal to liver interface"],
-nuclear:["bone scan vertex skull lesion","I-123 thyroid scan","V/Q pulmonary mismatch chest","HIDA cystic duct liver","MAG3 kidneys obstruction","DMSA renal cortical scar","MDP three-phase toe osteomyelitis","MDP ankle uptake tibiotalar","MDP knee arthroplasty","MDP femoral neck uptake","MDP iliac wing","MDP rib chest","sulfur colloid liver spleen","RBC GI bleed mid abdomen","sestamibi parathyroid neck","PYP cardiac chest","DaTscan brain striatum cerebral","Ga-68 DOTATATE mesenteric","NaF PET talus","WBC scan calcaneus","lymphoscintigraphy inguinal femoral neck","gastric emptying mid abdomen","MUGA cardiac chest","I-131 whole body skull base remnant","octreotide liver mets","DMSA peds kidneys","MAG3 transplant pelvis fossa","bone scan superscan chest","three-phase metatarsal toe","larynx pertechnetate neck"],
+nuclear:["bone scan vertex skull lesion","I-123 thyroid scan","V/Q pulmonary mismatch chest","HIDA cystic duct liver","MAG3 kidneys obstruction","DMSA renal cortical scar","MDP three-phase toe osteomyelitis","MDP ankle uptake tibiotalar","MDP knee arthroplasty","MDP femoral neck uptake","MDP iliac wing","MDP rib chest","sulfur colloid liver spleen","RBC GI bleed mid abdomen","sestamibi parathyroid neck","PYP cardiac chest","DaTscan brain striatum cerebral","Ga-68 DOTATATE mesenteric","NaF PET talus","WBC scan calcaneus","lymphoscintigraphy inguinal femoral neck","gastric emptying mid abdomen","MUGA cardiac chest","I-131 whole body skull base remnant","octreotide liver mets","DMSA peds kidneys","MAG3 transplant pelvis fossa","bone scan superscan chest","three-phase metatarsal toe","larynx pertechnetate neck","Bone scan Paget disease of the pelvis with Mickey Mouse sign"],
 cardiac:["SPECT MPI anterior wall chest","PET Rb-82 inferior wall chest","flurpiridaz PET chest","PYP ATTR cardiac chest","FDG cardiac sarcoid chest","MUGA EF chest","TID high risk chest","hibernating mismatch FDG chest","LBBB septal artifact chest","breast attenuation anterior wall chest","diaphragmatic inferior wall chest","regadenoson stress chest","N-13 ammonia PET chest","coronary calcium CT chest","cardiac MRI delayed enhancement chest","aortic root CTA chest","pericardial effusion CT chest","myocarditis MRI chest","transplant vasculopathy PET chest","viability protocol chest","post-stress stunning chest","balanced ischemia CFR chest","right ventricular uptake chest","liver scatter into inferior wall chest","pacemaker metal chest","CABG graft CTA chest","anomalous coronary CTA chest","amyloid MRI chest","endocarditis extra-cardiac spleen septic","sestamibi gut activity mid abdomen incidental"],
 mammo:["screening mammogram breast chest","diagnostic mammo spiculated mass chest","tomosynthesis architectural distortion chest","breast MRI enhancing mass chest","axillary node US chest","breast biopsy clip chest","male breast gynecomastia chest","implant rupture MRI chest","focal asymmetry chest","calcifications grouped chest","developing density chest","radial scar language chest","papilloma chest","phyllodes chest","inflammatory breast chest","Paget nipple chest","recurrence chest wall chest","internal mammary node chest","supra-clavicular node neck","sternal met chest","liver staging CT after breast","bone scan rib chest","FDG breast primary chest","brain met vertex cerebral","femoral neck pathologic fracture","acetabular met pelvis","calvarial met vertex","adrenal met liver kidneys","ovary met pelvis","meniscal incidental MRI knee"],
 rad:["chest radiograph nodule","abdominal radiograph kidneys stones language","pelvis radiograph acetabulum","femoral neck radiograph","knee radiograph series","ankle radiograph tibiotalar mortise","foot radiograph toes metatarsal","skull radiograph vertex calvarium","c-spine radiograph neck","portable chest","KUB mid abdomen bowel gas","hip radiograph femoral neck","calcaneus radiograph","patella sunrise knee","ribs radiograph chest","sacrum pelvis","sinus radiograph skull base","soft tissue neck radiograph","SBO series mid abdomen","IVP historical kidneys","cystogram bladder pelvis","VCUG peds bladder pelvis","scoliosis includes chest","os calcis axial talus","sesamoid toes","Waters view skull base","Townes vertex","thoracolumbar chest","leg length femoral neck discrepancy","mortise tibiotalar ankle"],
@@ -3465,7 +3544,18 @@ Object.keys(RR_STEM).forEach(k => { RR_POOLS[k] = RR_STEM[k].slice(); });
 function rrWeightedFallback(rng){const sum=RR_STATIONS.reduce((s,st)=>s+st.weight,0);let r=rng()*sum;for(const st of RR_STATIONS){r-=st.weight;if(r<=0)return st.id;}return "chest";}
 let RR_CACHE={seed:null,rows:null,v:3};
 function plateForRow(finding, stationId, categoryId, salt){
+  if (window.SharedCase) {
+    const kind = SharedCase.studyKind(finding, categoryId);
+    const gated = SharedCase.plateFor(finding, categoryId);
+    if (kind === "muga" || kind === "pyp") return "";
+    if (kind === "bone") return gated || "bone-scan-wb.jpg";
+    if (gated) return gated;
+    if (kind === "other") return "";
+  }
   const own = window.STEM_PLATE && window.STEM_PLATE[finding];
+  const fEarly = String(finding || "");
+  if (/\bmuga\b|gated blood|equilibrium radionuclide|\berna\b/i.test(fEarly)) return "";
+  if (/\bpyp\b|pyrophosphate/i.test(fEarly)) return "";
   if (own) return own;
   const f = String(finding || "").toLowerCase();
   const cat = String(categoryId || "").toLowerCase();
@@ -3553,7 +3643,7 @@ function rrVerifyPlates(rows){
   return {ok, n:(rows||[]).length, missing: missing.slice(0,12)};
 }
 function rrGenerate(seed){
-  if (RR_CACHE.seed===seed&&RR_CACHE.rows&&RR_CACHE.v===13) return RR_CACHE.rows;
+  if (RR_CACHE.seed===seed&&RR_CACHE.rows&&RR_CACHE.v===14) return RR_CACHE.rows;
   const rng=rrMulberry(seed);const rows=[];let acc=100000;
   RR_CATS.forEach(cat=>{
     const pool=RR_POOLS[cat.id];
@@ -3567,7 +3657,9 @@ function rrGenerate(seed){
       const age=1+Math.floor(rng()*90);
       const status=rng()<0.55?"Q-READY":(rng()<0.5?"READ":"PENDING");
       const priority=rng()<0.08?"STAT":"ROUTINE";
-      const suv=(cat.id==="pethybrid"||/FDG|PSMA|PET/i.test(finding))?(1+rng()*12).toFixed(1):null;
+      const _kind = window.SharedCase ? SharedCase.studyKind(finding, cat.id) : "";
+      const _stated = window.SharedCase ? SharedCase.statedSuv(finding) : null;
+      const suv = (_stated && window.SharedCase && SharedCase.reportsSuv(_kind)) ? _stated : null;
       const accession="RR-"+year+"-"+String(acc++).slice(-6);
       const mrn="MRN"+String(1000000+Math.floor(rng()*8000000));
       const date=year+"-"+String(1+Math.floor(rng()*12)).padStart(2,"0")+"-"+String(1+Math.floor(rng()*28)).padStart(2,"0");
@@ -3576,12 +3668,12 @@ function rrGenerate(seed){
       rows.push({idx:rows.length,accession,mrn,age,sex,categoryId:cat.id,finding,stationId:st.id,stationName:st.name,slice,suv,status,priority,acgme:cat.acgme,date,search,plate});
     }
   });
-  RR_CACHE={seed,rows,v:13}; rrFixStations(rows); return rows;
+  RR_CACHE={seed,rows,v:14}; rrFixStations(rows); return rows;
 }
 function rrRunAssertions(rows){
   const out=[]; const hits=Array(101).fill(null); let contig=true;
   const pv=rrVerifyPlates(rows);
-  out.push({name:"every case has a loadable matched plate",pass:pv.ok===pv.n && pv.n===33000,detail:pv.ok+"/"+pv.n});
+  out.push({name:"each teaching row names a bundled plate file, not a unique verified image",pass:pv.ok===pv.n && pv.n===33000,detail:pv.ok+"/"+pv.n+" teaching rows. Verified displayable images are a separate count and are not 33,000."});
 
   RR_STATIONS.forEach((st,i)=>{for(let s=st.start;s<=st.end;s++){if(hits[s]) contig=false; hits[s]=st.id;} if(i&&st.start!==RR_STATIONS[i-1].end+1) contig=false;});
   out.push({name:"every slice 0-100 has exactly one station",pass:hits.every(Boolean)});
@@ -4203,8 +4295,88 @@ function shortNum(n) {
   }
   return s.slice(0, 3);
 }
+const oeState = { open: false, q: "", note: "signed-out" };
+const OE_HOME = "https://www.openevidence.com/";
+const OE_NOTES = {
+  "signed-out": "OpenEvidence does not offer an embed or a public API this studio can sign into. Live answers are not shown here. Use Open OpenEvidence and sign in on their site.",
+  empty: "Type a de-identified question first. Nothing was searched.",
+  opened: "OpenEvidence opened in a new tab. Sign in there if you need to. This panel cannot display their answer, and this app did not send the question.",
+  blocked: "The browser blocked the new tab. Use the Open OpenEvidence link. Nothing was sent.",
+  copied: "Question copied on this device only. Paste it on OpenEvidence. This app did not send it.",
+  "copy-fail": "Could not copy. Select the question and copy it yourself. Nothing was sent."
+};
+function wireOpenEvidence() {
+  const toggle = document.getElementById("oeToggle");
+  const panel = document.getElementById("oePanel");
+  const field = document.getElementById("oeQ");
+  const status = document.getElementById("oeStatus");
+  const search = document.getElementById("oeSearch");
+  const clear = document.getElementById("oeClear");
+  if (!toggle || !field || !status) return;
+  field.value = oeState.q;
+  status.textContent = OE_NOTES[oeState.note] || OE_NOTES["signed-out"];
+  const paint = () => {
+    const wrap = document.getElementById("oeWrap");
+    if (wrap) wrap.classList.toggle("open", oeState.open);
+    toggle.classList.toggle("active", oeState.open);
+    toggle.setAttribute("aria-expanded", oeState.open ? "true" : "false");
+    status.textContent = OE_NOTES[oeState.note] || OE_NOTES["signed-out"];
+  };
+  toggle.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    oeState.open = !oeState.open;
+    paint();
+    if (oeState.open) {
+      const nav = document.getElementById("nav");
+      if (panel && nav) panel.scrollIntoView({ block: "nearest" });
+      field.focus({ preventScroll: true });
+    }
+  };
+  field.oninput = () => { oeState.q = field.value; };
+  field.onfocus = () => {
+    setTimeout(() => { try { field.scrollIntoView({ block: "center", inline: "nearest" }); } catch (e) {} }, 280);
+  };
+  search.onclick = () => {
+    oeState.q = field.value;
+    const q = oeState.q.trim();
+    if (!q) { oeState.note = "empty"; paint(); return; }
+    const pop = window.open(OE_HOME, "_blank");
+    if (pop) pop.opener = null;
+    oeState.note = pop ? "opened" : "blocked";
+    paint();
+  };
+  clear.onclick = () => {
+    oeState.q = "";
+    field.value = "";
+    oeState.note = "signed-out";
+    paint();
+    field.focus();
+  };
+  const copy = document.createElement("button");
+  copy.type = "button";
+  copy.className = "oe-quiet";
+  copy.textContent = "Copy question";
+  copy.id = "oeCopy";
+  const actions = panel && panel.querySelector(".oe-actions");
+  if (actions && !document.getElementById("oeCopy")) actions.insertBefore(copy, actions.lastElementChild);
+  copy.onclick = async () => {
+    oeState.q = field.value;
+    const q = oeState.q.trim();
+    if (!q) { oeState.note = "empty"; paint(); return; }
+    try {
+      await navigator.clipboard.writeText(q);
+      oeState.note = "copied";
+    } catch (e) {
+      oeState.note = "copy-fail";
+    }
+    paint();
+  };
+}
+
 function renderNav() {
   const nav = $("#nav");
+  const navScroll = nav ? nav.scrollTop : 0;
   const nm = COURSE.modules.filter(m => m.track !== "dr" && m.track !== "atlas" && m.track !== "res");
   const dr = COURSE.modules.filter(m => m.track === "dr");
   const res = COURSE.modules.filter(m => m.track === "res");
@@ -4218,6 +4390,23 @@ function renderNav() {
     </button>`;
   };
   nav.innerHTML = `<div class="nav-sec">Widgets</div>
+    <div class="oe-wrap ${oeState.open ? "open" : ""}" id="oeWrap">
+      <button type="button" class="nav-item ${oeState.open ? "active" : ""}" id="oeToggle" aria-expanded="${oeState.open ? "true" : "false"}" aria-controls="oePanel">
+        <span class="idx" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5 20 20"/><path d="M10 7.5v5M7.5 10h5"/></svg></span>
+        <span class="meta"><b>OpenEvidence</b><s>Search medical evidence</s></span>
+      </button>
+      <div class="oe-panel" id="oePanel" role="region" aria-label="OpenEvidence search">
+        <p class="oe-note">De-identified educational questions only. Do not type a patient name, record number, date of birth, or other identifier. Do not attach an image. This studio does not send the question to OpenEvidence and does not save it.</p>
+        <label for="oeQ">Question</label>
+        <textarea id="oeQ" maxlength="500" autocomplete="off" placeholder="Example: FDG PET Deauville score after lymphoma treatment"></textarea>
+        <div class="oe-actions">
+          <button type="button" id="oeSearch">Search</button>
+          <button type="button" id="oeClear" class="oe-quiet">Clear</button>
+          <a id="oeOpen" href="https://www.openevidence.com/" target="_blank" rel="noopener noreferrer">Open OpenEvidence</a>
+        </div>
+        <p class="oe-status" id="oeStatus" role="status"></p>
+      </div>
+    </div>
     <button class="nav-item ${state.view === "radreview" ? "active" : ""}" data-view="radreview">
       <span class="idx">RR</span><span class="meta"><b>RAD REVIEW</b><s>Split worklist widget</s></span>
     </button>
@@ -4270,6 +4459,8 @@ function renderNav() {
     state.view = b.dataset.view;
     render();
   });
+  wireOpenEvidence();
+  if (nav) nav.scrollTop = navScroll;
 }
 
 function openModule(id) {
@@ -5214,7 +5405,10 @@ function visualSVG(type) {
 
 function diagramKeyFor(lesson, mod) {
   const title = (lesson && lesson.title) || "";
+  const id = (mod && mod.id) || "";
   if (/cover|page 1 of 48|table of contents/i.test(title)) return "blueprint";
+  if (id === "dr-us" && !/\bHIDA\b|mebrofenin|cholescint/i.test(title)) return "us";
+  if ((id === "physics" || id === "dr-physics") && !/\bHIDA\b|bone scan/i.test(title)) return "decay";
   if (/PSMA/i.test(title) && /SSTR|DOTATATE|DOTATOC/i.test(title)) return "targeted";
   const rules = [
     [/scrot|torsion|epididym/i, "gammacam"],
@@ -5225,7 +5419,7 @@ function diagramKeyFor(lesson, mod) {
     [/radioembol/i, "hida"],
     [/Xofigo|alpha therapy/i, "threephase"],
     [/thyroid|Graves|parathyroid|NIS|iodide|whole-body iodine|radioiodine/i, "thyroid"],
-    [/HIDA|gallbladder|cholecyst|mebrofenin/i, "hida"],
+    [/HIDA|mebrofenin|cholescint|hepatobiliary/i, "hida"],
     [/Meckel|gastric reflux|salivary/i, "generator"],
     [/MAG3|DTPA|renogram|Lasix|diuretic|ACE-inhibitor/i, "renogram"],
     [/V\/Q|perfusion lung|MAA|PIOPED|ventilation/i, "vq"],
@@ -5255,7 +5449,6 @@ function diagramKeyFor(lesson, mod) {
   }
   const blob = title + " " + ((mod && mod.title) || "");
   for (const [re, key] of rules) if (re.test(blob)) return key;
-  const id = (mod && mod.id) || "";
   const byId = {
     welcome: "blueprint", pre00: "blueprint", instruments: "gammacam",
     pharmacy: "generator", "res-hotlab": "generator",
@@ -5572,7 +5765,7 @@ function openLivePop(term){
     <div class="ra-live-body" id="raLiveResults"><p>Searching RadAtlas for “${q}”…</p></div>
     <div class="ra-live-view" id="raLiveView"></div>
     <div class="lp-grid" id="livePopGrid"><p style="grid-column:1/-1;color:#111">Also searching Wikipedia, PubMed, and web/CC…</p></div>
-    <p class="lp-stat" id="livePopStat">Working</p>`;
+    <p class="lp-stat" id="livePopStat">Searching</p>`;
   const play = document.getElementById("livePopPlay");
   if (play) play.onclick = (e) => { e.preventDefault(); e.stopPropagation(); narrateLiveView(); };
   const c = document.getElementById("livePopClose");
@@ -5651,79 +5844,83 @@ async function liveSearchTerm(term){
   const q = String(term || "").replace(/\s+/g, " ").trim().slice(0, 90);
   if (q.length < 3) return;
   if (/^(next|question|score|play|home|atlas|widget|restore|minimize|maximize|board|studio|rad|review|yes|no)(\s+(question|case|row))?$/i.test(q)) return;
+  state._liveSeq = (state._liveSeq || 0) + 1;
+  const seq = state._liveSeq;
   openLivePop(q);
-  if (typeof raSearch === "function") {
-    raSearch(q, false).then(data => raPaintLessonHits(q, data)).catch(() => {
-      const el = document.getElementById("raLiveResults");
-      if (el) el.innerHTML = "<p>RadAtlas search failed for this term. Wiki/PubMed still runs below.</p>";
-    });
-  }
-  const enc = encFromLesson();
-  enc.finding = q + " " + (enc.finding || "");
-  const collected = [];
-  const jobs = [
-    fetchAtlasStills(q).then(r => (r||[]).forEach(x => collected.push(Object.assign({ kind:"wiki" }, x)))).catch(()=>{}),
-    fetchCommons(q, 0).then(r => (r||[]).forEach(x => collected.push(Object.assign({ kind:"commons", src:x.thumb, title:x.title, raw:x.raw||x.title }, x)))).catch(()=>{}),
-    fetchPmcLinked(q, 1).then(r => (r||[]).forEach(x => collected.push(Object.assign({ kind:"pmc", src:x.thumb||x.src, title:x.title, raw:x.raw||x.title }, x)))).catch(()=>{}),
-    fetchPmcFigures(q, 1).then(r => (r||[]).forEach(x => collected.push(Object.assign({ kind:"pmc" }, x)))).catch(()=>{}),
-    fetchOpenverse(q).then(r => (r||[]).forEach(x => collected.push(Object.assign({ kind:"web", src:x.thumb||x.src, title:x.title, raw:x.raw||x.title }, x)))).catch(()=>{}),
-    fetchDdgImage(q).then(r => collected.push.apply(collected, r||[])).catch(()=>{})
-  ];
-  await Promise.all(jobs);
-  const qa = (typeof IQA !== "undefined" && IQA.filterLive) ? IQA.filterLive(enc, collected) : collected;
-  const working = [];
-  for (const it of qa.slice(0, 40)) {
-    const src = it.src || it.thumb;
-    if (!src) continue;
-    if (typeof probeImg === "function") {
-      const ok = await probeImg(src);
-      if (!ok) { if (IQA && IQA.reject) IQA.reject(src, "BROKEN_URL"); continue; }
-    }
-    working.push(it);
-  }
   const grid = document.getElementById("livePopGrid");
   const stat = document.getElementById("livePopStat");
+  if (stat) stat.textContent = "Searching";
+  if (grid) grid.innerHTML = '<p style="grid-column:1/-1;color:#111">Searching approved sources…</p>';
+  if (typeof raSearch === "function") {
+    const timed = new Promise(function(_, rej){ setTimeout(function(){ rej(new Error("timeout")); }, 12000); });
+    Promise.race([raSearch(q, false), timed]).then(function(data){
+      if (seq !== state._liveSeq) return;
+      raPaintLessonHits(q, data);
+    }).catch(function(){
+      if (seq !== state._liveSeq) return;
+      const el = document.getElementById("raLiveResults");
+      if (el) el.innerHTML = "<p>RadAtlas search timed out or failed. It is not still running.</p>";
+    });
+  }
+  const ctrl = new AbortController();
+  const timer = setTimeout(function(){ ctrl.abort(); }, 12000);
+  let data = null;
+  let fail = "";
+  try {
+    const res = await fetch("/api/library/search?q=" + encodeURIComponent(q), { signal: ctrl.signal });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    data = await res.json();
+  } catch (err) {
+    fail = (err && err.name === "AbortError") ? "timeout" : "unavailable";
+  } finally {
+    clearTimeout(timer);
+  }
+  if (seq !== state._liveSeq) return;
   if (!grid) return;
-  if (!working.length) {
-    grid.innerHTML = `<p style="grid-column:1/-1;color:#111">No QA-approved image for “${q}”. Matched lesson plates stay on the left. Try another term.</p>
-      <p style="grid-column:1/-1;font-size:12px"><a href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q + " radiology")}" target="_blank" rel="noopener">Open Google Images in a new tab</a> ·
-      <a href="https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(q)}" target="_blank" rel="noopener">PubMed</a> ·
-      <a href="https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(q)}" target="_blank" rel="noopener">Wikipedia</a></p>`;
-    if (stat) stat.textContent = "0 approved · Image QA denied the rest";
+  if (fail === "timeout") {
+    grid.innerHTML = '<p style="grid-column:1/-1;color:#111">Search timed out. It is not still running.</p>';
+    if (stat) stat.textContent = "Timed out · not still searching";
     return;
   }
-  grid.innerHTML = working.map((it, i) => {
-    const src = it.src || it.thumb;
-    const cap = (it.title || it.cap || q) + " · " + (it.kind || "live");
-    return `<figure data-tile="${i}"><img alt="" src="${src}" referrerpolicy="no-referrer"><figcaption>${String(cap).slice(0,120).replace(/</g,"")}</figcaption>
-      <button type="button" data-tileplay="${i}">▶ Play</button></figure>`;
+  if (fail || !data) {
+    grid.innerHTML = '<p style="grid-column:1/-1;color:#111">Search unavailable. It is not still running.</p>';
+    if (stat) stat.textContent = "Unavailable · not still searching";
+    return;
+  }
+  const hits = data.results || [];
+  const sources = (data.sources || []).map(function(s){ return (s.name || s.id) + " " + s.state; }).join(" · ");
+  const safe = function(s){
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){
+      if (c === "&") return "&" + "amp;";
+      if (c === "<") return "&" + "lt;";
+      if (c === ">") return "&" + "gt;";
+      return "&" + "quot;";
+    });
+  };
+  if (!hits.length) {
+    grid.innerHTML = '<p style="grid-column:1/-1;color:#111">No results. The search is finished.</p><p style="grid-column:1/-1;font-size:12px">' + safe(sources) + "</p>";
+    if (stat) stat.textContent = (data.state || "empty") + " · no results · not still searching";
+    return;
+  }
+  grid.innerHTML = hits.map(function(it){
+    const title = safe(String(it.title || q).slice(0, 160));
+    const srcName = safe(it.sourceName || it.source || "");
+    const lic = safe(it.license || "not stated");
+    const note = safe(String(it.licenseNote || "").slice(0, 180));
+    const attr = safe(String(it.attribution || "").slice(0, 160));
+    const page = safe(it.pageUrl || "");
+    const show = it.permittedUse === "display" && it.imageUrl;
+    const img = show
+      ? '<img alt="" src="' + safe(it.imageUrl) + '" referrerpolicy="no-referrer">'
+      : '<div style="min-height:64px;display:flex;align-items:center;justify-content:center;background:#e8eef8;color:#12315c;font-size:12px">Link only</div>';
+    return '<figure>' + img + '<figcaption>' + title + '<br>' + srcName + ' · ' + lic + '<br>' + note + '<br>' + attr + '<br><a href="' + page + '" target="_blank" rel="noopener">Open the source</a></figcaption></figure>';
   }).join("");
-  if (typeof RAD_ATLAS !== "undefined") RAD_ATLAS.liveTiles = working;
-  grid.querySelectorAll("[data-tileplay]").forEach(b => b.onclick = (e) => {
-    e.preventDefault();
-    const it = working[+b.dataset.tileplay];
-    if (!it) return;
-    RAD_ATLAS.shown = { title: it.title || it.cap || q, caption: it.raw || it.cap || "", src: it.src || it.thumb, kind: it.kind };
-    speakScan(describeFigure(RAD_ATLAS.shown));
-  });
-  grid.querySelectorAll("figure img").forEach((img, i) => {
-    img.onclick = () => {
-      const it = working[i];
-      if (!it) return;
-      RAD_ATLAS.shown = { title: it.title || it.cap || q, caption: it.raw || it.cap || "", src: it.src || it.thumb, kind: it.kind };
-    };
-  });
-  if (stat) stat.textContent = working.length + " QA-approved / " + collected.length + " fetched · Wikipedia · PubMed · web/CC · denied images hidden";
-  const dock = document.getElementById("wikiDock");
-  if (dock) {
-    dock.classList.add("has-tiles");
-    dock.innerHTML = working.slice(0, 8).map(it => {
-      const src = it.src || it.thumb;
-      const cap = String(it.title || it.cap || q).slice(0, 80).replace(/</g, "");
-      return `<button type="button" class="wiki-tile"><img alt="" src="${src}" referrerpolicy="no-referrer"><span>${cap}</span></button>`;
-    }).join("");
+  if (stat) {
+    const c = data.counts || {};
+    stat.textContent = (data.state || "ok") + (data.cached ? (" · cached " + (data.cachedAt || "")) : " · live") + " · " + (c.returned || hits.length) + " shown · " + (c.displayableImages || 0) + " displayable · " + (c.linkOnly || 0) + " link-only · " + (c.duplicatesDropped || 0) + " duplicates dropped · finished";
   }
 }
+
 function bindLessonLiveSearch(){
   const root = document.getElementById("stage");
   if (!root || root.dataset.phraseBound) return;
@@ -5925,6 +6122,18 @@ const Theater = {
     this.bag = [this.modId, this.modTitle, this.lessonTitle, ((lesson && lesson.audio) || []).join(" ")].join(" ");
   },
   pick(s) {
+    const mod = String(this.modId || "").toLowerCase();
+    const lessonTitle = String(this.lessonTitle || "");
+    const usLesson = mod === "dr-us" || /\bultrasound\b/i.test(lessonTitle + " " + (this.modTitle || ""));
+    const physicsLesson = mod === "physics" || mod === "dr-physics" || /\bphysics\b/i.test(this.modTitle || "");
+    if (usLesson && !/\bhida\b|mebrofenin|cholescint/i.test(lessonTitle)) {
+      this.plateKey = "us";
+      return "us";
+    }
+    if (physicsLesson && !/\bhida\b|bone scan|thyroid scan/i.test(lessonTitle)) {
+      this.plateKey = "decay";
+      return "medphys";
+    }
     const win = (this.words || []).slice(Math.max(0, (this.wordI || 0) - 1), (this.wordI || 0) + 8).join(" ");
     const hitOn = (t) => {
       t = String(t || "").toLowerCase();
@@ -5948,7 +6157,7 @@ const Theater = {
         hit(/mo-99|generator|elut|pertechnetate|kit labeling/, "generator", "generator") ||
         hit(/alara|inverse.?square|bremsstrahlung|occupational limit|dose limit|mird|10 cfr|millisievert|written directive/, "alara", "safety2") ||
         hit(/deauville|percist|\bsuv\b/, "suv", "deauville") ||
-        hit(/hida|gallbladder|biliary|cholecyst/, "hida", "hida") ||
+        hit(/\bhida\b|mebrofenin|cholescint|hepatobiliary scan/, "hida", "hida") ||
         hit(/v\/q|ventilation.?perfusion|pioped|\bmaa\b/, "vq", "vq") ||
         hit(/mag3|dmsa|dtpa|renogram|lasix|captopril/, "renogram", "mag3") ||
         hit(/\bthyroid\b|graves|parathyroid|iodide/, "thyroid", "thyroid") ||
@@ -5968,7 +6177,7 @@ const Theater = {
       this.plateKey = "blueprint";
       return "physiology";
     }
-    return hitOn(win) || hitOn(s) || hitOn(this.bag) || (() => {
+    return hitOn(win) || hitOn(s) || (() => {
       const dk = (typeof diagramKeyFor === "function")
         ? diagramKeyFor({ title: this.lessonTitle, audio: [s] }, { title: this.modTitle, id: this.modId })
         : "gammacam";
@@ -5976,7 +6185,7 @@ const Theater = {
       const clip = ({ polar:"heart2", mpi:"heart2", suv:"fdg", annihilation:"pet", gammacam:"anger", generator:"generator",
         photons:"photoelectric", collimator:"collimator", decay:"f18", decaymath:"f18", hida:"hida", vq:"vq",
         renogram:"mag3", thyroid:"thyroid", threephase:"bone2", datscan:"brain2", psma:"therapy", alara:"safety2",
-        limits:"safety2", nrc:"safety2", deauville:"deauville" })[this.plateKey] || "anger";
+        limits:"safety2", nrc:"safety2", deauville:"deauville", us:"us", medphys:"medphys" })[this.plateKey] || "anger";
       return clip;
     })();
   },
@@ -6101,8 +6310,28 @@ const Theater = {
       v.src = src;
     }
     this.showVideo(true);
+    if (!this._clipOn) {
+      try { v.pause(); } catch (e) {}
+      v.removeAttribute("src");
+      try { v.load(); } catch (e) {}
+      const cap = document.getElementById("vidCap");
+      if (cap) cap.textContent = "No video on this protocol page. The page image stays on screen.";
+      return;
+    }
+    v.onerror = () => {
+      try { v.pause(); } catch (e) {}
+      v.removeAttribute("src");
+      try { v.load(); } catch (e) {}
+      this.showVideo(false);
+      const cap = document.getElementById("vidCap");
+      if (cap) cap.textContent = "This clip could not be played. The lesson text and figure are still available.";
+    };
     const play = v.play();
-    if (play && play.catch) play.catch(() => this.showVideo(false));
+    if (play && play.catch) play.catch(() => {
+      this.showVideo(false);
+      const cap = document.getElementById("vidCap");
+      if (cap && !v.getAttribute("src")) cap.textContent = "This clip could not be played. The lesson text and figure are still available.";
+    });
   },
   oval(c, x, y, rx, ry, fill) {
     c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); c.fillStyle = fill; c.fill();
@@ -6812,7 +7041,7 @@ function nmLessonPlates(lesson, mod) {
     breast: ["breast-spiculated.jpg","breast-calcs.jpg","breast-us-mass.jpg","breast-mri-malign.jpg"],
     psma: ["nm-psma.jpg","nm-psma-wb.jpg"],
     deauville: ["nm-fdg-onc.jpg"],
-    us: ["case-us-2.jpg","thyroid-patterns.jpg"],
+    us: ["case-us-1.jpg","case-us-2.jpg"],
     ct: ["case-ct-1.jpg","case-ct-2.jpg"],
     rai: ["rai-therapy.jpg","nm-iodine.jpg","thyroid-scan-i123.jpg"]
   };
@@ -7140,7 +7369,15 @@ function renderVolume() {
     d.innerHTML = `<img src="${card.img}" alt="">
       <div class="front">${card.front}</div>
       <div class="back">${card.back}</div>`;
-    d.onclick = () => d.classList.toggle("open");
+    d.setAttribute("role", "button");
+    d.tabIndex = 0;
+    d.setAttribute("aria-pressed", "false");
+    const flip = () => {
+      d.classList.toggle("open");
+      d.setAttribute("aria-pressed", d.classList.contains("open") ? "true" : "false");
+    };
+    d.onclick = flip;
+    d.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } };
     $("#vg").appendChild(d);
   });
   $("#playerInfo").innerHTML = `<b>Volume cards</b><span>${COURSE.volumeCards.length} cards · tap to reveal</span>`;
@@ -7252,7 +7489,7 @@ async function fetchMoreFigures(enc, offset){
   const words = String((enc && enc.finding) || "").split(/[^A-Za-z0-9]+/).filter(w => w.length > 3).slice(0, 4).join(" ");
   const q = encodeURIComponent((words + " " + (a.id || "") + " radiology radiograph MRI CT").trim() + " filetype:bitmap");
   const url = "https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=" + q + "&gsrnamespace=6&gsrlimit=50&gsroffset=" + (offset || 0) + "&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=800&format=json&origin=*";
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error("commons " + res.status);
   const data = await res.json();
   const pages = Object.values((data.query && data.query.pages) || {});
@@ -7273,15 +7510,20 @@ async function fetchMoreFigures(enc, offset){
 async function fetchCaseFigures(enc, offset){
   const q = caseQuery(enc);
   const commonsP = fetchMoreFigures(enc, offset).catch(() => []);
-  const openiP = fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(q))
+  const openiP = fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(q), { signal: AbortSignal.timeout(8000) })
     .then(r => r.ok ? r.json() : { results: [] })
-    .then(d => (d.results || []).map(m => ({
-      title: m.title || m.caption || "Open-i figure",
-      thumb: String(m.url || "").indexOf("https://openi.nlm.nih.gov/imgs/") === 0
-        ? "/api/pmc/img?src=" + encodeURIComponent(m.url) : m.url,
-      page: "https://openi.nlm.nih.gov/search?query=" + encodeURIComponent(q),
-      raw: (m.caption || "") + " " + (m.title || "")
-    })))
+    .then(d => (d.results || []).map(m => {
+      const img = m.permittedUse === "display" ? String(m.imageUrl || "") : "";
+      const thumb = img.indexOf("https://openi.nlm.nih.gov/imgs/") === 0
+        ? "/api/pmc/img?src=" + encodeURIComponent(img)
+        : (/\.(jpe?g|png|gif|webp)(\?|$)/i.test(img) ? img : "");
+      return {
+        title: plainCap(m.caption || m.title || "Open-i figure"),
+        thumb: thumb,
+        page: m.pageUrl || m.url || ("https://openi.nlm.nih.gov/search?query=" + encodeURIComponent(q)),
+        raw: plainCap((m.caption || "") + " " + (m.title || ""))
+      };
+    }).filter(m => m.thumb))
     .catch(() => []);
   const pmcP = fetchPmcFigures(q, Math.floor((offset || 0) / 40) + 1)
     .then(rows => (rows || []).map(it => ({
@@ -7291,7 +7533,11 @@ async function fetchCaseFigures(enc, offset){
       raw: it.raw || it.cap || ""
     })))
     .catch(() => []);
-  const parts = await Promise.all([commonsP, openiP, pmcP]);
+  const parts = await Promise.all([
+    Promise.race([commonsP, new Promise(r => setTimeout(() => r([]), 9000))]),
+    Promise.race([openiP, new Promise(r => setTimeout(() => r([]), 9000))]),
+    Promise.race([pmcP, new Promise(r => setTimeout(() => r([]), 9000))])
+  ]);
   const seen = new Set();
   const out = [];
   parts.forEach(list => (list || []).forEach(c => {
@@ -7301,12 +7547,12 @@ async function fetchCaseFigures(enc, offset){
   }));
   return out;
 }
-async function fetchCommons(query, offset) {
+async function fetchCommons(query, offset, signal) {
   const terms = String(query||"").split(/[^A-Za-z0-9]+/).filter(w => w.length > 2 && !/^(star|gp|rm2|lnth)$/i.test(w)).slice(0, 6).join(" ");
   const guarded = `${terms || "PET CT"} (scintigraphy OR "PET-CT" OR "PET/CT" OR SPECT OR FAPI OR PSMA OR "bone scan") filetype:bitmap -intitle:Boeing -intitle:Dubai -intitle:aircraft -intitle:context -intitle:diploma -intitle:map -intitle:flag -intitle:skyline -intitle:city -intitle:airport -intitle:campus`;
   const q = encodeURIComponent(guarded);
   const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrnamespace=6&gsrlimit=50&gsroffset=${offset}&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=800&format=json&origin=*`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error("commons " + res.status);
   const data = await res.json();
   const pages = Object.values(data.query && data.query.pages || {});
@@ -7378,15 +7624,20 @@ async function loadBankPage() {
   const cache = seedLocal(mod);
   const goal = BANK[mod].goal;
   const queries = BANK[mod].queries;
-  if (cache.loading || cache.done || cache.items.length >= goal) return;
+  if (cache.done || cache.items.length >= goal) return;
+  if (cache.loading && cache.abort) {
+    try { cache.abort.abort(); } catch (e) {}
+  }
   cache.loading = true;
+  cache.abort = typeof AbortController === "function" ? new AbortController() : null;
+  const timer = setTimeout(() => { if (cache.abort) cache.abort.abort(); }, 12000);
   const btn = $("#bankMore");
-  if (btn) btn.textContent = "Loading…";
+  if (btn) { btn.textContent = "Loading…"; btn.disabled = true; btn.setAttribute("aria-busy", "true"); }
   let addedTotal = 0;
   try {
     for (let tries = 0; tries < queries.length && addedTotal < 20 && cache.items.length < goal && !cache.done; tries++) {
       const query = queries[cache.qIndex] || queries[0];
-      const batch = await fetchCommons(query, cache.offset);
+      const batch = await fetchCommons(query, cache.offset, cache.abort && cache.abort.signal);
       cache.offset += 50;
       const seen = new Set(cache.items.map(x => x.thumb));
       let added = 0;
@@ -7400,17 +7651,22 @@ async function loadBankPage() {
       }
     }
   } catch (err) {
-    cache.qIndex += 1;
-    cache.offset = 0;
-    if (cache.qIndex >= queries.length) {
-      cache.done = true;
-      const stat = $("#bankStat");
-      if (stat) stat.textContent = "Could not reach Wikimedia. Stay online and click Load next 50 again.";
+    const aborted = err && (err.name === "AbortError" || /abort/i.test(err.message || ""));
+    if (!aborted) {
+      cache.qIndex += 1;
+      cache.offset = 0;
+      if (cache.qIndex >= queries.length) cache.done = true;
     }
+    const stat = $("#bankStat");
+    if (stat) stat.textContent = aborted
+      ? "That request stopped. It is not still loading. Click Load next 50 to try again."
+      : "Could not reach Wikimedia. Stay online and click Load next 50 again.";
+  } finally {
+    clearTimeout(timer);
+    cache.loading = false;
+    if (btn) { btn.textContent = "Load next 50"; btn.disabled = false; btn.removeAttribute("aria-busy"); }
+    paintBankGrid();
   }
-  cache.loading = false;
-  if (btn) btn.textContent = "Load next 50";
-  paintBankGrid();
 }
 
 const OPENI_Q = {
@@ -8786,7 +9042,7 @@ function caseDepictSrc(enc){
     + "<text x='36' y='168' font-size='13' font-family='Arial' fill='#111'>Teaching schematic for this case. Not this accession's pixels.</text>"
     + "<rect x='36' y='200' width='568' height='110' rx='10' fill='#e8eef8'/>"
     + "<text x='52' y='248' font-size='14' font-family='Arial' fill='#111'>Expected search pattern: " + a.id + "</text>"
-    + "<text x='52' y='276' font-size='14' font-family='Arial' fill='#111'>Matched plate is the assigned clinical analogue below/aside.</text>"
+    + "<text x='52' y='276' font-size='14' font-family='Arial' fill='#111'>This drawing is not a scan and not a matched clinical image.</text>"
     + "</svg>";
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
@@ -8863,7 +9119,7 @@ async function fetchPmcFigures(query, page){
     const pmcid = p.pmcid;
     if (!pmcid) continue;
     try {
-      const xml = await (await fetch("https://www.ebi.ac.uk/europepmc/webservices/rest/" + pmcid + "/fullTextXML")).text();
+      const xml = await (await fetch("https://www.ebi.ac.uk/europepmc/webservices/rest/" + pmcid + "/fullTextXML", { signal: AbortSignal.timeout(6000) })).text();
       const hrefs = Array.from(xml.matchAll(/<graphic[^>]*xlink:href="([^"]+)"/g)).map(m => m[1]);
       const title = p.title || pmcid;
       hrefs.slice(0, 10).forEach(h => {
@@ -9003,6 +9259,13 @@ async function loadCaseImages(enc, more){
   if (!more && slot.fetched) return slot;
   slot.loading = true;
   if (!slot.items.length) slot.items = localCaseImages(enc, 3);
+  const lockedKind = window.SharedCase ? SharedCase.studyKind(enc && enc.finding, enc && enc.categoryId) : "";
+  if (lockedKind === "muga" || lockedKind === "pyp" || lockedKind === "bone") {
+    slot.items = localCaseImages(enc, 2);
+    slot.fetched = true;
+    slot.loading = false;
+    return slot;
+  }
   const q = qs[(slot.qIndex || 0) % qs.length] || qs[0];
   slot.qIndex = (slot.qIndex || 0) + 1;
   try {
@@ -9028,6 +9291,7 @@ async function loadCaseImages(enc, more){
         });
       });
       finalizeCaseItems(enc, slot, true);
+      if (!slot.moreOffset) slot.moreOffset = 50;
       const gal = document.querySelector(".case-gal");
       if (gal && gal.dataset.key === key) bindCaseGallery(enc);
     }).catch(() => {});
@@ -9054,6 +9318,13 @@ async function loadCaseImages(enc, more){
 }
 
 
+function plainCap(s){
+  let t = String(s || "");
+  for (let i = 0; i < 2; i++) {
+    t = t.replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/&#0*38;|&/gi, "&").replace(/&#0*60;|</gi, "<").replace(/&#0*62;|>/gi, ">");
+  }
+  return t.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
 function escTxt(s){
   return String(s||"").replace(/&/g,"&#38;").replace(/</g,"&#60;").replace(/>/g,"&#62;").replace(/"/g,"&#34;");
 }
@@ -9064,7 +9335,7 @@ function imageDescribe(item, enc){
   if (kind === "depict") return "Teaching schematic: " + finding + ", " + region + ".";
   if (kind === "matched") return "Teaching analogue for " + finding + " · " + region + ".";
   if (kind === "local") return "Related plate for " + finding + " in the " + region + ".";
-  const cap = String((item && (item.cap || item.raw)) || "").replace(/\s+/g, " ").trim();
+  const cap = plainCap((item && (item.cap || item.raw)) || "");
   if (cap.length > 16 && !/depict ·| · region /.test(cap)) return cap;
   return finding + ". Region: " + region + ".";
 }
@@ -9193,7 +9464,14 @@ const IQA = (function(){
     out.push({ name: "anatomy_ok", ok: !anatomyDeny && (trusted || anatomyOk || a.id === "pet"), critical: "anatomy" });
     const mod = modalityOf(enc);
     let modOk = trusted || item.kind === "depict";
-    if (!modOk) {
+    if (window.SharedCase && enc && item && item.kind !== "depict") {
+      const sk = SharedCase.studyKind(enc.finding, enc.categoryId);
+      const blob = h + " " + String(item.src || "");
+      if (sk === "muga") modOk = /muga|blood-?pool|blood pool|labeled red|\berna\b/.test(blob) && !/pyp|pyrophosphate|sestamibi|polar|xr-|radiograph/.test(blob);
+      else if (sk === "pyp") modOk = /\bpyp\b|pyrophosphate/.test(blob) && !/muga|polar|xr-|radiograph|sestamibi/.test(blob);
+      else if (sk === "bone") modOk = /bone-scan|bone scan|scintig|\bmdp\b|skeletal|nm-bone|bone-1|bone-wb|bone-ant/.test(blob) && !/pyp|muga|\bct\b|mri|radiograph|xr-/.test(String(item.src || ""));
+    }
+    if (!modOk && !(window.SharedCase && enc && /^(muga|pyp|bone)$/.test(SharedCase.studyKind(enc.finding, enc.categoryId)))) {
       if (mod === "PET") modOk = /pet|fdg|psma|mip|fusion|nuclear/.test(h) || a.id === "pet";
       else if (mod === "NM") modOk = /spect|scintig|sestamibi|nuclear|iodine|mag3|hida|vq|pyp|nm-/.test(h);
       else if (mod === "MRI") modOk = /mri|mr-|t2|t1|flair/.test(h);
@@ -9326,9 +9604,9 @@ const IQA = (function(){
   function label(){
     const s = scanState();
     const tot = (s.total || 33000).toLocaleString();
-    if (!s.n) return "Not scanned yet";
-    if (s.done && !lookQ().length) return "Automatic check finished · nothing flagged for you";
-    return s.ok.toLocaleString() + " / " + tot + " kept · " + s.n.toLocaleString() + " / " + tot + " scanned" + (s.done ? "" : (s.running ? " …" : ""));
+    if (!s.n) return s.running ? "The check was interrupted. It is not still running." : "Not scanned yet. The 33,000 teaching rows are not checked until you press the button.";
+    if (s.done && !lookQ().length) return "Automatic check finished · " + s.n.toLocaleString() + " teaching rows · nothing flagged for you";
+    return s.ok.toLocaleString() + " kept · " + s.n.toLocaleString() + " / " + tot + " teaching rows checked" + (s.done ? " · finished" : (s.running ? " · working" : " · paused"));
   }
   function paintBadges(){
     const full = label();
@@ -9366,7 +9644,7 @@ const IQA = (function(){
       if (!rows || !rows.length) { setTimeout(tick, 400); return; }
       const st = scanState();
       const start = st.n || 0;
-      const end = Math.min(start + 500, 33000, rows.length);
+      const end = Math.min(start + 80, rows.length);
       for (let i = start; i < end; i++) {
         const enc = rows[i];
         const plateName = enc && enc.plate;
@@ -9380,18 +9658,18 @@ const IQA = (function(){
         }
       }
       st.n = end;
-      st.total = 33000;
-      st.done = st.n >= Math.min(33000, rows.length);
+      st.total = rows.length;
+      st.done = st.n >= rows.length;
       st.running = !st.done;
       saveScan(st);
       paintBadges();
       if (st.done) {
         const m = metrics();
-        m.lastSummary = "IMAGE QA SUMMARY · Cases evaluated: " + st.n.toLocaleString() + " / 33,000 · Auto-approved: " + st.ok.toLocaleString() + " / 33,000 · Denied: " + st.deny.toLocaleString() + " · Anatomy mismatches: " + st.anatomy + " · Modality mismatches: " + st.modality + " · Needs a Look: " + lookQ().length + " · Educational analogues, not accession DICOM.";
+        m.lastSummary = "Automatic check finished. Teaching rows evaluated: " + st.n.toLocaleString() + ". Kept: " + st.ok.toLocaleString() + ". Rejected: " + st.deny.toLocaleString() + ". Anatomy mismatches: " + st.anatomy + ". Modality mismatches: " + st.modality + ". Waiting for a person: " + lookQ().length + ". These are educational analogues, not accession DICOM, and not an ACGME log.";
         save(K.metrics, m);
         if (state && state.view === "iqa") try { renderImageQA(); } catch (e) {}
       } else {
-        setTimeout(tick, 0);
+        setTimeout(tick, 40);
       }
     };
     setTimeout(tick, 60);
@@ -9777,7 +10055,7 @@ function renderImageQA(){
         <div class="iqa-metric"><b>${look.length}</b><span>Waiting for you</span></div>
         <div class="iqa-metric"><b>${(m.DENIED||0).toLocaleString()}</b><span>Rejected</span></div>
       </div>
-      <p class="iqa-log">${escTxt(m.lastSummary || "The agent is still walking through the 33,000 cases.")}</p>
+      <p class="iqa-log">${escTxt(m.lastSummary || "No full pass has been started. Rejected items above are from earlier checks, not from a scan that is still running.")}</p>
       <p><button type="button" id="iqaSim" class="primary">Check all 33,000 now</button>
          <button type="button" id="iqaNeg">Run the safety checks again</button></p>
     </details>
@@ -9826,22 +10104,30 @@ function bindCaseGallery(enc){
     const cur = items[sel] || items[0];
     if (cur) { main.src = cur.src; if (cap) cap.textContent = imageDescribe(cur, enc); applyPlateCrop(main, enc); }
     main.onerror = () => {
-      const dead = main.src;
+      if (main.dataset.dead === main.src) return;
+      main.dataset.dead = main.src;
+      const dead = main.getAttribute("src") || "";
       slot.items = slot.items.filter(it => it.src !== dead);
       if (!slot.items.length) return;
       const nsel = Math.min((state.caseSel[key] || 0), slot.items.length - 1);
       state.caseSel[key] = nsel;
-      paint(slot, true);
+      const next = slot.items[nsel];
+      if (next && next.src !== dead) main.src = next.src;
     };
-    strip.querySelectorAll("img").forEach(im => {
-      im.onerror = () => {
-        const dead = im.src;
-        slot.items = slot.items.filter(it => it.src !== dead);
-        paint(slot, true);
-      };
-    });
     const left = keep ? strip.scrollLeft : 0;
     strip.innerHTML = items.map((it,i) => thumbHTML(it, i, sel, enc)).join("");
+    strip.querySelectorAll("img").forEach(im => {
+      im.onerror = () => {
+        if (im.dataset.dead) return;
+        im.dataset.dead = "1";
+        const dead = im.getAttribute("src") || "";
+        slot.items = slot.items.filter(it => it.src !== dead);
+        const thumb = im.closest(".case-th");
+        if (thumb) thumb.remove();
+        const count = $("#caseCount");
+        if (count && !slot.loading) count.textContent = slot.items.length + " images for this case";
+      };
+    });
     const report = assertGallery(enc, items);
     const box = $("#caseAssert");
     if (box) {
@@ -9864,48 +10150,67 @@ function bindCaseGallery(enc){
     if (count) count.textContent = (slot.loading ? "Searching PubMed…" : (items.length + " images for this case")) + (typeof IQA !== "undefined" && IQA.label ? " · QA " + IQA.label() : "");
     const more = $("#caseMore");
     if (more) {
-      more.disabled = !!slot.loading;
-      more.textContent = slot.loading ? "Searching PubMed…" : "Next 50";
+      const busy = more.dataset.busy === "1";
+      more.disabled = false;
+      if (!busy) more.textContent = slot.moreNote || "Next 50";
       more.onclick = async () => {
-        if (more.disabled) return;
+        if (more.dataset.busy === "1") return;
         const slot = CASE_IMG[key];
-        const before = (slot.items || []).length;
-        more.disabled = true;
-        more.textContent = "Searching…";
+        if (!slot) return;
+        more.dataset.busy = "1";
+        more.disabled = false;
+        slot.moreNote = "";
+        more.textContent = "Searching… 0 of 50";
+        const deadline = Date.now() + 9000;
+        let stalled = false;
+        let fresh = [];
         try {
-          const batch = await fetchCaseFigures(enc, slot.moreOffset || 0);
-          slot.moreOffset = (slot.moreOffset || 0) + 50;
           const seen = new Set((slot.items || []).map(it => it.src));
-          let added = 0;
-          (batch || []).forEach(c => {
-            if (!c.thumb || seen.has(c.thumb)) return;
-            seen.add(c.thumb);
-            slot.items.push({
-              src: c.thumb,
-              cap: c.title || "Published figure",
-              href: c.page || "",
-              kind: "more",
-              raw: (c.raw || "") + " " + (c.title || "")
+          slot.pending = (slot.pending || []).filter(it => it && it.src && !seen.has(it.src));
+          slot.pending.forEach(it => seen.add(it.src));
+          let offset = slot.moreOffset || 50;
+          let emptyPages = 0;
+          for (let page = 0; slot.pending.length < 50 && page < 2 && emptyPages < 2 && Date.now() < deadline; page++) {
+            more.textContent = "Searching… " + Math.min(slot.pending.length, 50) + " of 50";
+            const left = Math.max(1200, deadline - Date.now());
+            const batch = await Promise.race([
+              fetchCaseFigures(enc, offset),
+              new Promise(resolve => setTimeout(() => resolve(null), Math.min(8000, left)))
+            ]);
+            if (!batch) { stalled = true; break; }
+            offset += 50;
+            let grew = false;
+            batch.forEach(c => {
+              if (!c.thumb || seen.has(c.thumb)) return;
+              seen.add(c.thumb);
+              grew = true;
+              slot.pending.push({
+                src: c.thumb,
+                cap: plainCap(c.title || "Published figure"),
+                href: c.page || "",
+                kind: "more",
+                raw: plainCap((c.raw || "") + " " + (c.title || ""))
+              });
             });
-            added++;
-          });
+            emptyPages = grew ? 0 : emptyPages + 1;
+          }
+          slot.moreOffset = offset;
+          fresh = slot.pending.splice(0, 50);
+          fresh.forEach(it => slot.items.push(it));
           finalizeCaseItems(enc, slot, true);
+          slot.moreNote = fresh.length ? ("Added " + fresh.length + " · Next 50") : (stalled ? "Try Next 50 again" : "No new images · Next 50");
           paint(slot, true);
-          const strip = $("#caseStrip");
-          if (strip) strip.scrollLeft = strip.scrollWidth;
-          const btn = $("#caseMore");
-          const gained = Math.max(0, (slot.items || []).length - before);
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = gained ? ("Added " + gained + " · Next 50") : "No more for this case";
-          }
-          if (!added && more) {
-            more.disabled = false;
-            more.textContent = "No more for this case";
-          }
+          const stripNow = $("#caseStrip");
+          if (stripNow) stripNow.scrollLeft = stripNow.scrollWidth;
         } catch (err) {
+          slot.moreNote = "Try Next 50 again";
+        } finally {
+          more.dataset.busy = "";
           more.disabled = false;
-          more.textContent = "Try Next 50 again";
+          more.dataset.added = String(fresh.length);
+          more.textContent = slot.moreNote || "Next 50";
+          const countNow = $("#caseCount");
+          if (countNow) countNow.textContent = (slot.items || []).length + " images for this case";
         }
       };
     }
@@ -9914,10 +10219,8 @@ function bindCaseGallery(enc){
   const slot = CASE_IMG[key] || (CASE_IMG[key] = { items: localCaseImages(enc, 2), offset: 0, pmcPage: 1, loading: false, fetched: false, query: caseQuery(enc) });
   paint(slot, false);
   if (!slot.fetched && !slot.loading) {
-    const moreBtn = $("#caseMore");
-    if (moreBtn) { moreBtn.disabled = true; moreBtn.textContent = "Searching PubMed…"; }
     const countEl = $("#caseCount");
-    if (countEl) countEl.textContent = "Searching PubMed…";
+    if (countEl) countEl.textContent = ((slot.items || []).length) + " images for this case · still looking";
     loadCaseImages(enc, false).then(() => {
       const gal = document.querySelector(".case-gal");
       if (gal && gal.dataset.key && gal.dataset.key !== key) return;
@@ -10040,6 +10343,74 @@ function nbaGenerate(){
   return rows;
 }
 
+function deskForCase(row){
+  const finding = String((row && row.finding) || "");
+  const f = finding.toLowerCase();
+  if (/\bmuga\b|gated blood|equilibrium radionuclide|\berna\b/.test(f)) {
+    return {
+      id:"muga", station:"chest", region:"Chest · MUGA blood pool", plates:[],
+      see:[
+        "MUGA gates the labeled red-cell blood pool. It is not a perfusion polar map.",
+        "The number is LVEF. There is no SUV on a MUGA.",
+        "No MUGA image is on file. A PYP file and a chest radiograph are not this study."
+      ],
+      q:"What does a MUGA measure?",
+      choices:["Left ventricular ejection fraction from labeled red cells","A myocardial perfusion polar map","PYP heart-to-rib uptake","Coronary calcium"],
+      a:0,
+      why:"MUGA is equilibrium radionuclide angiography. Report LVEF. Do not read it as PYP or as an FDG SUV."
+    };
+  }
+  if (/\bpyp\b|pyrophosphate/.test(f)) {
+    return {
+      id:"pyp", station:"chest", region:"Chest · Tc-99m PYP", plates:[],
+      see:[
+        "PYP grades myocardial uptake against the ribs.",
+        "It is not a MUGA and it does not report an ejection fraction.",
+        "No PYP-only image is on file, and there is no FDG SUV."
+      ],
+      q:"A grade 3 PYP scan means which comparison?",
+      choices:["Myocardial uptake greater than rib, blood pool cleared","LVEF from labeled red cells","A perfusion polar-map defect","An FDG SUV in the pelvis"],
+      a:0,
+      why:"PYP for ATTR is read as heart versus rib, not as EF and not as SUV."
+    };
+  }
+  if (/paget/.test(f)) {
+    return {
+      id:"paget", station:"pelvis", region:"Pelvis · bone scan", plates:["bone-scan-wb.jpg"],
+      see:[
+        "Paget on a bone scan is intense osteoblastic uptake in the bone named by the stem, often the pelvis, skull, or a long bone.",
+        "The Mickey Mouse sign is vertebral uptake in the body, both pedicles, and the spinous process.",
+        "This is a Tc-99m MDP bone scan. It is not a PSMA PET, not an FDG SUV, and not a pelvic CT."
+      ],
+      q:"The Mickey Mouse sign on a bone scan is uptake in which structure?",
+      choices:["A vertebra: body, both pedicles, and the spinous process","Labeled red-cell blood pool","A myocardial perfusion polar map","An FDG-avid pelvic lymph node"],
+      a:0,
+      why:"Paget disease can light up a whole vertebra that way. The study is still a bone scan, not MUGA and not PET."
+    };
+  }
+  if ((/bone scan|\bmdp\b|three-phase|\bhdp\b|osteoblast/.test(f) || (/paget/.test(f) && /bone|pelvis|skull|mdp/.test(f))) && !/nipple/.test(f)) {
+    const bone = (typeof ANATOMY_DESKS !== "undefined" && ANATOMY_DESKS.find(d => d.id === "bone")) || null;
+    if (bone) return bone;
+  }
+  const blob = [row && row.finding, row && row.stationName, row && row.stationId, row && row.modality, row && row.categoryId].join(" ");
+  return (typeof ANATOMY_DESKS !== "undefined" && ANATOMY_DESKS.find(d => d.test.test(blob))) || null;
+}
+function casePanel(enc, st){
+  const f = String((enc && enc.finding) || "").toLowerCase();
+  if (/\bmuga\b|gated blood|equilibrium radionuclide|\berna\b/.test(f)) {
+    return { anatomy:"Cardiac blood pool. Labeled red cells in the ventricular cavities.", read:"Report LVEF from the gated blood pool. There is no SUV. A PYP image, a chest radiograph, and an FDG PET are not this study. No MUGA image is on file." };
+  }
+  if (/\bpyp\b|pyrophosphate/.test(f)) {
+    return { anatomy:"Myocardium compared with rib.", read:"Grade heart uptake against rib. This is not a MUGA, not a perfusion polar map, and not an FDG SUV. No PYP-only image is on file." };
+  }
+  if (/paget/.test(f)) {
+    return { anatomy:"Skeleton. Osteoblastic uptake in the bone the stem names. Pelvic Paget is bone, not a prostate-PSMA station.", read:"Read the bone scan for Paget. The Mickey Mouse sign is a vertebra, not a PET finding. A pelvic CT, radiograph, MRI, PSMA PET, or FDG SUV is not this study." };
+  }
+  if ((/bone scan|\bmdp\b|three-phase|\bhdp\b/.test(f) || (/paget/.test(f) && !/nipple/.test(f)))) {
+    return { anatomy:"Skeleton. Osteoblastic uptake. If the pelvis is named, it is bone on this scan, not a prostate-PSMA station.", read:"Read the bone scan. A pelvic CT, radiograph, MRI, PSMA PET, or FDG SUV is not this study. The station name only says where the row was filed." };
+  }
+  return { anatomy:(st && st.anatomy) || "", read:(st && st.interpretation) || "" };
+}
 function nbaQuestion(row){
   const st = RR_STATIONS.find(s => s.id === row.stationId) || rrStationForSlice(row.slice);
   if (row.basis === "authored-simulation") {
@@ -10055,9 +10426,10 @@ function nbaQuestion(row){
       pearl: "Authored therapy simulation — safety sequence is the scored behavior."
     };
   }
-  const blob = [row.finding, row.stationName, row.stationId, row.modality, row.categoryId].join(" ");
-  const desk = (typeof ANATOMY_DESKS !== "undefined" && ANATOMY_DESKS.find(d => d.test.test(blob))) || null;
   const finding = row.finding || "this case";
+  const desk = (typeof deskForCase === "function") ? deskForCase(row) : null;
+  const kind = window.SharedCase ? SharedCase.studyKind(finding, row.categoryId) : "";
+  const pet = window.SharedCase ? SharedCase.reportsSuv(kind) : /\b(fdg|psma|dotatate|\bpet\b)/i.test(finding);
   const variants = [];
   if (desk) {
     variants.push({ prompt: finding + " — " + desk.q, choices: desk.choices.slice(), a: desk.a, pearl: desk.why });
@@ -10071,7 +10443,7 @@ function nbaQuestion(row){
       });
     });
   }
-  if (st && st.lesions && st.lesions[0]) {
+  if (pet && st && st.lesions && st.lesions[0]) {
     variants.push({
       prompt: "The plate for " + finding + " is marked at which station?",
       choices: [st.name + " · " + st.lesions[0].label, "Cervical neck", "Toes", "Vertex"],
@@ -10079,7 +10451,15 @@ function nbaQuestion(row){
       pearl: st.teaching || (desk && desk.why) || ""
     });
   }
-  if (st && st.interpretation) {
+  if (!pet) {
+    const panel = casePanel(row, st);
+    variants.push({
+      prompt: "What should you say about " + finding + "?",
+      choices: [panel.read, "Quote a pelvis FDG SUV of 8.1.", "Call it a prostate PSMA study.", "Pair it with a different modality’s picture."],
+      a: 0,
+      pearl: panel.read
+    });
+  } else if (st && st.interpretation) {
     variants.push({
       prompt: "What should you say about the image at " + st.name + " for " + finding + "?",
       choices: [st.interpretation, "This slice is the forefoot.", "This is the opposite breast.", "Ignore the picture and trust the filename."],
@@ -10124,8 +10504,15 @@ function caseNarration(enc, which){
   lines.push("The case finding is: " + (enc.finding || "not stated") + ".");
   lines.push("Category " + (enc.categoryId || enc.modality || "imaging") + (enc.priority ? ", " + enc.priority + " priority" : "") + ".");
   lines.push("Anatomy: " + region + ", station " + (enc.stationName || "unspecified") + (enc.slice != null ? ", slice " + enc.slice : "") + ".");
-  if (st && st.anatomy) lines.push("What you should look for at this station: " + st.anatomy + ".");
-  if (st && st.interpretation) lines.push("Interpretation: " + st.interpretation + ".");
+  const panel = (typeof casePanel === "function") ? casePanel(enc, st) : null;
+  const special = /\bmuga\b|\bpyp\b|bone scan|\bmdp\b|three-phase/i.test(enc.finding || "") || (/paget/i.test(enc.finding || "") && !/nipple/i.test(enc.finding || ""));
+  if (panel && special) {
+    lines.push("What you should look for: " + panel.anatomy + ".");
+    lines.push("Interpretation: " + panel.read + ".");
+  } else {
+    if (st && st.anatomy) lines.push("What you should look for at this station: " + st.anatomy + ".");
+    if (st && st.interpretation) lines.push("Interpretation: " + st.interpretation + ".");
+  }
   if (st && st.teaching) lines.push("Teaching point: " + st.teaching + ".");
   if (cur) {
     const idn = assertImageIdentity(cur, enc);
@@ -10231,7 +10618,7 @@ function renderAcademy(){
   if (state.nbaMode == null) state.nbaMode = "board";
   const q = state.nbaQuery.toLowerCase();
   const filtered = rows.filter(r =>
-    (state.nbaBasis === "all" || state.nbaBasis === "authored-simulation" || r.basis === state.nbaBasis) &&
+    (state.nbaBasis === "all" || r.basis === state.nbaBasis) &&
     (state.nbaTrack === "ALL" || r.track === state.nbaTrack) &&
     (state.nbaMod === "ALL" || r.modality === state.nbaMod) &&
     (state.nbaStation == null || state.nbaStation === "" || rowFitsStation(r, state.nbaStation)) &&
@@ -10249,8 +10636,9 @@ function renderAcademy(){
   const nNM = rows.filter(r => r.track === "NM").length;
   const nSL = rows.filter(r => r.basis === "source-label").length;
   const nMG = rows.filter(r => r.basis === "metadata-grounded").length;
-  const nTH = rows.length;
+  const nTH = rows.filter(r => r.basis === "authored-simulation").length;
   const qa = enc ? nbaQuestion(enc) : null;
+  const panel = enc ? casePanel(enc, st) : { anatomy: st.anatomy, read: st.interpretation };
   const mods = ["ALL","XR","CT","US","MRI","BREAST_FLUORO","NM_GENERAL","PET","CARDIAC_NM","THERAPY"];
   const tile = (id, label, n) => `<button type="button" class="rr-tile ${state.nbaBasis===id||state.nbaTrack===id||state.nbaMod===id?"on":""}" data-nba="${id}" data-kind="${label}">${n!=null?`<b>${n}</b>`:""}<span>${label}</span></button>`;
   $("#stage").innerHTML = `
@@ -10291,8 +10679,8 @@ function renderAcademy(){
           <input type="range" id="nbaScrub" min="0" max="100" value="${state.nbaSlice}">
           <div class="rr-readout">${enc ? enc.studyKey : "—"} · SLICE ${String(state.nbaSlice).padStart(3,"0")} · ${st.name} · ${st.plane}${enc ? " · " + enc.basis : ""}</div>
           <div class="rr-cols">
-            <div><h4>ANATOMY</h4><p>${st.anatomy}</p></div>
-            <div><h4>INTERPRETATION</h4><p>${state.nbaMode==="board" ? "Overlays hidden in Board mode. Commit first." : st.interpretation}</p></div>
+            <div><h4>ANATOMY</h4><p>${panel.anatomy}</p></div>
+            <div><h4>INTERPRETATION</h4><p>${state.nbaMode==="board" ? "Overlays hidden in Board mode. Commit first." : panel.read}</p></div>
             <div><h4>PROVENANCE</h4><p>${enc ? enc.basis + " · " + enc.track + " · " + enc.modality : "Select a row"}</p></div>
           </div>
           ${qa ? `<div class="rr-qa"><h4>COMMIT</h4><p>${qa.prompt}</p>
@@ -10419,6 +10807,7 @@ function renderRadReview() {
   const enc = filtered[state.rrSel];
   if (enc) state.rrSlice = enc.slice;
   const st = enc ? (RR_STATIONS.find(s => s.id === enc.stationId) || rrStationForSlice(enc.slice)) : rrStationForSlice(50);
+  const panel = casePanel(enc, st);
   const tiles = RR_CATS.map(c => `<button type="button" class="rr-tile ${state.rrCat===c.id?"on":""}" data-cat="${c.id}"><b>${c.n.toLocaleString()}</b><span>${c.name}</span></button>`).join("");
   $("#stage").innerHTML = `
     <div id="radRoot" class="rr-root">
@@ -10447,11 +10836,11 @@ function renderRadReview() {
             ${caseGalleryHTML(enc)}
             <div class="rr-scale" id="rrScale" title="Filter the left list to this station">${RR_STATIONS.map(s=>`<button type="button" data-sid="${s.id}">${s.name}</button>`).join("")}<button type="button" data-sid="">ALL</button></div>
           </div>` : "<p>Select a case on the left.</p>"}
-          <div class="rr-readout">${st.name} · ${st.plane} · analogue images, not this MRN pixels</div>
+          <div class="rr-readout">${st.name} · ${st.plane} · atlas 0–100 · demo row, not a clinical encounter</div>
           <div class="rr-cols">
             <div><h4>THIS CASE</h4><p>${enc ? enc.finding : ""}</p></div>
-            <div><h4>ANATOMY</h4><p>${st.anatomy}</p></div>
-            <div><h4>HOW TO READ</h4><p>${st.interpretation}</p></div>
+            <div><h4>ANATOMY</h4><p>${panel.anatomy}</p></div>
+            <div><h4>HOW TO READ</h4><p>${panel.read}</p></div>
           </div>
         </div>
       </div>
@@ -10545,7 +10934,15 @@ function renderDrill() {
     const d = document.createElement("div");
     d.className = "flash";
     d.innerHTML = `<div class="front">${f}</div><div class="back">${b}</div>`;
-    d.onclick = () => d.classList.toggle("open");
+    d.setAttribute("role", "button");
+    d.tabIndex = 0;
+    d.setAttribute("aria-pressed", "false");
+    const flip = () => {
+      d.classList.toggle("open");
+      d.setAttribute("aria-pressed", d.classList.contains("open") ? "true" : "false");
+    };
+    d.onclick = flip;
+    d.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } };
     fg.appendChild(d);
   });
   $("#playerInfo").innerHTML = `<b>Drill</b><span>${COURSE.drills.length} cards</span>`;
@@ -10670,7 +11067,7 @@ async function raSearchPmc(query){
   const uniq = [];
   const seen = new Set();
   out.forEach(f => { if (f && f.imageUrl && !seen.has(f.imageUrl) && raFitsQuery(query, f) > 0) { seen.add(f.imageUrl); uniq.push(f); } });
-  return { figures: uniq.slice(0, 18), status: { source:"pmc", state: uniq.length?"ok":"empty", count: uniq.length, latencyMs: Date.now()-started } };
+  return { figures: uniq.slice(0, 18), status: { source:"wiki", state: uniq.length?"ok":"empty", count: uniq.length, latencyMs: Date.now()-started, message: uniq.length ? "Wikipedia and Wikimedia Commons. Not PubMed." : "No reference image from Wikipedia or Commons." } };
 }
 async function raSearchTcia(query){
   const started = Date.now();
@@ -10743,15 +11140,8 @@ async function raSearchTcia(query){
 async function raSearchOpenNeuro(query){
   const started = Date.now();
   const q = String(query || "").trim();
-  const studies = q.length >= 2 ? [{
-    id: "on-search",
-    title: "OpenNeuro search · " + q,
-    collection: "OpenNeuro",
-    format: "BIDS",
-    modalities: ["MR"],
-    fullStudyUrl: "https://openneuro.org/search?query=" + encodeURIComponent(q)
-  }] : [];
-  return { studies, status: { source:"openneuro", state: studies.length ? "ok" : "empty", count: studies.length, latencyMs: Date.now()-started } };
+  if (q.length < 2) return { studies: [], status: { source:"openneuro", state:"empty", count:0, latencyMs: Date.now()-started, message:"Query too short." } };
+  return { studies: [], status: { source:"openneuro", state:"link-only", count:0, latencyMs: Date.now()-started, message:"Not searched. Open https://openneuro.org/search/" + encodeURIComponent(q) + " yourself. This is not a live result." } };
 }
 function raTimeout(p, ms, fallback){
   return Promise.race([p, new Promise(r => setTimeout(() => r(fallback), ms))]);
@@ -10759,7 +11149,7 @@ function raTimeout(p, ms, fallback){
 async function raSearch(query, withOn){
   const t0 = Date.now();
   const [pmc, tcia, on] = await Promise.all([
-    raTimeout(raSearchPmc(query), 9000, { figures: [], status: { source:"pmc", state:"error", count:0, latencyMs:9000, message:"timeout" } }),
+    raTimeout(raSearchPmc(query), 9000, { figures: [], status: { source:"wiki", state:"error", count:0, latencyMs:9000, message:"timeout" } }),
     raTimeout(raSearchTcia(query), 8000, { previews: [], studies: [], status: { source:"tcia", state:"error", count:0, latencyMs:8000, message:"timeout" } }),
     withOn ? raTimeout(raSearchOpenNeuro(query), 6000, { studies: [], status: { source:"openneuro", state:"error", count:0, latencyMs:6000 } }) : Promise.resolve({ studies: [], status: { source:"openneuro", state:"disabled", count:0, latencyMs:0, message:"Off" } })
   ]);
@@ -10870,16 +11260,70 @@ function raPaintMatches(){
 async function raPubmedSearch(q){
   const grid = document.getElementById("raPmcGrid");
   if (!grid) return;
-  const query = String(q || "").trim();
-  if (query.length < 2) { grid.innerHTML = "<p>Type a PubMed query.</p>"; return; }
-  grid.innerHTML = "<p>Searching PubMed Central…</p>";
-  let items = [];
-  try { items = await fetchPmcFigures(query, 1); } catch (e) { items = []; }
-  if (!items.length) {
-    grid.innerHTML = `<p>No PubMed Central figures for “${raEsc(query)}”.</p>`;
+  const query = String(q || "").replace(/\b(mrn|ssn|dob|accession)\b[:\s#-]*[a-z0-9-]*/gi, " ").trim().slice(0, 120);
+  if (query.length < 3) { grid.innerHTML = "<p>Type a PubMed query. Nothing was sent.</p>"; return; }
+  grid.innerHTML = "<p>Searching PubMed…</p>";
+  const searchUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=12&sort=relevance&tool=BoardStudioTeaching&term=" + encodeURIComponent(query);
+  let search = null;
+  let err = "";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(searchUrl, { signal: AbortSignal.timeout(12000) });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      search = await res.json();
+      err = "";
+      break;
+    } catch (e) {
+      err = (e && e.message) || "failed";
+      if (attempt === 0) await new Promise(function(r){ setTimeout(r, 800); });
+    }
+  }
+  if (!search) {
+    grid.innerHTML = "<p>PubMed did not respond after one retry (" + raEsc(err) + "). No papers were added. Open-i, Europe PMC, Wikimedia Commons, and TCIA are a separate image search. Radiopaedia, MedPix, Eurorad, and the other libraries were not queried: they have no permitted search API for this app.</p>";
     return;
   }
-  grid.innerHTML = items.slice(0, 12).map(it => `<figure><a href="${raEsc(it.href || "#")}" target="_blank" rel="noreferrer"><img alt="" src="${raEsc(it.src)}" referrerpolicy="no-referrer"></a><figcaption>${raEsc(it.cap || it.raw || "")}</figcaption></figure>`).join("");
+  const ids = (search.esearchresult && search.esearchresult.idlist) || [];
+  const count = (search.esearchresult && search.esearchresult.count) || "0";
+  const seen = {};
+  const unique = ids.filter(function(id){ if (seen[id]) return false; seen[id] = 1; return true; });
+  if (!unique.length) {
+    grid.innerHTML = "<p>PubMed responded. " + raEsc(count) + " matches, and none are listed here. The search is finished.</p>";
+    return;
+  }
+  let summary = null;
+  try {
+    const sumUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&tool=BoardStudioTeaching&id=" + unique.join(",");
+    const res = await fetch(sumUrl, { signal: AbortSignal.timeout(12000) });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    summary = await res.json();
+  } catch (e) {
+    grid.innerHTML = "<p>PubMed found " + unique.length + " PMIDs, but the summary did not load. " + unique.map(function(id){ return "<a href=\"https://pubmed.ncbi.nlm.nih.gov/" + id + "/\" target=\"_blank\" rel=\"noopener\">PMID " + id + "</a>"; }).join(" · ") + "</p>";
+    return;
+  }
+  const result = (summary && summary.result) || {};
+  const tokens = query.toLowerCase().split(/[^a-z0-9]+/).filter(function(t){ return t.length >= 3; });
+  const strict = tokens.length <= 1;
+  const matched = unique.filter(function(id){
+    if (!strict) return true;
+    const title = String((result[id] && result[id].title) || "").toLowerCase();
+    if (!tokens.every(function(t){ return title.indexOf(t) >= 0; })) return false;
+    if (tokens[0] === "muga" && !/scan|cardiac|ventric|heart|gated|radionuclide|nuclear|scint|ejection|patient|imaging/.test(title)) return false;
+    return true;
+  });
+  const listed = matched.slice(0, 5);
+  const skipped = unique.length - matched.length;
+  if (!listed.length) {
+    grid.innerHTML = "<p>PubMed responded (" + raEsc(count) + " matches). None of the first " + unique.length + " had the query in the title, so they are not listed. The search is finished.</p>";
+    return;
+  }
+  grid.innerHTML = "<p>Live PubMed · " + raEsc(count) + " matches · showing " + listed.length + (skipped > 0 ? " · " + skipped + " omitted because the title did not match the query" : "") + ". These are citations, not images.</p><ol class=\"ra-cites\">" + listed.map(function(id){
+    const r = result[id] || {};
+    const title = raEsc(r.title || "Untitled");
+    const journal = raEsc(r.source || "");
+    const date = raEsc(r.pubdate || "");
+    const doi = raEsc(r.elocationid || "");
+    return "<li><a href=\"https://pubmed.ncbi.nlm.nih.gov/" + id + "/\" target=\"_blank\" rel=\"noopener\">PMID " + id + "</a> · " + title + "<br><span>" + journal + " · " + date + (doi ? " · " + doi : "") + "</span></li>";
+  }).join("") + "</ol>";
 }
 
 function renderRadAtlas(){
@@ -10960,7 +11404,7 @@ async function raRun(){
   const view = $("#raView");
   if (!list) return;
   const local = raFilterTitles(RAD_ATLAS.query);
-  list.innerHTML = `<p class="ra-load">Searching PMC and TCIA for “${raEsc(RAD_ATLAS.query)}”…</p>
+  list.innerHTML = `<p class="ra-load">Searching reference images and TCIA for “${raEsc(RAD_ATLAS.query)}”…</p>
     <div class="ra-meta"><p>${local.length} local case titles match while live figures load.</p></div>
     <div class="ra-cards">${local.slice(0,12).map(c => `<article class="ra-card"><div><h4>${raEsc(c.title)}</h4><p>${raEsc(c.station||c.cat||"")}</p></div></article>`).join("")}</div>`;
   RAD_ATLAS.loading = true;
@@ -10976,7 +11420,7 @@ async function raRun(){
   list.innerHTML = `
     <div class="ra-meta"><b>${raEsc(data.query)}</b><div>${pills}</div>
       <p>${figs.length} figures · ${prev.length} previews · ${full.length} studies · ${(data.meta.durationMs/1000).toFixed(1)}s · education only</p></div>
-    <h3>Article figures</h3>
+    <h3>Reference images</h3>
     <div class="ra-cards">${figs.length ? figs.map((f,i)=>`
       <article class="ra-card" data-kind="fig" data-i="${i}">
         <img alt="" src="${raEsc(f.imageUrl)}" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('noimg')">
@@ -10984,7 +11428,7 @@ async function raRun(){
         <h4>${raEsc(f.title)}</h4>
         <p>${raEsc(f.caption)}</p>
         <button type="button" data-open="fig" data-i="${i}">Source</button></div>
-      </article>`).join("") : "<p>No QA-approved PMC figures for this query.</p>"}</div>
+      </article>`).join("") : "<p>No reference image matched this query.</p>"}</div>
     <h3>Study previews</h3>
     ${prev.length ? prev.map((s,i)=>`
       <article class="ra-study" data-kind="prev" data-i="${i}">
@@ -11794,4 +12238,5 @@ window.NMBState = state;
 <script>
 try { if (typeof renderNav === "function") renderNav(); if (typeof updateBar === "function") updateBar(); } catch (e) {}
 </script>
+<script src="/library/ui.js" defer></script>
 </body></html>
