@@ -142,6 +142,7 @@ export const Route = createFileRoute("/api/pmc/match")({
               data = await pull(Math.min(spec.cap, m + take));
               list = data ? paint(data) : [];
             }
+            list = list.slice(0, take);
             const total = Math.min(spec.cap, data?.total || spec.cap);
             return Response.json({ modality, total, m, list });
           } catch {
