@@ -209,7 +209,7 @@ export default function CaseList({
   const scrollRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportH, setViewportH] = useState(720)
-  const [filmH, setFilmH] = useState(180)
+  const [filmH, setFilmH] = useState(300)
   const [rowH, setRowH] = useState(ROW_H)
 
   const onScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -251,7 +251,7 @@ export default function CaseList({
   const filmRef = useRef<HTMLDivElement>(null)
   const [filmLeft, setFilmLeft] = useState(0)
   const [filmW, setFilmW] = useState(480)
-  const thumbW = Math.max(110, Math.min(240, Math.round(filmH * 0.95)))
+  const thumbW = Math.max(160, Math.min(340, Math.round(filmH * 1.15)))
   const THUMB = thumbW + 6
 
   useEffect(() => {
@@ -284,72 +284,10 @@ export default function CaseList({
           </span>
         </div>
 
-        <div className="mt-2 flex items-stretch gap-1">
-          <input
-            value={query}
-            onChange={(e) => onQuery(e.target.value)}
-            placeholder="Search finding, station, modality, demo id"
-            spellCheck={false}
-            className="min-w-0 flex-1 rounded border border-rr-line bg-rr-bg px-2 py-1.5 text-[11px] text-rr-text placeholder:text-rr-dim focus:border-rr-blue-lit focus:outline-none"
-          />
-          {/* The same green RadAtlas control the browser add-on places under a
-              search box: it searches the public archives, not this log. */}
-          <button
-            type="button"
-            onClick={onToggleAtlas}
-            disabled={!query.trim()}
-            title={
-              query.trim()
-                ? `Search PubMed Central, TCIA and OpenNeuro for “${query.trim()}”`
-                : 'Type something to search the public archives'
-            }
-            className={
-              'shrink-0 rounded border px-2 text-[9px] font-bold tracking-[0.1em] transition-colors disabled:opacity-40 ' +
-              (atlasOpen
-                ? 'border-rr-green bg-rr-green/25 text-rr-green'
-                : 'border-rr-green/40 bg-rr-green/10 text-rr-green hover:border-rr-green')
-            }
-          >
-            ◉ ATLAS
-          </button>
-        </div>
-        {atlasPanel}
-      </div>
-
-      <div className="flex shrink-0 flex-wrap gap-1 border-b border-rr-line px-3 py-2">
-        <button
-          type="button"
-          onClick={() => onFilter('ALL')}
-          className={
-            'rounded border px-1.5 py-1 text-[9px] font-bold tracking-wider transition-colors ' +
-            (filter === 'ALL'
-              ? 'border-rr-blue-lit bg-rr-blue/25 text-white'
-              : 'border-rr-line bg-rr-raised text-rr-dim hover:border-rr-dim')
-          }
-        >
-          ALL {(allCount).toLocaleString()}
-        </button>
-        {CATEGORIES.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            onClick={() => onFilter(c.id)}
-            className={
-              'rounded border px-1.5 py-1 text-[9px] font-bold tracking-wider transition-colors ' +
-              (filter === c.id
-                ? 'border-rr-blue-lit bg-rr-blue/25 text-white'
-                : 'border-rr-line bg-rr-raised text-rr-dim hover:border-rr-dim')
-            }
-          >
-            {c.pill} {(counts?.[c.id] ?? c.count).toLocaleString()}
-          </button>
-        ))}
-      </div>
-
       {filmH > 48 && cases.length > 0 && (
-        <div className="rr-film shrink-0 border-b border-rr-line px-2 pt-1" style={{ height: filmH + 36 }}>
+        <div className="rr-film -mx-3 shrink-0 border-b border-rr-line px-2 pt-1" style={{ height: filmH + 36 }}>
           <div className="px-1 text-[11px] font-bold text-white tabular-nums">
-            {cases.length.toLocaleString()} teaching rows · scroll sideways
+            {cases.length.toLocaleString()} images · scroll left and right
           </div>
           <div
             ref={filmRef}
@@ -414,6 +352,68 @@ export default function CaseList({
       >
         drag to resize images
       </div>
+        <div className="mt-2 flex items-stretch gap-1">
+          <input
+            value={query}
+            onChange={(e) => onQuery(e.target.value)}
+            placeholder="Search finding, station, modality, demo id"
+            spellCheck={false}
+            className="min-w-0 flex-1 rounded border border-rr-line bg-rr-bg px-2 py-1.5 text-[11px] text-rr-text placeholder:text-rr-dim focus:border-rr-blue-lit focus:outline-none"
+          />
+          {/* The same green RadAtlas control the browser add-on places under a
+              search box: it searches the public archives, not this log. */}
+          <button
+            type="button"
+            onClick={onToggleAtlas}
+            disabled={!query.trim()}
+            title={
+              query.trim()
+                ? `Search PubMed Central, TCIA and OpenNeuro for “${query.trim()}”`
+                : 'Type something to search the public archives'
+            }
+            className={
+              'shrink-0 rounded border px-2 text-[9px] font-bold tracking-[0.1em] transition-colors disabled:opacity-40 ' +
+              (atlasOpen
+                ? 'border-rr-green bg-rr-green/25 text-rr-green'
+                : 'border-rr-green/40 bg-rr-green/10 text-rr-green hover:border-rr-green')
+            }
+          >
+            ◉ ATLAS
+          </button>
+        </div>
+        {atlasPanel}
+      </div>
+
+      <div className="flex shrink-0 flex-wrap gap-1 border-b border-rr-line px-3 py-2">
+        <button
+          type="button"
+          onClick={() => onFilter('ALL')}
+          className={
+            'rounded border px-1.5 py-1 text-[9px] font-bold tracking-wider transition-colors ' +
+            (filter === 'ALL'
+              ? 'border-rr-blue-lit bg-rr-blue/25 text-white'
+              : 'border-rr-line bg-rr-raised text-rr-dim hover:border-rr-dim')
+          }
+        >
+          ALL {(allCount).toLocaleString()}
+        </button>
+        {CATEGORIES.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => onFilter(c.id)}
+            className={
+              'rounded border px-1.5 py-1 text-[9px] font-bold tracking-wider transition-colors ' +
+              (filter === c.id
+                ? 'border-rr-blue-lit bg-rr-blue/25 text-white'
+                : 'border-rr-line bg-rr-raised text-rr-dim hover:border-rr-dim')
+            }
+          >
+            {c.pill} {(counts?.[c.id] ?? c.count).toLocaleString()}
+          </button>
+        ))}
+      </div>
+
 
       <div ref={scrollRef} onScroll={onScroll} className="rr-scroll min-h-0 flex-1 overflow-y-scroll">
         {indexing ? (

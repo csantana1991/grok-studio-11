@@ -115,6 +115,19 @@ export function reportsSuv(kind: StudyKind): boolean {
   return kind === 'pet-fdg' || kind === 'pet-psma' || kind === 'pet-dota'
 }
 
+export function caseReading(kind: StudyKind, stationText: string): string {
+  if (kind === 'muga') {
+    return 'MUGA: left ventricular ejection fraction from labeled red cells. No SUV. A PYP image, a chest radiograph, and a perfusion polar map are not this study.'
+  }
+  if (kind === 'pyp') {
+    return 'PYP: myocardial uptake against rib. Not a MUGA, not a perfusion polar map, and not an FDG SUV. No PYP-only image is on file.'
+  }
+  if (kind === 'bone') {
+    return 'Bone scan: osteoblastic uptake in the skeleton. A pelvic CT, MRI, radiograph, PSMA study, or FDG SUV is not this scan. The atlas station only says where the row is filed.'
+  }
+  return stationText
+}
+
 /** The number written in the stem. Never a second random value. */
 export function statedSuv(finding: string): string | null {
   const m = finding.match(/\bSUV\s*(\d+(?:\.\d+)?)/i)
