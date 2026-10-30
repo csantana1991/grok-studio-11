@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Header from './components/Header'
-import CaseList from './components/CaseList'
+import CaseList, { ImageGallery } from './components/CaseList'
 import Viewer from './components/Viewer'
 import InfoBar from './components/InfoBar'
 import ControlPanel from './components/ControlPanel'
@@ -527,6 +527,17 @@ export default function App() {
         totalEncounters={cases.length}
         pendingReview={qa.exceptions.length}
         onOpenReview={() => setReviewOpen(true)}
+      />
+      <ImageGallery
+        cases={filtered}
+        thumbFor={thumbFor}
+        selectedIdx={selected?.idx ?? null}
+        onSelect={(c) => {
+          playAllRef.current = false
+          audio.stop()
+          setSelected(c)
+          setSlice(c.slice)
+        }}
       />
 
       <main ref={stageRef} className="flex min-h-0 flex-1 flex-col min-[720px]:flex-row min-[720px]:overflow-hidden">

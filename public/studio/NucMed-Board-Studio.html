@@ -3614,11 +3614,12 @@ let RR_CACHE={seed:null,rows:null,v:3};
 function plateForRow(finding, stationId, categoryId, salt){
   if (window.SharedCase) {
     const kind = SharedCase.studyKind(finding, categoryId);
-    const gated = SharedCase.plateFor(finding, categoryId);
-    if (kind === "muga" || kind === "pyp") return "";
-    if (kind === "bone") return gated || "bone-scan-wb.jpg";
+    const gated = SharedCase.plateFor(finding, categoryId, salt);
+    if (kind === "muga") return "";
+    if (kind === "pyp") return gated || "";
     if (gated) return gated;
-    if (kind === "other") return "";
+    if (kind === "bone") return "bone-scan-wb.jpg";
+    if (kind) return "";
   }
   const own = window.STEM_PLATE && window.STEM_PLATE[finding];
   const fEarly = String(finding || "");

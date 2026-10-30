@@ -252,6 +252,7 @@ export const FINDING_POOLS: Record<string, string[]> = {
     'Bone density and body composition scan sarcopenia flagged',
     'Ga-68 DOTATATE Krenning score 4 midgut NET',
     'Thallium viability study reversible perfusion defect inferior wall',
+    'Tc-99m PYP scan heart to contralateral ratio elevated ATTR amyloid',
   ],
   CARDIAC: [
     'Coronary CTA CAD-RADS 4A proximal LAD 70 percent stenosis',
@@ -286,6 +287,8 @@ export const FINDING_POOLS: Record<string, string[]> = {
     'CT pericardial calcification with constrictive physiology',
     'Cardiac MRI post-infarct left ventricular thrombus apical',
     'Coronary CTA graft patency assessment LIMA to LAD patent',
+    'Tc-99m PYP grade 3 myocardial uptake equal to rib ATTR amyloid',
+    'Tc-99m pyrophosphate scan grade 2 cardiac uptake',
   ],
   MAMMO: [
     'Screening mammogram BI-RADS 1 negative dense breasts category C',
@@ -356,6 +359,8 @@ export const FINDING_POOLS: Record<string, string[]> = {
     'Chest radiograph subcutaneous emphysema after chest tube',
     'Clavicle radiograph mid-shaft fracture with shortening',
     'Chest radiograph rib fractures with underlying pulmonary contusion',
+    'Calcaneus radiograph Bohler angle depressed intra-articular fracture',
+    'Patella radiograph vertical fracture on sunrise view',
   ],
   THERAPY: [
     'Palliative radiotherapy to a painful femoral shaft metastasis',

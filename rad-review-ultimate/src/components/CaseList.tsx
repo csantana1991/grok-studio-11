@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Encounter } from '../data/generateCases'
 import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
 import { formatSlice } from '../data/stations'
 import PlateImg from './PlateImg'
-import { teachingPlateFor } from '../data/teachingPlate'
+import { imageLabel, teachingPlateFor } from '../data/teachingPlate'
 import { isNihToken, useNihFilm } from '../data/nihLive'
 import { isOpeniToken, useOpeniFilm } from '../data/openiLive'
 import { reportsSuv, statedSuv, studyKind } from '../data/caseDossier'
@@ -515,5 +515,100 @@ export default function CaseList({
         {cases.length.toLocaleString()} · double-click a row to load
       </div>
     </aside>
+  )
+}
+
+/** Every case that has a picture, a page at a time, across the full width. */
+export function ImageGallery({
+  cases,
+  thumbFor,
+  onSelect,
+  selectedIdx,
+}: {
+  cases: Encounter[]
+  thumbFor: (c: Encounter) => string | undefined
+  onSelect: (c: Encounter) => void
+  selectedIdx: number | null
+}) {
+  const pictured = useMemo(() => {
+    const out: Encounter[] = []
+    for (const c of cases) if (thumbFor(c)) out.push(c)
+    return out
+  }, [cases, thumbFor])
+  const [page, setPage] = useState(0)
+  const [wide, setWide] = useState(1280)
+  useEffect(() => {
+    const fit = () => setWide(window.innerWidth)
+    fit()
+    window.addEventListener('resize', fit)
+    return () => window.removeEventListener('resize', fit)
+  }, [])
+  useEffect(() => {
+    setPage(0)
+  }, [cases])
+  const cols = wide < 520 ? 2 : wide < 900 ? 3 : 6
+  const rowsN = 3
+  const per = cols * rowsN
+  const pages = Math.max(1, Math.ceil(pictured.length / per) || 1)
+  const safe = Math.min(page, pages - 1)
+  const slice = pictured.slice(safe * per, safe * per + per)
+  const from = pictured.length ? safe * per + 1 : 0
+  const to = safe * per + slice.length
+
+  return (
+    <section className="shrink-0 border-b border-rr-line bg-black">
+      <div className="flex items-center gap-2 px-2 py-1">
+        <span className="min-w-0 flex-1 text-[12px] font-bold text-white tabular-nums">
+          {pictured.length
+            ? `${from.toLocaleString()}–${to.toLocaleString()} of ${pictured.length.toLocaleString()} images`
+            : 'No matched image in this set'}
+        </span>
+        <button
+          type="button"
+          disabled={safe <= 0}
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          className="shrink-0 rounded border border-white/40 px-2 py-1 text-[11px] font-bold text-white disabled:opacity-30"
+        >
+          Previous
+        </button>
+        <button
+          type="button"
+          disabled={safe >= pages - 1}
+          onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}
+          className="shrink-0 rounded border border-white bg-white/10 px-2 py-1 text-[11px] font-bold text-white disabled:opacity-30"
+        >
+          Next
+        </button>
+      </div>
+      {slice.length > 0 && (
+        <div
+          className="grid gap-1 px-2 pb-2"
+          style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+        >
+          {slice.map((c) => {
+            const src = thumbFor(c)
+            return (
+              <button
+                key={c.idx}
+                type="button"
+                title={imageLabel(c)}
+                onClick={() => onSelect(c)}
+                className={
+                  'relative aspect-[4/3] overflow-hidden border bg-black ' +
+                  (c.idx === selectedIdx ? 'border-[#ffe14a]' : 'border-white/25')
+                }
+              >
+                {src ? (
+                  <FullThumb c={c} src={src} plain className="absolute inset-0 h-full w-full" />
+                ) : null}
+                <span className="absolute inset-x-0 bottom-0 truncate bg-black/75 px-1 text-left text-[10px] leading-5 text-white">
+                  {imageLabel(c)}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </section>
   )
 }

@@ -110,14 +110,14 @@ describe('case dossier', () => {
       stationId: 'CHEST',
     })
     const plate = resolveVisibleFigure(pet)
-    expect(plate?.url).toContain('pet-mip')
+    expect(plate?.url).toMatch(/^oi:pet:/)
     const hidden = resolveVisibleFigure(pet, { rejected: (url) => url === plate?.url })
     expect(hidden).toBeNull()
     const pypPin = resolveVisibleFigure(pet, {
       pin: { url: 'https://example.test/pyp.jpg', caption: 'Tc-99m PYP cardiac scan', title: 'PYP' },
     })
     expect(pypPin?.url ?? '').not.toContain('pyp')
-    expect(pypPin?.url).toContain('pet-mip')
+    expect(pypPin?.url).toMatch(/^oi:pet:/)
     const cited = resolveVisibleFigure(pet, {
       pin: {
         url: 'https://example.test/fdg.jpg',

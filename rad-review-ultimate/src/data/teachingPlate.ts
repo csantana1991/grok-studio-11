@@ -73,26 +73,26 @@ const DR = '/studio/assets/dr/'
 /** First file of each pool was checked by eye. The label is that picture, not the case sentence. */
 const POOLS: Record<string, string[]> = {
   mriBrain: ['one/mr-1.jpg', 'case-mr-3.jpg'],
-  mriKnee: ['case-mr-2.jpg', 'one/mr-2.jpg'],
-  mriShoulder: ['one/mr-3.jpg'],
+  mriKnee: ['case-mr-2.jpg', 'one/mr-2.jpg', 'one/mr-3.jpg', 'stem/mri-knee-2.jpg', 'stem/mri-knee-3.jpg'],
   mriSpine: ['one/mr-4.jpg'],
+  mriBreast: ['breast-mri-malign.jpg', 'breast-mri-occult.jpg'],
   mrcp: ['mrcp-choledocholithiasis.jpg'],
-  pet: ['one/pet-mip-1.jpg'],
+  pet: ['one/pet-mip-1.jpg', 'one/pet-mip-2.jpg'],
   petBrain: ['nm-petmri-brain.jpg'],
-  psma: ['one/psma-pair-1.jpg'],
-  dotatate: ['one/dota-1.jpg'],
-  bone: ['one/bone-1.jpg'],
-  thyroid: ['one/thyroid-1.jpg'],
-  mammo: ['one/mammo-4.jpg'],
-  ctChest: ['one/ct-chest-2.jpg', 'one/ct-chest-3.jpg'],
-  ctBody: ['one/ct-body-2.jpg'],
-  ctHead: ['one/mr-1.jpg'],
-  us: ['case-us-1.jpg'],
+  psma: ['one/psma-pair-1.jpg', 'nm-psma.jpg'],
+  dotatate: ['one/dota-1.jpg', 'nm-dotatate.jpg'],
+  bone: ['one/bone-2.jpg', 'one/bone-1.jpg', 'bone-scan-wb.jpg', 'nm-bone-4view.jpg', 'stem/bone-hmdp.jpg', 'stem/bone-wb.jpg'],
+  thyroid: ['one/thyroid-1.jpg', 'thyroid-scan-i123.jpg', 'nm-iodine.jpg', 'stem/thyroid-graves.jpg'],
+  mammo: ['one/mammo-3.jpg', 'one/mammo-4.jpg'],
+  ctHead: ['stem/ct-subdural.jpg'],
+  vq: ['one/vq-1.jpg', 'one/vq-2.jpg', 'nm-vq1.jpg', 'nm-vq2.jpg'],
+  usBreast: ['breast-us-mass.jpg'],
+  usGb: ['case-us-2.jpg'],
   pyp: ['one/pyp-1.jpg'],
-  xrChest: ['one/xr-1.jpg', 'one/xr-2.jpg'],
+  xrPatella: ['stem/patella-xr.jpg'],
+  xrCalc: ['stem/calcaneus-xr.jpg'],
   hida: ['nm-hida.jpg'],
-  renal: ['nm-mag3.jpg'],
-  vq: ['one/vq-1.jpg'],
+  renal: ['nm-mag3.jpg', 'stem/mag3.jpg', 'stem/dmsa.jpg'],
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -111,7 +111,12 @@ const KIND_LABEL: Record<string, string> = {
   ctChest: 'Chest CT example',
   cardiacCt: 'Cardiac CT example',
   ctBody: 'Abdomen CT example',
-  ctHead: 'Brain MRI example',
+  ctHead: 'Head CT example',
+  xrPatella: 'Patella radiograph example',
+  xrCalc: 'Calcaneus radiograph example',
+  mriBreast: 'Breast MRI example',
+  usBreast: 'Breast ultrasound example',
+  usGb: 'Gallbladder ultrasound example',
   us: 'Ultrasound example',
   pyp: 'PYP scan example',
   xrChest: 'Chest radiograph example',
@@ -120,25 +125,13 @@ const KIND_LABEL: Record<string, string> = {
   vq: 'V/Q scan example',
 }
 
-function categoryFilm(categoryId: string): string {
-  const cat = categoryId.toLowerCase()
-  if (cat === 'ct') return 'ctBody'
-  if (cat === 'mri') return 'mriBrain'
-  if (cat === 'pethyb' || cat === 'nuc' || cat === 'therapy') return 'pet'
-  if (cat === 'us') return 'us'
-  if (cat === 'mammo') return 'mammo'
-  if (cat === 'cardiac') return 'cardiacCt'
-  return 'xrChest'
-}
-
 export function plateKind(finding: string, categoryId: string): string | null {
   const f = finding.toLowerCase()
   const cat = categoryId.toLowerCase()
   if (/\bmuga\b|gated blood|equilibrium radionuclide|\berna\b/.test(f)) return null
-  // nm-pyp.jpg also contains a sestamibi polar map, and pyp-1.jpg is not a readable PYP study.
-  if (/\bpyp\b|pyrophosphate/.test(f)) return categoryFilm(cat)
-  if (/parathyroid/.test(f)) return categoryFilm(cat)
-  if (/\becho\b/.test(f)) return categoryFilm(cat)
+  if (/\bpyp\b|pyrophosphate/.test(f)) return 'pyp'
+  if (/parathyroid/.test(f)) return null
+  if (/\becho\b/.test(f)) return null
   if (/sestamibi|tetrofosmin|myocardial perfusion|\bmibi\b|stress pet myocardial|thallium viability/.test(f)) {
     return 'mpi'
   }
@@ -151,31 +144,51 @@ export function plateKind(finding: string, categoryId: string): string | null {
     return 'thyroid'
   }
   if (/bone scan|three-phase bone|\bmdp\b|ra-223/.test(f)) return 'bone'
-  if (/leukocyte/.test(f)) return categoryFilm(cat)
+  if (/leukocyte/.test(f)) return null
   if (/mrcp|choledocholithiasis/.test(f)) return 'mrcp'
-  if (cat === 'mammo' || (/mammogram|tomosynthesis|\bbi-rads\b/.test(f) && !/\bmri\b/.test(f))) return 'mammo'
-  if (cat === 'us' || (/\bultrasound\b|\bduplex\b|\bdoppler\b/.test(f) && !/\bct\b|\bmri\b/.test(f))) return 'us'
-  if (cat === 'rad' || /radiograph/.test(f) || /bronchiolitis|steeple sign|\bcroup\b/.test(f)) {
-    return 'xrChest'
+  if ((cat === 'mammo' || /mammogram|tomosynthesis|\bbi-rads\b/.test(f)) && !/\bmri\b|\bultrasound\b/.test(f)) return 'mammo'
+  if (cat === 'us' || (/\bultrasound\b|\bduplex\b|\bdoppler\b/.test(f) && !/\bct\b|\bmri\b/.test(f))) {
+    if (/breast/.test(f)) return 'usBreast'
+    if (/gallbladder|cholecyst|\bbiliary\b|cholelith/.test(f)) return 'usGb'
+    if (/obstetric|nuchal|biometry|placenta|fetal|fetus|anatomy survey/.test(f)) return 'us'
+    return null
+  }
+  if (/steeple|\bcroup\b/.test(f)) return null
+  if (
+    (cat === 'rad' || cat === 'peds' || /radiograph/.test(f) || /bronchiolitis|acute chest syndrome|air bronchogram/.test(f)) &&
+    !/\bct\b|\bmri\b|\bultrasound\b|\bpet\b/.test(f)
+  ) {
+    if (/patella|knee radiograph/.test(f)) return 'xrPatella'
+    if (/calcaneus|\bos calcis\b/.test(f)) return 'xrCalc'
+    if (/abdominal|elbow|ankle|wrist|foot radiograph|forefoot|pelvis radiograph|hip radiograph|skull radiograph|humerus|clavicle|scaphoid|hand radiograph|shoulder radiograph|lumbar radiograph|spine radiograph|cervical spine radiograph/.test(f)) {
+      return null
+    }
+    if (/chest|pneumo|pneumonia|kerley|pleural|bronchiol|air bronchogram|acute chest|\bcxr\b|hilar|miliary|rib fracture|silhouette|costophrenic|subdiaphragmatic|nasogastric|pacemaker|lobar/.test(f)) {
+      return 'xrChest'
+    }
+    return null
   }
   const mri = cat === 'mri' || /\bmri\b|\bmra\b/.test(f)
   if (mri) {
     if (/knee|\bacl\b|menisc/.test(f)) return 'mriKnee'
-    if (/shoulder|slap|rotator|supraspinatus/.test(f)) return 'mriShoulder'
-    if (/spine|lumbar|cervical|discitis|epidural|cord signal|stenosis/.test(f)) return 'mriSpine'
+    if (/shoulder|slap|rotator|supraspinatus/.test(f)) return null
+    if (/cervical/.test(f) && !/lumbar/.test(f)) return null
+    if (/spine|lumbar|discitis|epidural|cord signal|stenosis|spondylol|pars/.test(f)) return 'mriSpine'
     if (/cardiac|myocarditis|cardiomyopathy|viability|amyloid|takotsubo|fabry|sarcoid|myxoma|pericarditis|arrhythmogenic|hypertrophic/.test(f)) {
       return 'cardiacMri'
     }
+    if (/breast/.test(f)) return 'mriBreast'
     if (/brain|pituitary|orbit|\bms\b|demyelin|glioblastoma|schwannoma|herpes|hydrocephalus|cavernous|encephalopathy|infarct|seizure|cortical dysplasia/.test(f)) {
       return 'mriBrain'
     }
-    return 'mriBrain'
+    return null
   }
   const ct = !mri && (cat === 'ct' || /\bct\b|\bcta\b/.test(f))
   if (ct) {
-    if (/head|brain|facial|temporal|sinus|odontoid|spine|extremity|limb|femur|tibial|wrist|pelvis|prostate/.test(f)) {
-      return 'ctBody'
+    if (/facial|temporal|sinus|odontoid|mastoid|skull base|\bcta\b|aneurysm|circle of willis|extremity|femur|tibial|wrist|spine|prostate/.test(f)) {
+      return null
     }
+    if (/head|brain|skull|subdural|subarachnoid|\bstroke\b|\bmca\b|intracranial|convexity/.test(f)) return 'ctHead'
     if (/coronary|calcium score|tavi|pulmonary vein|atrial appendage|aortic root|prosthetic valve|pericardial calcif|myocardial bridging|pannus/.test(f)) {
       return 'cardiacCt'
     }
@@ -191,7 +204,7 @@ export function plateKind(finding: string, categoryId: string): string | null {
     if (/brain|skull|pituitary/.test(f)) return 'petBrain'
     return 'pet'
   }
-  return categoryFilm(cat)
+  return null
 }
 
 const FILE_KIND: [string, StudyKind][] = [
@@ -230,6 +243,16 @@ export function knownPlateKind(url: string): StudyKind | null {
   if (u.startsWith('oi:mri:')) return 'mri'
   if (u.startsWith('oi:pet:')) return 'pet-fdg'
   if (u.includes('/library/nih/')) return 'radiograph'
+  if (u.includes('patella-xr') || u.includes('calcaneus-xr')) return 'radiograph'
+  if (u.includes('ct-subdural') || u.includes('/case-ct-')) return 'ct'
+  if (u.includes('mri-knee') || u.includes('/one/mr-2') || u.includes('/one/mr-3') || u.includes('/one/mr-4') || u.includes('breast-mri')) return 'mri'
+  if (u.includes('breast-us')) return 'us'
+  if (u.includes('/one/pyp-') || u.includes('/nm-pyp')) return 'pyp'
+  if (u.includes('/one/bone') || u.includes('bone-scan') || u.includes('/nm-bone') || u.includes('bone-hmdp') || u.includes('bone-wb')) return 'bone'
+  if (u.includes('/one/vq') || u.includes('/nm-vq')) return 'vq'
+  if (u.includes('/one/mammo')) return 'mammo'
+  if (u.includes('/one/thyroid') || u.includes('thyroid-scan') || u.includes('thyroid-graves') || u.includes('/nm-iodine')) return 'thyroid'
+  if (u.includes('/stem/mag3') || u.includes('/nm-mag3') || u.includes('dmsa')) return 'renal'
   if (u.includes('/meta-image/films/x')) return 'radiograph'
   if (u.includes('/meta-image/films/ct-')) return 'ct'
   if (u.includes('/meta-image/films/mri-')) return 'mri'
@@ -260,20 +283,16 @@ function pick(finding: string, _stationId: string, categoryId: string, idx = 0):
   if (key === 'cardiacCt') return CARDIAC_CT[Math.abs(idx) % CARDIAC_CT.length]
   if (key === 'xrChest') return nihToken(finding, idx)
   if (key === 'ctChest' || key === 'ctBody') return openiToken('ct', idx)
-  if (key === 'mriBrain' || key === 'mriKnee' || key === 'mriShoulder' || key === 'mriSpine' || key === 'mrcp') {
-    return openiToken('mri', idx)
-  }
-  if (key === 'pet' || key === 'petBrain') return openiToken('pet', idx)
+  if (key === 'mriBrain') return openiToken('mri', idx)
+  if (key === 'pet') return openiToken('pet', idx)
   if (key === 'us') {
     const pool = US_PLATES
     if (pool.length) return pool[Math.abs(idx) % pool.length]
     return ''
   }
-  const pool = POOLS[key]
-  if (!pool) return ''
-  const name = pool.find((file) => !NOT_MEDICAL.has(file))
-  if (!name) return ''
-  return DR + name
+  const pool = (POOLS[key] || []).filter((file) => !NOT_MEDICAL.has(file))
+  if (!pool.length) return ''
+  return DR + pool[Math.abs(idx) % pool.length]
 }
 
 function ctFilms(finding: string): Film[] {
