@@ -2188,7 +2188,7 @@ body.hj-full #liveLabel {
 body.hj-full #hjSaid { flex:1; min-width:0; height:32px; margin:0; border:0; border-radius:999px; background:#f7f4ee; color:#1a1408; padding:0 12px; font:inherit; }
 #wikiTop { display:none; }
 #wikiTop.on {
-  display:flex; gap:8px; align-items:center; position:fixed; top:40px; left:0; right:0; height:72px;
+  display:flex; gap:8px; align-items:stretch; position:fixed; top:40px; left:0; right:0; height:118px;
   z-index:790; overflow-x:auto; overflow-y:hidden; background:#0c1210; padding:6px 10px;
   scrollbar-width: none;
 }
@@ -2202,12 +2202,13 @@ body.wiki-top #liveLabel {
 }
 body.wiki-top #hjSaid { flex:1; min-width:0; height:28px; margin:0; border:0; border-radius:999px; background:#f7f4ee; color:#1a1408; padding:0 12px; font:inherit; }
 body.wiki-top:not(.hj-full) #hjExit { display:none !important; }
-body.wiki-top:not(.hj-full):not(.medb-full) .app { margin-top:112px; height:calc(100dvh - 112px); }
-#wikiTop button { flex:0 0 auto; width:120px; border:0; background:transparent; padding:0; }
-#wikiTop img { width:120px; height:66px; object-fit:cover; border-radius:6px; background:#07141f; }
-#wikiTop span, #wikiTop b[data-q] { display:none; }
+body.wiki-top:not(.hj-full):not(.medb-full) .app { margin-top:164px; height:calc(100dvh - 164px); }
+#wikiTop button { flex:0 0 auto; width:150px; border:0; background:#123044; border-radius:8px; padding:0; display:flex; flex-direction:column; overflow:hidden; }
+#wikiTop img { width:150px; height:78px; object-fit:cover; background:#07141f; }
+#wikiTop span { display:block; color:#d7e6ee; font-size:10px; line-height:1.2; padding:2px 6px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#wikiTop b[data-q] { display:none; }
 body.hj-full.wiki-top .work,
-body.medb-full.wiki-top .work { top:126px !important; bottom:92px !important; }
+body.medb-full.wiki-top .work { top:164px !important; bottom:92px !important; }
 body.hj-full #capRail,
 body.medb-full #capRail { height:84px !important; z-index:400; pointer-events:auto; }
 body.hj-full .work,
@@ -5505,12 +5506,11 @@ const CapRail = {
       if (!fresh.length) return;
       host.classList.add("on");
       document.body.classList.add("wiki-top");
-      host.querySelectorAll("button").forEach((node) => node.remove());
       host.dataset.q = q;
       this.seenTop = this.seenTop || {};
       const said = document.getElementById("hjSaid");
       if (said && document.activeElement !== said) said.value = q;
-      fresh.forEach((p) => {
+      fresh.slice().reverse().forEach((p) => {
         const src = p.thumbnail.source;
         this.seenTop[src] = 1;
         const cap = "Wikipedia · " + (p.title || q);
@@ -5525,11 +5525,11 @@ const CapRail = {
         b.appendChild(img);
         b.appendChild(label);
         b.onclick = () => this.pop(src, cap);
-        host.appendChild(b);
+        host.insertBefore(b, host.firstChild);
         add(src, cap);
         if (typeof LiveHero !== "undefined") LiveHero.add({ src, cap, term: q, kind: "wiki-live", raw: p.title || q });
       });
-      while (host.children.length > 8) host.removeChild(host.lastChild);
+      while (host.children.length > 14) host.removeChild(host.lastChild);
       const payload = { source: "atlas-figures", items: rows.slice(0, 2).map((p) => ({ src: p.thumbnail.source, title: p.title || q, href: p.fullurl || "" })) };
       document.querySelectorAll("iframe").forEach((frame) => {
         try { frame.contentWindow.postMessage(payload, "*"); } catch (e) {}
@@ -5559,9 +5559,9 @@ const CapRail = {
     this.readScreen();
   },
   nextScreenPhrase() {
-    const stop = /^(that|this|with|from|what|when|your|have|they|them|then|about|there|their|which|would|could|should|really|into|over|lecture|yeah|okay|well|just|like|gonna|going|know|right|look|here|cause|causes)$/i;
-    const bag = (this.screenWords && this.screenWords.length) ? this.screenWords.join(" ") : (this.line || this.topic || ((document.getElementById("hjSaid") || {}).value) || "");
-    const words = String(bag).toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.test(w));
+    const stop = /^(that|this|with|from|what|when|your|have|they|them|then|about|there|their|which|would|could|should|really|into|over|lecture|yeah|okay|well|just|like|gonna|going|know|right|look|here|cause|causes|meta|image|images|atlas|academy|nucleus|review|ultimate|widget|search|imaging|clear|youtube|ninja|nerd|public|clinical|medicine|medical|rad|board|studio|results|open)$/i;
+    const raw = (this.line && this.line.length > 12) ? this.line : ((this.screenWords && this.screenWords.length) ? this.screenWords.join(" ") : (this.topic || ((document.getElementById("hjSaid") || {}).value) || ""));
+    const words = String(raw).toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.test(w));
     if (!words.length) return "";
     this._win = (this._win || 0) + 1;
     const i = this._win % words.length;
