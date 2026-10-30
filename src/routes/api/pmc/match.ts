@@ -59,7 +59,7 @@ export const Route = createFileRoute("/api/pmc/match")({
           const asJson = url.searchParams.get("format") === "json";
           const caps: Record<string, number> = {
             ct: 347302, mri: 316774, pet: 220264, xray: 112120,
-            muga: 188838, pyp: 2938, bone: 190870, thyroid: 32841,
+            muga: 6918, pyp: 2938, bone: 190870, thyroid: 32841,
             vq: 16410, hida: 3087, renal: 75583, mpi: 9660,
             us: 82831, mammo: 4637, psma: 27133, dota: 1254,
             xr: 15658, para: 7453, echo: 63562,
@@ -68,7 +68,7 @@ export const Route = createFileRoute("/api/pmc/match")({
             ct: "computed tomography",
             mri: "magnetic resonance imaging",
             pet: '"positron emission tomography"',
-            muga: '"gated blood pool scintigraphy"',
+            muga: '"MUGA scan"',
             pyp: '"pyrophosphate scintigraphy"',
             bone: '"bone scintigraphy"',
             thyroid: '"thyroid scintigraphy"',
