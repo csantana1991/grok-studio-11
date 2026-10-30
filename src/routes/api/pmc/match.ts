@@ -58,46 +58,33 @@ export const Route = createFileRoute("/api/pmc/match")({
           const modality = url.searchParams.get("modality") || "ct";
           const spec =
             modality === "mri"
-              ? { q: "mri", cap: 112120 }
+              ? { q: "magnetic resonance imaging", cap: 316774 }
               : modality === "pet"
-                ? { q: '"positron emission tomography"', cap: 112120 }
-                : { q: "computed tomography", cap: 112120 };
+                ? { q: '"positron emission tomography"', cap: 220264 }
+                : { q: "computed tomography", cap: 347302 };
           const it = (url.searchParams.get("it") || "").replace(/\s+/g, " ").trim().slice(0, 120);
           const specQ = it || spec.q;
           const n = Math.min(36, Math.max(1, Number(url.searchParams.get("n") || 36) || 36));
           let m = Math.max(1, Number(url.searchParams.get("m") || 1) || 1);
           if (m > spec.cap) m = ((m - 1) % spec.cap) + 1;
           const take = Math.min(n, spec.cap - m + 1);
-          try {
-            const search =
-              "https://openi.nlm.nih.gov/api/search?coll=pmc&query=" +
-              encodeURIComponent(specQ) +
-              "&m=" +
-              m +
-              "&n=" +
-              take;
-            const res = await fetch(search, {
-              signal: AbortSignal.timeout(12000),
-              headers: { "User-Agent": "BoardStudio/1.0 (teaching)" },
-            });
-            if (!res.ok) return Response.json({ modality, total: spec.cap, m, list: [] });
-            const data = (await res.json()) as {
-              total?: number;
-              list?: {
-                title?: string;
-                imgLarge?: string;
-                pmcid?: string;
-                image?: { caption?: string };
-              }[];
-            };
-            const total = Math.min(spec.cap, data.total || spec.cap);
-            const list = (data.list || [])
+          const paint = (data: {
+            total?: number;
+            list?: {
+              title?: string;
+              imgLarge?: string;
+              pmcid?: string;
+              image?: { caption?: string };
+            }[];
+          }) => {
+            const seen = new Set<string>();
+            return (data.list || [])
               .filter((row) => row.imgLarge)
               .filter((row) => {
-                if (modality !== "pet") return true
-                const text = ((row.image?.caption || "") + " " + (row.title || "")).replace(/<[^>]+>/g, " ")
-                if (/polyethylene|terephthalate/i.test(text) && !/positron|fluorodeoxyglucose|\bFDG\b|PET\s*\/\s*CT/i.test(text)) return false
-                return true
+                if (modality !== "pet") return true;
+                const text = ((row.image?.caption || "") + " " + (row.title || "")).replace(/<[^>]+>/g, " ");
+                if (/polyethylene|terephthalate/i.test(text) && !/positron|fluorodeoxyglucose|\bFDG\b|PET\s*\/\s*CT/i.test(text)) return false;
+                return true;
               })
               .map((row) => {
                 const raw = row.image?.caption || row.title || spec.q;
@@ -118,7 +105,44 @@ export const Route = createFileRoute("/api/pmc/match")({
                   pmcid: row.pmcid || "",
                   title: (row.title || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 180),
                 };
+              })
+              .filter((row) => {
+                if (seen.has(row.url)) return false;
+                seen.add(row.url);
+                return true;
               });
+          };
+          try {
+            const pull = async (start: number) => {
+              const search =
+                "https://openi.nlm.nih.gov/api/search?coll=pmc&query=" +
+                encodeURIComponent(specQ) +
+                "&m=" +
+                start +
+                "&n=" +
+                take;
+              const res = await fetch(search, {
+                signal: AbortSignal.timeout(20000),
+                headers: { "User-Agent": "BoardStudio/1.0 (teaching)" },
+              });
+              if (!res.ok) return null;
+              return (await res.json()) as {
+                total?: number;
+                list?: {
+                  title?: string;
+                  imgLarge?: string;
+                  pmcid?: string;
+                  image?: { caption?: string };
+                }[];
+              };
+            };
+            let data = await pull(m);
+            let list = data ? paint(data) : [];
+            if (!list.length) {
+              data = await pull(Math.min(spec.cap, m + take));
+              list = data ? paint(data) : [];
+            }
+            const total = Math.min(spec.cap, data?.total || spec.cap);
             return Response.json({ modality, total, m, list });
           } catch {
             return Response.json({ modality, total: spec.cap, m, list: [] });

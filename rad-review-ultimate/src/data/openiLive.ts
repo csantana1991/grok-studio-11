@@ -1,13 +1,14 @@
 /**
  * CT, MRI, and PET frames for RAD REVIEW come from Open-i (PubMed Central).
  * Chest radiographs stay on the NIH index. These catalogs are paged, not stored:
- * CT, MRI, and PET are each capped at 112,120 to match the chest library.
- * PET is the Open-i search for "positron emission tomography", not the plastic.
+ * Chest radiographs stay on the NIH index of 112,120.
+ * CT, MRI, and PET page the full Open-i sets: 347,302 CT, 316,774 MRI, 220,264 PET.
+ * Each rank is a different figure. PET is "positron emission tomography", not the plastic.
  */
 
 import { useEffect, useState } from 'react'
 
-export const OPENI_TOTAL = { ct: 112120, mri: 112120, pet: 112120 } as const
+export const OPENI_TOTAL = { ct: 347302, mri: 316774, pet: 220264 } as const
 export type OpeniModality = keyof typeof OPENI_TOTAL
 
 export function openiToken(modality: OpeniModality, idx: number): string {
