@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/pmc/match")({
             modality === "mri"
               ? { q: "mri", cap: 112120 }
               : modality === "pet"
-                ? { q: "pet", cap: 64440 }
+                ? { q: '"positron emission tomography"', cap: 112120 }
                 : { q: "computed tomography", cap: 112120 };
           const it = (url.searchParams.get("it") || "").replace(/\s+/g, " ").trim().slice(0, 120);
           const specQ = it || spec.q;
@@ -65,6 +65,12 @@ export const Route = createFileRoute("/api/pmc/match")({
             const total = Math.min(spec.cap, data.total || spec.cap);
             const list = (data.list || [])
               .filter((row) => row.imgLarge)
+              .filter((row) => {
+                if (modality !== "pet") return true
+                const text = ((row.image?.caption || "") + " " + (row.title || "")).replace(/<[^>]+>/g, " ")
+                if (/polyethylene|terephthalate/i.test(text) && !/positron|fluorodeoxyglucose|\bFDG\b|PET\s*\/\s*CT/i.test(text)) return false
+                return true
+              })
               .map((row) => {
                 const raw = row.image?.caption || row.title || spec.q;
                 const caption = raw
