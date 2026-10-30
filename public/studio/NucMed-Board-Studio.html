@@ -8633,6 +8633,38 @@ function atlasScanOk(key, cap, src) {
   return /pet|spect|scintig|fdg|radiograph|\bct\b|mri/.test(hay);
 }
 
+const metaAtlas = {};
+const META_CAPS = { ct: 347302, mri: 316774, pet: 220264, xray: 112120, muga: 6918, pyp: 2938, bone: 190870, thyroid: 32841, vq: 16410, hida: 3087, renal: 75583, mpi: 9660, us: 82831, mammo: 4637, psma: 27133, dota: 1254, xr: 15658, para: 7453, echo: 63562 };
+function metaFamiliesForAtlas(key) {
+  const k = String(key || "");
+  if (/breast/.test(k)) return [["mammo", "Mammogram breast"]];
+  if (/cardio/.test(k)) return [["mpi", "Myocardial perfusion SPECT"], ["muga", "MUGA scintigraphy"], ["pyp", "PYP cardiac scintigraphy"], ["pet", "Cardiac PET"]];
+  if (/neuro/.test(k)) return [["mri", "Brain MRI"], ["pet", "Brain PET"], ["ct", "Head CT"]];
+  if (/thorax|lung/.test(k)) return [["xray", "Chest radiograph"], ["ct", "Chest CT"], ["vq", "V/Q scintigraphy"], ["pet", "Chest PET"]];
+  if (/(^|-)gi$|dr-gi/.test(k)) return [["hida", "HIDA scintigraphy"], ["ct", "Abdomen CT"], ["us", "Abdomen ultrasound"]];
+  if (/(^|-)gu$|dr-gu/.test(k)) return [["renal", "Renal scintigraphy"], ["ct", "CT"], ["psma", "PSMA PET"], ["us", "Ultrasound"]];
+  if (/msk/.test(k)) return [["bone", "Bone scan"], ["xr", "Radiograph"], ["mri", "MSK MRI"]];
+  if (/dr-us|(^|-)us$/.test(k)) return [["us", "Ultrasound"]];
+  if (/mri/.test(k)) return [["mri", "MRI"]];
+  if (/dr-ct/.test(k)) return [["ct", "CT"]];
+  if (/endocrine|thyroid/.test(k)) return [["thyroid", "Thyroid scintigraphy"], ["para", "Parathyroid scintigraphy"]];
+  if (/petmri/.test(k)) return [["pet", "PET"], ["mri", "MRI"], ["psma", "PSMA PET"]];
+  return [["pet", "PET scintigraphy"], ["ct", "CT"], ["mri", "MRI"], ["xray", "Chest radiograph"], ["bone", "Bone scan"], ["psma", "PSMA PET"]];
+}
+function metaLocalBatch(key, count) {
+  const fams = metaFamiliesForAtlas(key);
+  const slot = metaAtlas[key] || (metaAtlas[key] = { n: 1, items: [] });
+  const rows = [];
+  for (let i = 0; i < count; i++) {
+    const fam = fams[(slot.n + i) % fams.length];
+    const cap = META_CAPS[fam[0]] || 1000;
+    const rank = ((slot.n + i) % cap) + 1;
+    rows.push(["/api/pmc/match?source=film&modality=" + fam[0] + "&m=" + rank, fam[1] + " · Meta Image · local"]);
+  }
+  slot.n += count;
+  slot.items = slot.items.concat(rows);
+  return rows;
+}
 function atlasPlates(key) {
   const names = ATLAS10[key] || ATLAS10.nuclear;
   const rows = names.map((n, i) => [plateSrc(n), n.replace(/[-_]/g, " ").replace(".jpg", "")]);
@@ -8963,17 +8995,23 @@ function paintAtlasInto(root) {
   const labels = { petmri: "PET/MRI", nuclear: "Nuclear · 10 scans" };
   COURSE.modules.forEach(m => { labels[m.id] = m.num + " · " + m.title; });
   const tabs = ordered.map(k => `<button class="bank-tab ${state.atlasKey === k ? "on" : ""}" data-key="${k}">${labels[k] || k}</button>`).join("");
-  const list = atlasPlates(state.atlasKey).filter(row => atlasScanOk(state.atlasKey, row[1], row[0]));
+  const mode = state.atlasMode || "local";
+  const local = atlasPlates(state.atlasKey).filter(row => atlasScanOk(state.atlasKey, row[1], row[0]));
+  if (mode === "local" && !((metaAtlas[state.atlasKey] || {}).items || []).length) metaLocalBatch(state.atlasKey, 50);
+  const metaItems = mode === "local" ? ((metaAtlas[state.atlasKey] || {}).items || []).filter(row => atlasScanOk(state.atlasKey, row[1], row[0])) : [];
   if (liveAtlas[state.atlasKey] && Array.isArray(liveAtlas[state.atlasKey].items)) {
     liveAtlas[state.atlasKey].items = liveAtlas[state.atlasKey].items.filter(row => atlasScanOk(state.atlasKey, row[1], row[0]));
   }
   const pageSize = 50;
   if (!state.atlasPage) state.atlasPage = 0;
-  const shown = list.slice(0, Math.max(pageSize, (state.atlasPage + 1) * pageSize));
+  const pool = mode === "local" ? local.concat(metaItems) : local;
+  const shown = pool.slice(0, Math.max(pageSize, (state.atlasPage + 1) * pageSize));
   if (root._atlasIO) { try { root._atlasIO.disconnect(); } catch (e) {} root._atlasIO = null; }
   root.innerHTML = `
     <div class="atlas-head">
       <h2>Atlas</h2>
+      <button type="button" class="bank-tab ${mode === "local" ? "on" : ""}" id="atlasModeLocal">Local</button>
+      <button type="button" class="bank-tab ${mode === "online" ? "on" : ""}" id="atlasModeOnline">Online</button>
       <button type="button" class="primary" id="atlasScrollBtn">▶ Scroll</button>
       <button type="button" id="atlasPauseBtn">❚❚ Pause</button>
       <button type="button" class="primary" id="atlasPlayBtn">▶ Play all plates</button>
@@ -8981,19 +9019,24 @@ function paintAtlasInto(root) {
       <button type="button" id="closeAtlas">Hide</button>
     </div>
     <div class="atlas-grid" id="atlasGrid"></div>
-    <p id="liveStat" style="color:var(--muted)">${shown.length} on screen · ${list.length} collected · scroll for more</p>
-    <div id="atlasSentinel">Scroll for the next 50 live images</div>
+    <p id="liveStat" style="color:var(--muted)">${shown.length} on screen · ${pool.length} ${mode === "local" ? "local" : "collected"} · scroll for more</p>
+    <div id="atlasSentinel">${mode === "local" ? "Scroll for the next 50 Meta Image plates" : "Scroll for the next 50 live images"}</div>
     <div class="pager">
-      <button type="button" id="liveMore">Load next 50 live images</button>
+      <button type="button" id="liveMore">${mode === "local" ? "Load next 50 Meta Image" : "Load next 50 live images"}</button>
     </div>`;
   appendAtlasCards(root, 0, shown);
-  const liveKept = ((liveAtlas[state.atlasKey] || {}).items || []);
+  const liveKept = mode === "online" ? ((liveAtlas[state.atlasKey] || {}).items || []) : [];
   if (liveKept.length) appendAtlasCards(root, shown.length, liveKept);
-  root.querySelectorAll(".bank-tab").forEach(b => b.onclick = () => {
+  root.querySelectorAll(".bank-tab[data-key]").forEach(b => b.onclick = () => {
     state.atlasKey = b.dataset.key;
     state.atlasPage = 0;
     paintAtlasInto(root);
   });
+  const setMode = (next) => { state.atlasMode = next; state.atlasPage = 0; paintAtlasInto(root); };
+  const locBtn = root.querySelector("#atlasModeLocal");
+  const onBtn = root.querySelector("#atlasModeOnline");
+  if (locBtn) locBtn.onclick = () => setMode("local");
+  if (onBtn) onBtn.onclick = () => setMode("online");
   const more = root.querySelector("#liveMore");
   if (more) more.onclick = () => atlasLoadMore(root, true);
   const hide = root.querySelector("#closeAtlas");
@@ -9025,7 +9068,7 @@ function paintAtlasInto(root) {
       if (root.querySelectorAll("#atlasGrid .atlas-card").length < need) setTimeout(kick, 400);
     }).catch(() => {});
   };
-  kick();
+  if ((state.atlasMode || "local") === "online") kick();
 }
 
 function appendAtlasCards(root, fromIdx, rows) {
@@ -9052,8 +9095,10 @@ function appendAtlasCards(root, fromIdx, rows) {
   });
   const stat = root.querySelector("#liveStat");
   const n = grid.querySelectorAll(".atlas-card").length;
-  const collected = atlasPlates(state.atlasKey).length;
-  if (stat) stat.textContent = n + " on screen · " + collected + " collected · scroll for more";
+  const collected = (state.atlasMode || "local") === "local"
+    ? atlasPlates(state.atlasKey).length + (((metaAtlas[state.atlasKey] || {}).items || []).length)
+    : atlasPlates(state.atlasKey).length;
+  if (stat) stat.textContent = n + " on screen · " + collected + ((state.atlasMode || "local") === "local" ? " local" : " collected") + " · scroll for more";
 }
 
 function atlasNearBottom(root) {
@@ -9085,14 +9130,24 @@ async function atlasLoadMore(root, forceFetch) {
   if (state.atlasBusy && !forceFetch) return;
   state.atlasBusy = true;
   const sen = root && root.querySelector && root.querySelector("#atlasSentinel");
-  if (sen) sen.textContent = "Loading next 50 live images…";
+  if (sen) sen.textContent = (state.atlasMode || "local") === "local" ? "Loading next 50 Meta Image plates…" : "Loading next 50 live images…";
   try {
+    if ((state.atlasMode || "local") === "local") {
+      const extra = metaLocalBatch(state.atlasKey, 50);
+      if (root && typeof appendAtlasCards === "function") appendAtlasCards(root, 0, extra);
+      return;
+    }
     await loadOpenI({ append: true, root: root || undefined });
   } finally {
     state.atlasBusy = false;
     if (sen) {
-      const n = ((liveAtlas[state.atlasKey] || {}).items || []).length;
-      sen.textContent = "Live atlas " + n + " · scroll for next 50";
+      if ((state.atlasMode || "local") === "local") {
+        const n = ((metaAtlas[state.atlasKey] || {}).items || []).length;
+        sen.textContent = "Meta Image local " + n + " · scroll for next 50";
+      } else {
+        const n = ((liveAtlas[state.atlasKey] || {}).items || []).length;
+        sen.textContent = "Live atlas " + n + " · scroll for next 50";
+      }
     }
   }
 }
