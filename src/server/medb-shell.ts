@@ -121,7 +121,7 @@ const BRIDGE = `(function(){
       dock.className = "studio-widgets";
       var bar = document.createElement("div");
       bar.className = "inline-actions";
-      bar.style.cssText = "display:flex;flex-direction:column;align-items:stretch;gap:6px;margin-bottom:8px";
+      bar.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;margin-top:8px";
       var kinds = [["radreview","RAD REVIEW"],["radatlas","Rad Atlas"],["caseqa","Q+A"],["rrultimate","RAD REVIEW Ultimate"],["academy","Academy"],["nucleus","Nucleus"]];
       kinds.forEach(function(pair){
         var b = document.createElement("button");
@@ -135,36 +135,21 @@ const BRIDGE = `(function(){
           for (var n = 0; n < buttons.length; n++) {
             buttons[n].className = buttons[n].getAttribute("data-view") === pair[0] ? "button button-crimson" : "button button-quiet";
           }
-          var frame = dock.querySelector("iframe");
           var current = dock.getAttribute("data-title") || title;
-          if (frame) frame.src = widgetSrc(pair[0], current);
+          try { window.parent.postMessage({ type: "hj-widget", view: pair[0], title: current }, "*"); } catch (e) {}
         });
         bar.appendChild(b);
       });
-      dock.style.marginTop = "0";
-      dock.style.minWidth = "0";
-      var frame = document.createElement("iframe");
-      frame.id = "studioWidget";
-      frame.title = "Grok 11 widgets";
-      frame.setAttribute("allow", "autoplay");
-      frame.style.cssText = "width:100%;height:70vh;border:0;border-radius:12px;background:#0b1220";
       dock.appendChild(bar);
-      dock.appendChild(frame);
       dock.setAttribute("data-view", "radatlas");
-      player.insertBefore(dock, player.firstChild);
-      if (!document.getElementById("studioDockCss")) {
-        var css = document.createElement("style");
-        css.id = "studioDockCss";
-        css.textContent = ".media-player.with-widgets{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:12px;align-items:start}.media-player.with-widgets .studio-widgets{grid-column:1;grid-row:1 / span 4}@media (max-width:860px){.media-player.with-widgets{display:flex;flex-direction:column}.media-player.with-widgets .player-surface{order:1}.media-player.with-widgets .studio-widgets{order:2}}";
-        document.head.appendChild(css);
-      }
-      player.classList.add("with-widgets");
+      var caption = player.querySelector(".player-caption");
+      if (caption && caption.nextSibling) player.insertBefore(dock, caption.nextSibling);
+      else player.appendChild(dock);
     }
     if (dock.getAttribute("data-title") === title) return;
     dock.setAttribute("data-title", title);
     var view = dock.getAttribute("data-view") || "radatlas";
-    var live = dock.querySelector("iframe");
-    if (live) live.src = widgetSrc(view, title);
+    try { window.parent.postMessage({ type: "hj-widget", view: view, title: title }, "*"); } catch (e) {}
   }
   function tick(){
     mountDock();
