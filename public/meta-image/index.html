@@ -39,6 +39,17 @@
   dialog h2 { margin:0 0 6px; font-size:22px; }
   dialog p { margin:6px 0; color:var(--mute); }
   dialog a { color:var(--bone); }
+
+  .scrub { margin: 4px 0 18px; }
+  .scrub h2 { margin: 0; font-size: 14px; font-weight: 600; }
+  .scrub .row { display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
+  .scrub .now { margin: 4px 0 0; font-size: 14px; }
+  .scrub .hint { margin: 0; color: var(--mute); font-size: 12px; }
+  .rail { margin-top: 10px; display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; cursor:grab; padding-bottom:6px; }
+  .rail.dragging { cursor:grabbing; scroll-snap-type:none; }
+  .rail figure { flex: 0 0 78%; max-width: 24rem; scroll-snap-align:center; margin:0; }
+  .rail img { width:100%; aspect-ratio:1; object-fit:cover; background:#000; border:1px solid var(--line); border-radius:14px; display:block; user-select:none; -webkit-user-drag:none; }
+  .rail figcaption { margin-top:8px; font-size:14px; line-height:1.3; }
   footer { margin-top:22px; color:var(--mute); font-size:12px; max-width:70ch; }
 </style>
 </head>
@@ -58,6 +69,7 @@
   </div>
 </header>
 <main>
+  <div id="scrubs"></div>
   <p class="meta" id="count"></p>
   <div class="grid" id="grid"></div>
   <div class="pager">
@@ -168,6 +180,87 @@ function indexes(){
   }
   return out;
 }
+
+const DUPES = new Set(["films/x10-b.webp","films/xpna-b.webp"]);
+function distinct(mod){
+  return FILMS.filter(f => f.modality===mod && !DUPES.has(f.src));
+}
+function bindDrag(el){
+  let state=null;
+  el.addEventListener("pointerdown", (e) => {
+    if (e.button!==0) return;
+    state={x:e.clientX,y:e.clientY,left:el.scrollLeft,id:e.pointerId,on:false};
+  });
+  el.addEventListener("pointermove", (e) => {
+    if (!state) return;
+    const dx=e.clientX-state.x, dy=e.clientY-state.y;
+    if (!state.on){
+      if (Math.abs(dx)<6 && Math.abs(dy)<6) return;
+      if (Math.abs(dy)>Math.abs(dx)){ state=null; return; }
+      state.on=true;
+      el.setPointerCapture(state.id);
+      el.classList.add("dragging");
+    }
+    el.scrollLeft = state.left - dx;
+  });
+  const up=()=>{ state=null; el.classList.remove("dragging"); };
+  el.addEventListener("pointerup", up);
+  el.addEventListener("pointercancel", up);
+}
+function paintScrubs(){
+  const host=document.getElementById("scrubs");
+  if (host.dataset.view === view) return;
+  host.dataset.view = view;
+  host.innerHTML="";
+  const blocks=[];
+  if (view==="all" || view==="xray") blocks.push(["24,000 chest X-rays", distinct("xray")]);
+  if (view==="all" || view==="ct") blocks.push(["5,000 CTs", distinct("ct")]);
+  blocks.forEach(([title, films]) => {
+    const sec=document.createElement("section");
+    sec.className="scrub";
+    const row=document.createElement("div");
+    row.className="row";
+    const h=document.createElement("h2");
+    h.textContent=title;
+    const n=document.createElement("span");
+    n.className="meta";
+    n.textContent="1 of "+films.length;
+    row.append(h,n);
+    const now=document.createElement("p");
+    now.className="now";
+    now.textContent=films[0]?caption(films[0]):"";
+    const hint=document.createElement("p");
+    hint.className="hint";
+    hint.textContent="Click and drag to see each different film.";
+    const rail=document.createElement("div");
+    rail.className="rail";
+    films.forEach((film)=>{
+      const fig=document.createElement("figure");
+      const img=document.createElement("img");
+      const cap=caption(film);
+      img.src=film.src; img.alt=cap; img.draggable=false;
+      const fc=document.createElement("figcaption");
+      fc.textContent=cap;
+      fig.append(img, fc);
+      rail.append(fig);
+    });
+    rail.addEventListener("scroll", () => {
+      const mid=rail.scrollLeft+rail.clientWidth/2;
+      let best=0, bestD=1e9;
+      [...rail.children].forEach((kid,i)=>{
+        const c=kid.offsetLeft+kid.offsetWidth/2;
+        const d=Math.abs(c-mid);
+        if (d<bestD){ bestD=d; best=i; }
+      });
+      n.textContent=(best+1)+" of "+films.length;
+      now.textContent=caption(films[best]);
+    });
+    bindDrag(rail);
+    sec.append(row, now, hint, rail);
+    host.append(sec);
+  });
+}
+
 function draw(){
   document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.view===view));
   const ids = indexes();
@@ -194,6 +287,7 @@ function draw(){
   document.getElementById("pageLabel").textContent = `Page ${page.toLocaleString()} of ${pages.toLocaleString()}`;
   document.getElementById("prev").disabled = page<=1;
   document.getElementById("next").disabled = page>=pages;
+  paintScrubs();
 }
 function openStudy(s, film, cap){
   document.getElementById("dlgImg").src=film.src;
