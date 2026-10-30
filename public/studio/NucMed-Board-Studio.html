@@ -5458,7 +5458,7 @@ const CapRail = {
   },
   medicalTitle(title) {
     const t = String(title || "");
-    if (/ninja|warrior|kawasaki|aerospace|motorcycle|singer|concert|album|band\b|actor|film|movie|sacred|football|soccer|portrait|bicycle|weapon|wrestl|spacecraft|airline|rocket|festival/i.test(t)) return false;
+    if (/ninja|warrior|kawasaki|aerospace|motorcycle|singer|concert|album|band\b|actor|film|movie|sacred|football|soccer|portrait|bicycle|weapon|wrestl|spacecraft|airline|rocket|festival|chinese medicine|traditional chinese|game ?pad|controller|nintendo/i.test(t)) return false;
     return /heart|cardi|failur|ventric|atri|edema|lung|chest|anatom|arter|vein|myocard|eject|valve|aort|pulmon|medic|diseas|syndrom|clinic|patholog|radiolog|\bct\b|\bmri\b|x-ray|infarct|dyspn|congestion|organ|thorax|coronary|perfusion|ischemi|fluid|pleural|hepat|renal|neuro|bone|thyroid|nodule|lesion|tumor|cancer|pet\b|scan|magnet|tesla|proton|spin|resonance|hypertroph|dilat|murmur|preload|kussmaul/i.test(t);
   },
   async atlas(text) {
@@ -5570,12 +5570,40 @@ const CapRail = {
     return slice.join(" ");
   },
   async readScreen() {
+    this.watchPlayers();
     const phrase = this.nextScreenPhrase();
     if (!phrase) return;
     if (this.videoId) this.loadBoards(this.videoId);
     this.liveKey = "";
     this.wikiOff = ((this.wikiOff || 0) + 6) % 72;
     this.live(phrase, this.wikiOff);
+  },
+  watchPlayers() {
+    const frames = document.querySelectorAll("iframe");
+    for (let i = 0; i < frames.length; i++) {
+      const src = frames[i].getAttribute("src") || "";
+      const m = src.match(/youtube(?:-nocookie)?\.com\/embed\/([A-Za-z0-9_-]{6,15})/) || src.match(/[?&]v=([A-Za-z0-9_-]{6,15})/);
+      if (!m) continue;
+      const title = frames[i].getAttribute("title") || "";
+      this.useVideo(m[1], title);
+      return;
+    }
+  },
+  useVideo(id, title) {
+    if (!id) return;
+    if (id !== this.videoId) {
+      this.videoId = id;
+      this.seenTop = {};
+      this.screenWords = [];
+      this._boardId = "";
+      this.line = "";
+      const top = document.getElementById("wikiTop");
+      if (top) top.innerHTML = "";
+      this.loadBoards(id);
+    }
+    const words = String(title || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3);
+    this.screenWords = this.screenWords || [];
+    words.forEach((w) => { if (this.screenWords.indexOf(w) < 0 && this.screenWords.length < 40) this.screenWords.push(w); });
   },
   loadBoards(id) {
     if (!id || this._boardId === id) return;
@@ -14385,6 +14413,7 @@ window.addEventListener("message", (e) => {
       SideFilm.pull(data.text);
       if (!CapRail.cues.length) CapRail.scrub([], data.text);
     } else {
+      if (data.videoId) CapRail.useVideo(data.videoId, data.text);
       CapRail.liveKey = "";
       CapRail.wikiOff = ((CapRail.wikiOff || 0) + 4) % 32;
       CapRail.live(data.text, CapRail.wikiOff);

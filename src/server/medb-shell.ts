@@ -55,6 +55,7 @@ const BRIDGE = `(function(){
   var last = "";
   var spoken = "";
   var lessonSent = "";
+  var reportedId = "";
   var spin = 0;
   function post(text){
     text = String(text || "").replace(/\\s+/g, " ").trim();
@@ -176,7 +177,7 @@ const BRIDGE = `(function(){
     for (var j = 0; j < frames.length; j++) {
       var fr = frames[j];
       var src = fr.getAttribute("src") || "";
-      var m = src.match(/youtube(?:-nocookie)?\\.com\\/embed\\/([A-Za-z0-9_-]{6,15})/);
+      var m = src.match(/youtube(?:-nocookie)?\\.com\\/embed\\/([A-Za-z0-9_-]{6,15})/) || src.match(/[?&]v=([A-Za-z0-9_-]{6,15})/);
       if (!m) continue;
       loadCues(m[1]);
       if (!fr.id) fr.id = "ytcap" + j;
@@ -199,8 +200,12 @@ const BRIDGE = `(function(){
       }
     }
     if (lesson && lesson !== lessonSent) { lessonSent = lesson; post(lesson); }
+    if (videoId && videoId !== reportedId && lessonSent) {
+      reportedId = videoId;
+      try { parent.postMessage({ source: "hj-caption", cc: true, videoId: videoId, text: lessonSent }, "*"); } catch (e) {}
+    }
     var base = spoken || lesson;
-    if (base && spin % 3 === 0) {
+    if (base) {
       spin += 1;
       var bits = base.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\\s+/).filter(function(w){
         return w.length > 3 && !/^(that|this|with|from|what|when|your|have|they|them|then|about|there|their|which|would|could|should|really|made|into|over|lecture|monday)$/.test(w);
