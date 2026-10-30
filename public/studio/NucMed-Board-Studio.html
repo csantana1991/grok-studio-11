@@ -2154,18 +2154,20 @@ body.hj-full .stage {
 }
 body.hj-full #hjFrame, body.medb-full #mbFrame {
   flex:1 1 auto !important; width:100% !important; height:100% !important; min-height:100% !important;
-  border:0 !important; display:block !important; background:#0c1210 !important;
+  border:0 !important; display:block !important;
 }
-body.medb-full #mbBar { display:flex !important; height:40px; min-height:40px; overflow:hidden; flex-wrap:nowrap; z-index:200; }
-body.medb-full #mbBar button { padding:6px 10px; font-size:13px; white-space:nowrap; }
-@media (max-width: 700px) {
-  body.medb-full #mbBar span { display:none !important; }
+body.medb-full #mbFrame { background:#f4efe6 !important; }
+body.medb-full #mbBar {
+  display:flex !important; position:fixed; top:8px; right:8px; left:auto; width:auto; height:auto; min-height:0;
+  padding:0; gap:6px; background:transparent; box-shadow:none; z-index:200;
 }
+body.medb-full #mbBar b, body.medb-full #mbBar span { display:none !important; }
+body.medb-full #mbBar button { padding:6px 10px; font-size:12px; white-space:nowrap; border-radius:999px; background:rgba(14,28,40,.88); color:#f6f1e8; }
 body.medb-full .app { display:block !important; height:100dvh !important; padding:0 !important; margin:0 !important; }
 body.medb-full .sidebar, body.medb-full .topbar, body.medb-full #colSplit, body.medb-full .player, body.medb-full #playerDock, body.medb-full #winBar, body.medb-full #dockHandle, body.medb-full #atlasDrawer, body.medb-full #atlasSplit, body.medb-full #bootSplash { display:none !important; }
 body.medb-full .main { display:flex !important; flex-direction:column !important; height:100dvh !important; min-height:0 !important; overflow:hidden !important; padding:0 !important; }
 body.medb-full .work {
-  position:fixed !important; top:40px !important; left:0 !important; right:0 !important; bottom:0 !important;
+  position:fixed !important; top:0 !important; left:0 !important; right:0 !important; bottom:0 !important;
   width:100% !important; height:auto !important; max-height:none !important; min-height:0 !important;
   margin:0 !important; padding:0 !important; display:flex !important; flex-direction:column !important;
   overflow:hidden !important; background:#f6f1e8 !important;
