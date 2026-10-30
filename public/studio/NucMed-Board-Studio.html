@@ -2269,7 +2269,9 @@ body.medb-full .stage {
 body.hj-full #capRail,
 body.medb-full #capRail {
   display: flex !important;
-  bottom: 0; z-index: 400; height: 96px !important; overflow: hidden !important;
+  bottom: 0; z-index: 400; height: 96px !important;
+  overflow-x: scroll !important; overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch; touch-action: pan-x;
   background: #f7f4ee; border-top: 1px solid #e4dcc8;
 }
 body.hj-full #capRail .cap-tag,
@@ -2370,10 +2372,8 @@ body.medb-full .work { top: 96px !important; }
 #capRail .cap-tag { flex: 0 0 auto; color: #9fc8c0; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
 #atlasMute { flex: 0 0 auto; height: 28px; border: 0; border-radius: 999px; background: #1a1408; color: #f7f4ee; font-size: 12px; font-weight: 700; padding: 0 10px; cursor: pointer; }
 #capRow {
-  display: flex; gap: 8px; align-items: center; flex: 1 1 auto; min-width: 0;
-  overflow-x: scroll !important; overflow-y: hidden !important;
-  -webkit-overflow-scrolling: touch; touch-action: pan-x; cursor: grab;
-  scrollbar-width: thin;
+  display: flex; gap: 8px; align-items: center; flex: 0 0 auto; width: max-content;
+  overflow: visible !important;
 }
 #capRow button { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; height: 64px; padding: 0 8px 0 0; border: 0; border-radius: 10px; background: #123044; color: #e8f2f7; cursor: pointer; }
 #capRow img { width: 96px; height: 64px; object-fit: cover; border-radius: 10px 0 0 10px; background: #07141f; }
@@ -5607,7 +5607,7 @@ const CapRail = {
     this.screenWords = this.screenWords || [];
     this._follow = setInterval(() => { this.readScreen(); }, 1000);
     this.readScreen();
-    ["capRow", "wikiTop"].forEach((id) => {
+    ["capRail", "wikiTop"].forEach((id) => {
       const el = document.getElementById(id);
       if (!el || el.dataset.drag) return;
       el.dataset.drag = "1";
