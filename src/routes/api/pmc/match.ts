@@ -26,6 +26,63 @@ export const Route = createFileRoute("/api/pmc/match")({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const q = (url.searchParams.get("q") || "").slice(0, 300);
+        if (url.searchParams.get("source") === "openi-page") {
+          const modality = url.searchParams.get("modality") || "ct";
+          const spec =
+            modality === "mri"
+              ? { q: "mri", cap: 112120 }
+              : modality === "pet"
+                ? { q: "pet", cap: 64440 }
+                : { q: "computed tomography", cap: 112120 };
+          const n = Math.min(36, Math.max(1, Number(url.searchParams.get("n") || 36) || 36));
+          let m = Math.max(1, Number(url.searchParams.get("m") || 1) || 1);
+          if (m > spec.cap) m = ((m - 1) % spec.cap) + 1;
+          const take = Math.min(n, spec.cap - m + 1);
+          try {
+            const search =
+              "https://openi.nlm.nih.gov/api/search?coll=pmc&query=" +
+              encodeURIComponent(spec.q) +
+              "&m=" +
+              m +
+              "&n=" +
+              take;
+            const res = await fetch(search, {
+              signal: AbortSignal.timeout(12000),
+              headers: { "User-Agent": "BoardStudio/1.0 (teaching)" },
+            });
+            if (!res.ok) return Response.json({ modality, total: spec.cap, m, list: [] });
+            const data = (await res.json()) as {
+              total?: number;
+              list?: {
+                title?: string;
+                imgLarge?: string;
+                pmcid?: string;
+                image?: { caption?: string };
+              }[];
+            };
+            const total = Math.min(spec.cap, data.total || spec.cap);
+            const list = (data.list || [])
+              .filter((row) => row.imgLarge)
+              .map((row) => {
+                const raw = row.image?.caption || row.title || spec.q;
+                const caption = raw
+                  .replace(/<[^>]+>/g, " ")
+                  .replace(/&[a-z#0-9]+;/gi, " ")
+                  .replace(/\s+/g, " ")
+                  .trim()
+                  .slice(0, 220);
+                return {
+                  url: "https://openi.nlm.nih.gov" + row.imgLarge,
+                  caption: caption || spec.q,
+                  pmcid: row.pmcid || "",
+                  title: (row.title || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 180),
+                };
+              });
+            return Response.json({ modality, total, m, list });
+          } catch {
+            return Response.json({ modality, total: spec.cap, m, list: [] });
+          }
+        }
         if (url.searchParams.get("source") === "openi") {
           const words = q.split(/[^A-Za-z0-9+-]+/).filter((w) => w.length >= 3).slice(0, 6);
           if (!words.length) return Response.json({ query: q, results: [] });

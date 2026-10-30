@@ -12,6 +12,7 @@ import { basename } from '../data/sourceImages'
 import { CREDIT_BY_FILE, shortCredit } from '../data/credits'
 import PlateImg from './PlateImg'
 import { isNihToken, useNihFilm } from '../data/nihLive'
+import { isOpeniToken, useOpeniFilm } from '../data/openiLive'
 import { caseSources, searchTerms } from '../data/imageSources'
 import { publicQuery } from '../data/caseDossier'
 import { displayUrl } from '../data/liveMatch'
@@ -131,7 +132,8 @@ export default function Viewer({
   const frameRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const nih = useNihFilm(isNihToken(caseImage?.url) ? caseImage?.url : undefined)
-  const shownCaption = nih?.caption || caseImage?.caption || ''
+  const oi = useOpeniFilm(isOpeniToken(caseImage?.url) ? caseImage?.url : undefined)
+  const shownCaption = nih?.caption || oi?.caption || caseImage?.caption || ''
   const [hover, setHover] = useState<{ x: number; y: number; slice: number } | null>(null)
   const [failed, setFailed] = useState<Record<string, boolean>>({})
   const [dragOver, setDragOver] = useState(false)
@@ -744,11 +746,13 @@ export default function Viewer({
                 {' — '}
                 {nih
                   ? 'NIH Clinical Center, ChestX-ray14 CC0'
-                  : <>
-                      {caseImage.authors.split(',')[0]} et al., {caseImage.journal}{' '}
-                      {caseImage.year} · {caseImage.license.toUpperCase()} · {caseImage.pmcid} ·
-                      doi:{caseImage.doi}
-                    </>}
+                  : oi
+                    ? 'Open-i, U.S. National Library of Medicine'
+                    : <>
+                        {caseImage.authors.split(',')[0]} et al., {caseImage.journal}{' '}
+                        {caseImage.year} · {caseImage.license.toUpperCase()} · {caseImage.pmcid} ·
+                        doi:{caseImage.doi}
+                      </>}
               </div>
               )}
             </>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, type CSSProperties } from 'react'
 import { isNihToken, useNihFilm } from '../data/nihLive'
+import { isOpeniToken, useOpeniFilm } from '../data/openiLive'
 
 export default function PlateImg({
   src,
@@ -16,7 +17,9 @@ export default function PlateImg({
   plain?: boolean
 }) {
   const nih = useNihFilm(isNihToken(src) ? src : undefined)
-  const shown = isNihToken(src) ? nih?.url || '' : src
+  const oi = useOpeniFilm(isOpeniToken(src) ? src : undefined)
+  const remote = nih || oi
+  const shown = isNihToken(src) || isOpeniToken(src) ? remote?.url || '' : src
   const style: CSSProperties = {
     objectFit: 'cover',
     objectPosition: 'center center',
@@ -30,24 +33,24 @@ export default function PlateImg({
   err.current = onError
   const timer = useRef(0)
   useEffect(() => {
-    if (!shown || shown.startsWith('/') || isNihToken(src)) return
+    if (!shown || shown.startsWith('/') || isNihToken(src) || isOpeniToken(src)) return
     timer.current = window.setTimeout(() => err.current?.(), 8000)
     return () => window.clearTimeout(timer.current)
   }, [shown, src])
   useEffect(() => {
-    if (isNihToken(src) && nih && !nih.url) err.current?.()
-  }, [src, nih])
-  if (isNihToken(src) && !shown) {
+    if ((isNihToken(src) || isOpeniToken(src)) && remote && !remote.url) err.current?.()
+  }, [src, remote])
+  if ((isNihToken(src) || isOpeniToken(src)) && !shown) {
     return (
       <span className="flex h-full w-full items-center justify-center bg-black px-2 text-center text-[11px] font-bold text-[#ffe14a]">
-        {nih ? 'NIH film did not load' : 'Loading NIH film…'}
+        {remote?.caption || (isNihToken(src) ? 'Loading NIH film…' : 'Loading Open-i figure…')}
       </span>
     )
   }
   return (
     <img
       src={shown}
-      alt={nih?.caption || alt || ''}
+      alt={remote?.caption || alt || ''}
       draggable={false}
       className={className}
       style={style}

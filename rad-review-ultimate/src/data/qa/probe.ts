@@ -15,9 +15,12 @@ import type { ProbeResult } from './types'
 const TIMEOUT_MS = 12_000
 
 export function probeImage(url: string, now = Date.now()): Promise<ProbeResult> {
-  if (url.startsWith('nih:')) {
-    return import('../nihLive')
-      .then(({ resolveNih }) => resolveNih(url))
+  if (url.startsWith('nih:') || url.startsWith('oi:')) {
+    const load =
+      url.startsWith('oi:')
+        ? import('../openiLive').then(({ resolveOpeni }) => resolveOpeni(url))
+        : import('../nihLive').then(({ resolveNih }) => resolveNih(url))
+    return load
       .then((film) => (film.url ? probeImage(film.url, now) : Promise.reject(new Error('empty'))))
       .then((r) => ({ ...r, url }))
       .catch(
@@ -96,7 +99,7 @@ export async function probeAll(
   const workers = Array.from({ length: Math.min(concurrency, urls.length) }, async () => {
     while (i < urls.length) {
       const url = urls[i++]
-      if (url.startsWith('nih:')) {
+      if (url.startsWith('nih:') || url.startsWith('oi:')) {
         const r: ProbeResult = {
           url,
           ok: true,

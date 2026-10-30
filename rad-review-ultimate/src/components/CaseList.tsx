@@ -5,6 +5,7 @@ import { formatSlice } from '../data/stations'
 import PlateImg from './PlateImg'
 import { teachingPlateFor } from '../data/teachingPlate'
 import { isNihToken, useNihFilm } from '../data/nihLive'
+import { isOpeniToken, useOpeniFilm } from '../data/openiLive'
 import { reportsSuv, statedSuv, studyKind } from '../data/caseDossier'
 import { displayUrl } from '../data/liveMatch'
 
@@ -48,25 +49,27 @@ function FullThumb({
   plain?: boolean
 }) {
   const nih = useNihFilm(isNihToken(src) ? src : undefined)
+  const oi = useOpeniFilm(isOpeniToken(src) ? src : undefined)
+  const remote = nih || oi
   const [dead, setDead] = useState(false)
   useEffect(() => {
     setDead(false)
-  }, [src, nih?.url])
-  if (isNihToken(src) && !nih) {
+  }, [src, remote?.url])
+  if ((isNihToken(src) || isOpeniToken(src)) && !remote) {
     return (
       <span className="flex h-full items-center px-1 text-center text-[9px] font-bold text-[#ffe14a]">
-        Loading NIH film…
+        {isNihToken(src) ? 'Loading NIH film…' : 'Loading Open-i figure…'}
       </span>
     )
   }
-  if (isNihToken(src) && nih && !nih.url) {
+  if ((isNihToken(src) || isOpeniToken(src)) && remote && !remote.url) {
     return (
       <span className="flex h-full items-center px-1 text-center text-[9px] font-bold text-[#ffe14a]">
-        NIH film did not load
+        {remote.caption}
       </span>
     )
   }
-  const live = nih?.url || src
+  const live = remote?.url || src
   if (!live || dead) {
     return (
       <span className="flex h-full items-center px-1 text-center text-[9px] font-bold text-[#ffe14a]">
@@ -99,7 +102,8 @@ function FilmCell({
   onSelect: (c: Encounter) => void
 }) {
   const nih = useNihFilm(isNihToken(src) ? src : undefined)
-  const label = nih?.caption || (src ? teachingPlateFor(c).caption || 'Meta Image' : 'No match')
+  const oi = useOpeniFilm(isOpeniToken(src) ? src : undefined)
+  const label = nih?.caption || oi?.caption || (src ? teachingPlateFor(c).caption || 'Meta Image' : 'No match')
   return (
     <button
       type="button"
@@ -142,8 +146,9 @@ function Row({
   height: number
 }) {
   const nih = useNihFilm(isNihToken(thumb) ? thumb : undefined)
+  const oi = useOpeniFilm(isOpeniToken(thumb) ? thumb : undefined)
   const cat = CATEGORY_BY_ID[c.categoryId]
-  const plateLine = nih?.caption || (thumb ? teachingPlateFor(c).caption : '')
+  const plateLine = nih?.caption || oi?.caption || (thumb ? teachingPlateFor(c).caption : '')
   return (
     <button
       type="button"
@@ -203,7 +208,7 @@ function Row({
           Published reference. Not this row’s scan.
         </p>
       )}
-      {thumb && (thumb.startsWith('/') || isNihToken(thumb)) && !caption && (
+      {thumb && (thumb.startsWith('/') || isNihToken(thumb) || isOpeniToken(thumb)) && !caption && (
         <p className="line-clamp-2 text-[11px] leading-tight text-rr-amber">
           {plateLine || 'NIH ChestX-ray14. Loading this study’s finding.'}
         </p>

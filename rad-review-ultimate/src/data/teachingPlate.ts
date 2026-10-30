@@ -11,6 +11,7 @@ import type { LiveMatch } from './liveMatch'
 import type { StudyKind } from './caseDossier'
 import { US_PLATES } from './us-plates'
 import { nihToken } from './nihLive'
+import { openiToken } from './openiLive'
 
 const META = '/meta-image/films/'
 
@@ -225,6 +226,9 @@ const FILE_KIND: [string, StudyKind][] = [
 export function knownPlateKind(url: string): StudyKind | null {
   const u = url.toLowerCase()
   if (u.startsWith('nih:')) return 'radiograph'
+  if (u.startsWith('oi:ct:')) return 'ct'
+  if (u.startsWith('oi:mri:')) return 'mri'
+  if (u.startsWith('oi:pet:')) return 'pet-fdg'
   if (u.includes('/library/nih/')) return 'radiograph'
   if (u.includes('/meta-image/films/x')) return 'radiograph'
   if (u.includes('/meta-image/films/ct-')) return 'ct'
@@ -255,11 +259,11 @@ function pick(finding: string, _stationId: string, categoryId: string, idx = 0):
   if (key === 'cardiacMri') return CARDIAC_MRI[Math.abs(idx) % CARDIAC_MRI.length]
   if (key === 'cardiacCt') return CARDIAC_CT[Math.abs(idx) % CARDIAC_CT.length]
   if (key === 'xrChest') return nihToken(finding, idx)
-  if (key === 'ctChest' || key === 'ctBody') return at(ctFilms(finding), idx).src
+  if (key === 'ctChest' || key === 'ctBody') return openiToken('ct', idx)
   if (key === 'mriBrain' || key === 'mriKnee' || key === 'mriShoulder' || key === 'mriSpine' || key === 'mrcp') {
-    return at(MRI_BRAIN, idx).src
+    return openiToken('mri', idx)
   }
-  if (key === 'pet' || key === 'petBrain') return at(PET_BODY, idx).src
+  if (key === 'pet' || key === 'petBrain') return openiToken('pet', idx)
   if (key === 'us') {
     const pool = US_PLATES
     if (pool.length) return pool[Math.abs(idx) % pool.length]
@@ -389,6 +393,10 @@ export function teachingPlateFor(c: { finding: string; categoryId: string; stati
       url,
       caption: 'NIH ChestX-ray14. Loading this study’s finding. Not this row’s scan.',
     }
+  }
+  if (url.startsWith('oi:')) {
+    const kind = url.startsWith('oi:mri:') ? 'MRI' : url.startsWith('oi:pet:') ? 'PET' : 'CT'
+    return { url, caption: 'Open-i ' + kind + ' figure. Loading this figure’s caption. Not this row’s scan.' }
   }
   const film = [...CT_CHEST, ...CT_ABD, ...MRI_BRAIN, ...PET_BODY].find((f) => f.src === url)
   if (film) {
