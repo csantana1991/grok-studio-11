@@ -5455,6 +5455,47 @@ const CapRail = {
     const words = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.test(w));
     return words.slice(0, 4).join(" ");
   },
+  understand(text) {
+    const t = String(text || "").toLowerCase();
+    const concepts = [
+      ["gradient echo", /gradient\s*echo/],
+      ["spin echo", /spin\s*echo/],
+      ["fat saturation", /fat\s*sat/],
+      ["in phase", /in[- ]phase/],
+      ["out of phase", /out[- ]of[- ]phase/],
+      ["diffusion", /\bdwi\b|diffusion/],
+      ["gadolinium", /gadolinium/],
+      ["liver", /liver|hepatic/],
+      ["spleen", /spleen/],
+      ["kidney", /kidney|renal/],
+      ["pancreas", /pancrea/],
+      ["gallbladder", /gallbladder|biliary|bile duct/],
+      ["adrenal", /adrenal/],
+      ["aorta", /\baorta\b/],
+      ["portal vein", /portal vein/],
+      ["T1", /\bt1\b/],
+      ["T2", /\bt2\b/],
+      ["axial", /axial/],
+      ["coronal", /coronal/],
+      ["sagittal", /sagittal/],
+      ["pericardium", /pericard/],
+      ["tamponade", /tamponad/],
+      ["effusion", /effusion/],
+      ["cardiomyopathy", /cardiomyopath/],
+      ["hypertrophic", /hypertroph|\bhocm\b/],
+      ["murmur", /murmur/],
+      ["ventricle", /ventric/],
+      ["myocardium", /myocard/],
+      ["thyroid", /thyroid/],
+      ["nodule", /nodule/],
+      ["hemangioma", /hemangioma/],
+      ["cirrhosis", /cirrhos/],
+      ["lesion", /lesion/]
+    ];
+    const hit = [];
+    concepts.forEach((pair) => { if (pair[1].test(t) && hit.indexOf(pair[0]) < 0) hit.push(pair[0]); });
+    return hit.slice(0, 3).join(" ");
+  },
   queryOf(text) {
     const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|after|before|their|there|they|them|then|also|only|most|more|some|such|been|being|which|while|where|will|would|could|should|follows|meets|used|basic|webinar|lecture|monday|short|travels|clinical|medicine|medical|public|youtube|ninja|nerd|warrior|channel|official|meta|image|images|atlas|academy|nucleus|review|ultimate|widget|search|imaging|clear|results|shown|verified|target|dicom|catalog|appearance|introduction|intro|background|abdomen|abdominal|pulse|sequence|sequences|normal|outline|body)$/i;
     const words = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => (w.length > 3 || /^(mri|pet|t1|t2)$/.test(w)) && !stop.test(w));
@@ -5592,16 +5633,13 @@ const CapRail = {
   async readScreen() {
     this.watchPlayers();
     if (this.videoId) this.loadBoards(this.videoId);
-    if (this.line) {
-      const cap = this.specific(this.line);
-      if (cap) this.wikiNet(cap);
-    }
-    const slide = this.specific((this.screenWords || []).join(" "));
+    if (this.line) this.wikiNet(this.line);
+    const slide = (this.screenWords || []).join(" ");
     if (slide) this.slideNet(slide);
   },
   async wikiNet(text) {
-    const q = this.specific(text);
-    if (!q || q.length < 4 || /meta image|pulse sequence|introduction|background|abdominal/i.test(q)) return;
+    const q = this.understand(text);
+    if (!q) return;
     if (this.wikiNetKey === q) return;
     this.wikiNetKey = q;
     const host = document.getElementById("wikiTop");
@@ -5646,8 +5684,8 @@ const CapRail = {
     this.pushWidgets(q);
   },
   async slideNet(text) {
-    const q = this.specific(text);
-    if (!q || q.length < 4 || /meta image|pulse sequence|introduction|background|abdominal/i.test(q)) return;
+    const q = this.understand(text);
+    if (!q) return;
     if (this.slideKey === q) return;
     this.slideKey = q;
     const row = document.getElementById("capRow");
@@ -5770,10 +5808,10 @@ const CapRail = {
       const found = String((out && out.data && out.data.text) || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3);
       found.forEach((w) => { if (this.screenWords.indexOf(w) < 0 && this.screenWords.length < 40) this.screenWords.push(w); });
       if (!found.length) return;
-      const phrase = this.specific(found.join(" "));
+      const phrase = this.understand(found.join(" "));
       if (!phrase) return;
       this.slideKey = "";
-      this.slideNet(phrase);
+      this.slideNet(found.join(" "));
     } catch (e) {}
   },
   scrub(lines, title) {
