@@ -11,6 +11,7 @@ import {
 import { basename } from '../data/sourceImages'
 import { CREDIT_BY_FILE, shortCredit } from '../data/credits'
 import PlateImg from './PlateImg'
+import { isNihToken, useNihFilm } from '../data/nihLive'
 import { caseSources, searchTerms } from '../data/imageSources'
 import { publicQuery } from '../data/caseDossier'
 import { displayUrl } from '../data/liveMatch'
@@ -129,6 +130,8 @@ export default function Viewer({
 }: Props) {
   const frameRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const nih = useNihFilm(isNihToken(caseImage?.url) ? caseImage?.url : undefined)
+  const shownCaption = nih?.caption || caseImage?.caption || ''
   const [hover, setHover] = useState<{ x: number; y: number; slice: number } | null>(null)
   const [failed, setFailed] = useState<Record<string, boolean>>({})
   const [dragOver, setDragOver] = useState(false)
@@ -439,7 +442,7 @@ export default function Viewer({
                 key={`${caseImage.url}-${imageIndex}`}
                 src={displayUrl(caseImage.url)}
                 stationId={station.id}
-                alt={caseImage.caption || finding || ''}
+                alt={shownCaption || finding || ''}
                 onError={() => setCaseFailed(true)}
                 className="absolute"
               />
@@ -609,7 +612,7 @@ export default function Viewer({
                   }
                 >
                   {caseImage.tier === 'anatomy' || caseImage.journal?.includes('plate library')
-                    ? caseImage.caption.split('.')[0]
+                    ? shownCaption.split('.')[0]
                     : 'PUBLISHED REFERENCE — not this demo row'}
                   {caseLabel ? ` · ${caseLabel}` : ''}
                 </div>
@@ -737,11 +740,15 @@ export default function Viewer({
                 className="pointer-events-none absolute bottom-0 left-0 h-6 overflow-hidden bg-black/75 px-2 py-0.5 text-[8px] leading-6 whitespace-nowrap text-rr-dim"
                 style={{ right: SCALE_W }}
               >
-                <span className="text-rr-text">{caseImage.caption.slice(0, 190)}</span>
+                <span className="text-rr-text">{shownCaption.slice(0, 190)}</span>
                 {' — '}
-                {caseImage.authors.split(',')[0]} et al., {caseImage.journal}{' '}
-                {caseImage.year} · {caseImage.license.toUpperCase()} · {caseImage.pmcid} ·
-                doi:{caseImage.doi}
+                {nih
+                  ? 'NIH Clinical Center, ChestX-ray14 CC0'
+                  : <>
+                      {caseImage.authors.split(',')[0]} et al., {caseImage.journal}{' '}
+                      {caseImage.year} · {caseImage.license.toUpperCase()} · {caseImage.pmcid} ·
+                      doi:{caseImage.doi}
+                    </>}
               </div>
               )}
             </>

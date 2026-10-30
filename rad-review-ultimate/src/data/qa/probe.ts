@@ -15,6 +15,25 @@ import type { ProbeResult } from './types'
 const TIMEOUT_MS = 12_000
 
 export function probeImage(url: string, now = Date.now()): Promise<ProbeResult> {
+  if (url.startsWith('nih:')) {
+    return import('../nihLive')
+      .then(({ resolveNih }) => resolveNih(url))
+      .then((film) => (film.url ? probeImage(film.url, now) : Promise.reject(new Error('empty'))))
+      .then((r) => ({ ...r, url }))
+      .catch(
+        (): ProbeResult => ({
+          url,
+          ok: false,
+          httpStatus: null,
+          contentType: null,
+          bytes: null,
+          width: null,
+          height: null,
+          at: now,
+          failure: 'SOURCE_UNAVAILABLE',
+        }),
+      )
+  }
   return new Promise((resolve) => {
     const base: ProbeResult = {
       url,
@@ -77,6 +96,21 @@ export async function probeAll(
   const workers = Array.from({ length: Math.min(concurrency, urls.length) }, async () => {
     while (i < urls.length) {
       const url = urls[i++]
+      if (url.startsWith('nih:')) {
+        const r: ProbeResult = {
+          url,
+          ok: true,
+          httpStatus: null,
+          contentType: 'image/jpeg',
+          bytes: null,
+          width: null,
+          height: null,
+          at: Date.now(),
+        }
+        out.push(r)
+        onResult?.(r)
+        continue
+      }
       const r = await probeImage(url)
       out.push(r)
       onResult?.(r)

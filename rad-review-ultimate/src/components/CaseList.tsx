@@ -3,7 +3,8 @@ import type { Encounter } from '../data/generateCases'
 import { CATEGORIES, CATEGORY_BY_ID, GRAND_TOTAL } from '../data/categories'
 import { formatSlice } from '../data/stations'
 import PlateImg from './PlateImg'
-import { imageLabel } from '../data/teachingPlate'
+import { teachingPlateFor } from '../data/teachingPlate'
+import { isNihToken, useNihFilm } from '../data/nihLive'
 import { reportsSuv, statedSuv, studyKind } from '../data/caseDossier'
 import { displayUrl } from '../data/liveMatch'
 
@@ -46,18 +47,34 @@ function FullThumb({
   className: string
   plain?: boolean
 }) {
+  const nih = useNihFilm(isNihToken(src) ? src : undefined)
   const [dead, setDead] = useState(false)
   useEffect(() => {
     setDead(false)
-  }, [src])
-  if (!src || dead) {
+  }, [src, nih?.url])
+  if (isNihToken(src) && !nih) {
+    return (
+      <span className="flex h-full items-center px-1 text-center text-[9px] font-bold text-[#ffe14a]">
+        Loading NIH film…
+      </span>
+    )
+  }
+  if (isNihToken(src) && nih && !nih.url) {
+    return (
+      <span className="flex h-full items-center px-1 text-center text-[9px] font-bold text-[#ffe14a]">
+        NIH film did not load
+      </span>
+    )
+  }
+  const live = nih?.url || src
+  if (!live || dead) {
     return (
       <span className="flex h-full items-center px-1 text-center text-[9px] font-bold text-[#ffe14a]">
         No matched case image
       </span>
     )
   }
-  const shown = src.startsWith('/') ? src : displayUrl(src)
+  const shown = live.startsWith('/') ? live : displayUrl(live)
   return (
     <PlateImg
       src={shown}
@@ -67,6 +84,37 @@ function FullThumb({
       onError={() => setDead(true)}
       className={className}
     />
+  )
+}
+
+function FilmCell({
+  c,
+  src,
+  thumbW,
+  onSelect,
+}: {
+  c: Encounter
+  src?: string
+  thumbW: number
+  onSelect: (c: Encounter) => void
+}) {
+  const nih = useNihFilm(isNihToken(src) ? src : undefined)
+  const label = nih?.caption || (src ? teachingPlateFor(c).caption || 'Meta Image' : 'No match')
+  return (
+    <button
+      type="button"
+      title={label}
+      onClick={() => onSelect(c)}
+      className="relative h-full shrink-0 overflow-hidden rounded border border-rr-line bg-black"
+      style={{ width: thumbW }}
+    >
+      {src ? (
+        <FullThumb c={c} src={src} plain className="absolute inset-x-0 top-0 bottom-6 h-auto w-full" />
+      ) : (
+        <span className="absolute inset-x-0 top-0 bottom-6 flex items-center justify-center px-1 text-center text-[11px] font-bold text-[#ffe14a]">No match</span>
+      )}
+      <span className="absolute inset-x-0 bottom-0 h-6 truncate bg-black/80 px-1 text-left text-[10px] leading-6 text-white">{label}</span>
+    </button>
   )
 }
 
@@ -93,7 +141,9 @@ function Row({
   caption?: string
   height: number
 }) {
+  const nih = useNihFilm(isNihToken(thumb) ? thumb : undefined)
   const cat = CATEGORY_BY_ID[c.categoryId]
+  const plateLine = nih?.caption || (thumb ? teachingPlateFor(c).caption : '')
   return (
     <button
       type="button"
@@ -153,9 +203,9 @@ function Row({
           Published reference. Not this row’s scan.
         </p>
       )}
-      {thumb && thumb.startsWith('/') && !caption && (
-        <p className="line-clamp-1 text-[11px] leading-tight text-rr-amber">
-          {imageLabel(c)}
+      {thumb && (thumb.startsWith('/') || isNihToken(thumb)) && !caption && (
+        <p className="line-clamp-2 text-[11px] leading-tight text-rr-amber">
+          {plateLine || 'NIH ChestX-ray14. Loading this study’s finding.'}
         </p>
       )}
       {!thumb && !caption && (
@@ -311,27 +361,15 @@ export default function CaseList({
                 className="absolute top-0 flex h-full"
                 style={{ left: filmStart * THUMB, gap: 6 }}
               >
-                {strip.slice(filmStart, filmEnd).map((c) => {
-                  const src = thumbFor(c)
-                  const label = src ? imageLabel(c) : 'No match'
-                  return (
-                    <button
-                      key={c.idx}
-                      type="button"
-                      title={label}
-                      onClick={() => onSelect(c)}
-                      className="relative h-full shrink-0 overflow-hidden rounded border border-rr-line bg-black"
-                      style={{ width: thumbW }}
-                    >
-                      {src ? (
-                        <FullThumb c={c} src={src} plain className="absolute inset-x-0 top-0 bottom-6 h-auto w-full" />
-                      ) : (
-                        <span className="absolute inset-x-0 top-0 bottom-6 flex items-center justify-center px-1 text-center text-[11px] font-bold text-[#ffe14a]">No match</span>
-                      )}
-                      <span className="absolute inset-x-0 bottom-0 h-6 truncate bg-black/80 px-1 text-left text-[10px] leading-6 text-white">{label}</span>
-                    </button>
-                  )
-                })}
+                {strip.slice(filmStart, filmEnd).map((c) => (
+                  <FilmCell
+                    key={c.idx}
+                    c={c}
+                    src={thumbFor(c)}
+                    thumbW={thumbW}
+                    onSelect={onSelect}
+                  />
+                ))}
               </div>
             </div>
           </div>

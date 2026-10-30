@@ -11511,6 +11511,66 @@ function raMetaPack(query){
   }));
   return { figures, previews };
 }
+let raNihDv = null, raNihTrain = 86524, raNihTotal = 0;
+const RA_NIH_NAMES = ["Atelectasis","Cardiomegaly","Consolidation","Edema","Effusion","Emphysema","Fibrosis","Hernia","Infiltration","Mass","Nodule","Pleural_Thickening","Pneumonia","Pneumothorax"];
+async function raEnsureNih(){
+  if (raNihDv) return;
+  const [manRes, binRes] = await Promise.all([fetch("/meta-image/nih/manifest.json"), fetch("/meta-image/nih/rows.bin")]);
+  if (!manRes.ok || !binRes.ok) throw new Error("nih");
+  const man = await manRes.json();
+  const raw = await binRes.arrayBuffer();
+  if (raw.byteLength !== man.total * 8) throw new Error("size");
+  raNihDv = new DataView(raw);
+  raNihTrain = man.train;
+  raNihTotal = man.total;
+}
+function raNihBit(q){
+  const rules = [[/pneumothorax/,13],[/pneumonia/,12],[/pleural thick/,11],[/nodule/,10],[/\bmass\b/,9],[/infiltrat/,8],[/hernia/,7],[/fibrosis/,6],[/emphysema/,5],[/effusion/,4],[/edema/,3],[/consolidation/,2],[/cardiomegaly/,1],[/atelectasis/,0]];
+  for (const [re, b] of rules) if (re.test(q)) return b;
+  return 14;
+}
+async function raNihFigures(query){
+  const q = String(query||"").toLowerCase();
+  const cross = /\bct\b|\bmri\b|\bpet\b|\bfdg\b|spect/.test(q) && !/x-ray|xray|radiograph/.test(q);
+  const xr = /x-ray|xray|radiograph|chest|pneumonia|effusion|cardiomegaly|atelectasis|pneumothorax|nodule|infiltrat|edema/.test(q);
+  if (cross || !xr) return [];
+  try { await raEnsureNih(); } catch (e) { return []; }
+  const bit = raNihBit(q);
+  const hits = [];
+  for (let i = 0; i < raNihTotal; i++) {
+    const bits = raNihDv.getUint16(i * 8 + 6, true) & 0x3fff;
+    if (bit === 14 ? !bits : (bits & (1 << bit))) hits.push(i);
+  }
+  if (!hits.length) return [];
+  const picks = [];
+  const step = Math.max(1, Math.floor(hits.length / 4));
+  for (let n = 0; n < 4 && n * step < hits.length; n++) picks.push(hits[n * step]);
+  const figures = new Array(picks.length);
+  await Promise.all(picks.map(async (g, n) => {
+    const split = g < raNihTrain ? "train" : "test";
+    const row = split === "train" ? g : g - raNihTrain;
+    try {
+      const res = await fetch("https://datasets-server.huggingface.co/rows?dataset=timm/nih-chest-xray-14&config=default&split=" + split + "&offset=" + row + "&length=1", {signal: AbortSignal.timeout(12000)});
+      if (!res.ok) return;
+      const data = await res.json();
+      const src = data.rows && data.rows[0] && data.rows[0].row && data.rows[0].row.image && data.rows[0].row.image.src;
+      if (!src) return;
+      const o = g * 8;
+      const patient = raNihDv.getUint32(o, true);
+      const follow = raNihDv.getUint8(o + 4);
+      const flags = raNihDv.getUint16(o + 6, true);
+      const id = String(patient).padStart(8, "0") + "_" + String(follow).padStart(3, "0");
+      const names = [];
+      const bits = flags & 0x3fff;
+      for (let b = 0; b < 14; b++) if (bits & (1 << b)) names.push(RA_NIH_NAMES[b].replaceAll("_", " "));
+      const finding = names.length ? names.join(", ") : "No finding";
+      const view = (flags & 0x8000) ? "AP" : "PA";
+      const cap = finding + ", " + view + " chest radiograph. NIH " + id + ". CC0. Not this search’s patient.";
+      figures[n] = { id: "nih-" + id, title: cap, caption: cap, imageUrl: src, articleUrl: "https://nihcc.app.box.com/v/ChestXray-NIHCC", pmcid: "NIH " + id, modality: "xray", badge: "Meta Image · NIH CC0", meta: true };
+    } catch (e) { /* leave the slot empty */ }
+  }));
+  return figures.filter(Boolean);
+}
 async function raSearch(query, withOn){
   const t0 = Date.now();
   const [pmc, tcia, on] = await Promise.all([
@@ -11519,11 +11579,13 @@ async function raSearch(query, withOn){
     withOn ? raTimeout(raSearchOpenNeuro(query), 6000, { studies: [], status: { source:"openneuro", state:"error", count:0, latencyMs:6000 } }) : Promise.resolve({ studies: [], status: { source:"openneuro", state:"disabled", count:0, latencyMs:0, message:"Off" } })
   ]);
   const packed = raMetaPack(query);
-  const liveFigs = (pmc.figures && pmc.figures.length) ? pmc.figures : packed.figures;
+  const nihFigs = await raNihFigures(query);
+  const baseFigs = (pmc.figures && pmc.figures.length) ? pmc.figures : packed.figures;
+  const liveFigs = nihFigs.concat(baseFigs).slice(0, 12);
   const livePrev = (tcia.previews && tcia.previews.length) ? tcia.previews : packed.previews;
   const providers = [pmc.status, tcia.status, on.status];
-  if (!(pmc.figures && pmc.figures.length) || !(tcia.previews && tcia.previews.length)) {
-    providers.push({ source:"meta", state:"ok", count: packed.figures.length, message:"Meta Image library" });
+  if (nihFigs.length || !(pmc.figures && pmc.figures.length) || !(tcia.previews && tcia.previews.length)) {
+    providers.push({ source:"meta", state:"ok", count: nihFigs.length || packed.figures.length, message: nihFigs.length ? "NIH ChestX-ray14 via Meta Image" : "Meta Image library" });
   }
   return {
     query,
