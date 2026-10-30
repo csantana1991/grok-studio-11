@@ -2171,16 +2171,25 @@ body.view-rru #rruFrame {
   height: 100% !important;
   min-height: 0 !important;
 }
-body.hj-full .hj-exitbar { display:flex !important; height:40px; min-height:40px; overflow:hidden; flex-wrap:nowrap; z-index:200; align-items:center; }
-body.hj-full #hjSaid { flex:1; min-width:0; height:28px; margin:0 8px; border:0; border-radius:999px; background:#f7f4ee; color:#1a1408; padding:0 12px; font:inherit; }
-body.hj-full #liveLabel { display:inline !important; flex:0 0 auto; color:#9fc8c0; font-size:12px; letter-spacing:.04em; }
+body.hj-full #hjBar {
+  display:flex !important; position:fixed; top:0; left:0; right:0; height:48px; z-index:800;
+  align-items:center; gap:8px; padding:0 10px; background:#07141f; overflow:hidden;
+}
+body.hj-full #liveLabel {
+  display:inline-flex !important; align-items:center; height:28px; padding:0 10px; border-radius:999px;
+  background:#57d6c4; color:#082027; font-size:12px; font-weight:800; letter-spacing:.04em; flex:0 0 auto;
+}
+body.hj-full #hjSaid { flex:1; min-width:0; height:32px; margin:0; border:0; border-radius:999px; background:#f7f4ee; color:#1a1408; padding:0 12px; font:inherit; }
 #wikiTop { display:none; }
-#wikiTop.on { display:flex; gap:8px; align-items:center; position:fixed; top:40px; left:0; right:0; height:96px; z-index:210; overflow-x:auto; background:#0c1210; padding:8px 10px; }
+#wikiTop.on {
+  display:flex; gap:8px; align-items:center; position:fixed; top:48px; left:0; right:0; height:104px;
+  z-index:790; overflow-x:auto; background:#0c1210; padding:8px 10px;
+}
 #wikiTop button { flex:0 0 auto; display:flex; flex-direction:column; gap:4px; width:132px; border:0; background:transparent; color:#e8f2f7; cursor:pointer; padding:0; text-align:left; }
 #wikiTop img { width:132px; height:72px; object-fit:cover; border-radius:6px; background:#07141f; }
 #wikiTop span { font-size:11px; line-height:1.2; max-height:2.4em; overflow:hidden; }
 body.hj-full.wiki-top .work,
-body.medb-full.wiki-top .work { top:136px !important; }
+body.medb-full.wiki-top .work { top:152px !important; }
 body.hj-full .hj-exitbar button { padding:6px 10px; font-size:13px; white-space:nowrap; }
 @media (max-width: 700px) {
   body.hj-full .hj-exitbar span { display:none !important; }
@@ -2189,7 +2198,7 @@ body.hj-full .app { display:block !important; height:100dvh !important; padding:
 body.hj-full .sidebar, body.hj-full .topbar, body.hj-full #colSplit, body.hj-full .player, body.hj-full #playerDock, body.hj-full #winBar, body.hj-full #dockHandle, body.hj-full #atlasDrawer, body.hj-full #atlasSplit, body.hj-full #bootSplash { display:none !important; }
 body.hj-full .main { display:flex !important; flex-direction:column !important; height:100dvh !important; min-height:0 !important; overflow:hidden !important; padding:0 !important; }
 body.hj-full .work {
-  position:fixed !important; top:40px !important; left:0 !important; right:0 !important; bottom:0 !important;
+  position:fixed !important; top:48px !important; left:0 !important; right:0 !important; bottom:0 !important;
   width:100% !important; height:auto !important; max-height:none !important; min-height:0 !important;
   margin:0 !important; padding:0 !important; display:flex !important; flex-direction:column !important;
   overflow:hidden !important; background:#0c1210 !important;
@@ -2332,7 +2341,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 <aside id="filmLeft" aria-label="Lecture images"></aside>
 <aside id="filmRight" aria-label="Widget panel"></aside>
 <div id="capPop"><button type="button" id="capPopX">Close</button><img alt="" referrerpolicy="no-referrer"><p></p></div>
-<div class="rru-exitbar hj-exitbar" id="hjBar"><b>HJ Med</b><b id="liveLabel">Live search</b><input id="hjSaid" type="search" placeholder="Words from the captions" autocomplete="off"><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
+<div class="rru-exitbar hj-exitbar" id="hjBar"><b id="liveLabel">LIVE SEARCH</b><input id="hjSaid" type="search" placeholder="Words from the captions" autocomplete="off"><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
 <div id="wikiTop" aria-label="Wikipedia images from the captions"></div>
 <div class="rru-exitbar" id="mbBar"><b>Med-b</b><span>Live page</span><button type="button" id="mbAtlas">Atlas</button><button type="button" id="mbExit">Exit</button></div>
 <div id="hjAtlasSheet" aria-label="Grok 11 atlas"></div>
@@ -5283,6 +5292,20 @@ const CapRail = {
     if (tag) tag.textContent = bit.slice(0, 48);
     const said = document.getElementById("hjSaid");
     if (said && document.activeElement !== said) said.value = bit.slice(0, 90);
+    const host = document.getElementById("wikiTop");
+    if (host) {
+      host.classList.add("on");
+      document.body.classList.add("wiki-top");
+      let mark = host.querySelector("[data-q]");
+      if (!mark) {
+        mark = document.createElement("b");
+        mark.dataset.q = "1";
+        mark.style.cssText = "flex:0 0 auto;color:#57d6c4;font-size:12px;max-width:180px";
+        host.prepend(mark);
+      }
+      mark.textContent = bit.slice(0, 80);
+    }
+    this.live(bit);
     document.querySelectorAll("iframe").forEach((frame) => {
       try { frame.contentWindow.postMessage({ source: "caption-line", text: bit.slice(0, 120) }, "*"); } catch (e) {}
     });
