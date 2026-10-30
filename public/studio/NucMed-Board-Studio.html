@@ -2188,10 +2188,11 @@ body.hj-full #liveLabel {
 body.hj-full #hjSaid { flex:1; min-width:0; height:32px; margin:0; border:0; border-radius:999px; background:#f7f4ee; color:#1a1408; padding:0 12px; font:inherit; }
 #wikiTop { display:none; }
 #wikiTop.on {
-  display:flex; gap:8px; align-items:stretch; position:fixed; top:40px; left:0; right:0; height:118px;
-  z-index:790; overflow-x:auto; overflow-y:hidden; background:#0c1210; padding:6px 10px;
-  scrollbar-width: none;
+  display:flex; gap:6px; align-items:center; position:fixed; top:36px; left:0; right:0; height:52px;
+  z-index:40; overflow-x:auto; overflow-y:hidden; background:rgba(12,18,16,.92); padding:4px 8px;
+  scrollbar-width: none; pointer-events: auto;
 }
+#wikiTop.on:empty { display:none; }
 body.wiki-top #hjBar {
   display:flex !important; position:fixed; top:0; left:0; right:0; height:40px; z-index:810;
   align-items:center; gap:8px; padding:0 10px; background:#07141f; overflow:hidden;
@@ -2203,12 +2204,12 @@ body.wiki-top #liveLabel {
 body.wiki-top #hjSaid { flex:1; min-width:0; height:28px; margin:0; border:0; border-radius:999px; background:#f7f4ee; color:#1a1408; padding:0 12px; font:inherit; }
 body.wiki-top:not(.hj-full) #hjExit { display:none !important; }
 body.wiki-top:not(.hj-full):not(.medb-full) .app { margin-top:164px; height:calc(100dvh - 164px); }
-#wikiTop button { flex:0 0 auto; width:150px; border:0; background:#123044; border-radius:8px; padding:0; display:flex; flex-direction:column; overflow:hidden; }
-#wikiTop img { width:150px; height:78px; object-fit:cover; background:#07141f; }
-#wikiTop span { display:block; color:#d7e6ee; font-size:10px; line-height:1.2; padding:2px 6px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#wikiTop button { flex:0 0 auto; width:96px; border:0; background:#123044; border-radius:6px; padding:0; display:flex; overflow:hidden; }
+#wikiTop img { width:96px; height:44px; object-fit:cover; background:#07141f; }
+#wikiTop span { display:none; }
 #wikiTop b[data-q] { display:none; }
 body.hj-full.wiki-top .work,
-body.medb-full.wiki-top .work { top:164px !important; bottom:92px !important; }
+body.medb-full.wiki-top .work { top:92px !important; bottom:64px !important; }
 body.hj-full #capRail,
 body.medb-full #capRail { height:84px !important; z-index:400; pointer-events:auto; }
 body.hj-full .work,
@@ -2303,7 +2304,9 @@ body.hj-full #filmLeft,
 body.hj-full #filmRight { display: none !important; }
 body.hj-full .work,
 body.hj-full.film-widget .work,
-body.hj-full.wiki-top .work { left: 0 !important; right: 0 !important; bottom: 96px !important; }
+body.hj-full.wiki-top .work { left: 0 !important; right: 0 !important; bottom: 64px !important; }
+body.hj-full.wiki-top .work,
+body.medb-full.wiki-top .work { top: 92px !important; bottom: 64px !important; }
 body.hj-full .stage,
 body.hj-full #hjFrame { width: 100% !important; max-width: none !important; }
 body.medb-full #filmLeft,
@@ -5643,10 +5646,8 @@ const CapRail = {
     if (this.wikiNetKey === q) return;
     this.wikiNetKey = q;
     const host = document.getElementById("wikiTop");
-    if (host) {
-      host.classList.add("on");
-      document.body.classList.add("wiki-top");
-    }
+    if (host) host.classList.add("on");
+    document.body.classList.add("wiki-top");
     const said = document.getElementById("hjSaid");
     if (said && document.activeElement !== said && !/meta image|background/i.test(q)) said.value = q;
     const url = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=6&prop=pageimages|extracts|info&inprop=url&exintro=1&explaintext=1&exchars=140&pithumbsize=640&format=json&origin=*";
