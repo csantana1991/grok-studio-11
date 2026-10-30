@@ -202,7 +202,7 @@ const BRIDGE = `(function(){
     if (base) {
       spin += 1;
       var bits = base.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\\s+/).filter(function(w){
-        return w.length > 3 && !/^(that|this|with|from|what|when|your|have|they|them|then|about|there|their|which|would|could|should|really|made|into|over|lecture|monday)$/.test(w);
+        return w.length > 3 && !/^(that|this|with|from|what|when|your|have|they|them|then|about|there|their|which|would|could|should|really|made|into|over|lecture|monday|queue|started|advances|playable|lesson|ends|youtube|unit|source|ready)$/.test(w);
       });
       if (bits.length) {
         var pick = bits[spin % bits.length];

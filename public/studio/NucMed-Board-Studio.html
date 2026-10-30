@@ -5632,12 +5632,12 @@ const CapRail = {
     const cap = doc.querySelector(".player-caption, .caption");
     const said = cap ? String(cap.textContent || "").replace(/\s+/g, " ").trim() : "";
     if (said.length > 8) this.line = said;
-    const title = doc.querySelector("h1, h2");
-    const slide = title ? String(title.textContent || "").replace(/\s+/g, " ").trim() : "";
-    if (slide.length > 4) this.slideText = slide;
+    const current = doc.querySelector(".lesson-item.is-current strong") || doc.querySelector(".lesson-item.is-current");
+    const slide = current ? String(current.textContent || "").replace(/\[[^\]]+\]/g, " ").replace(/\s+/g, " ").trim() : "";
+    if (slide.length > 4 && !/queue started|playable lesson/i.test(slide)) this.slideText = slide;
   },
   captionWords(text) {
-    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|them|then|just|like|gonna|going|know|yeah|okay|well|meta|image|images|turn|size|widget|atlas|use|them|goal|video|fill|gap|approach|most|pretty|they|were|early|found|large|weak)$/i;
+    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|them|then|just|like|gonna|going|know|yeah|okay|well|meta|image|images|turn|size|widget|atlas|use|them|goal|video|fill|gap|approach|most|pretty|they|were|early|found|large|weak|queue|started|advances|playable|lesson|ends|youtube|unit|source|next|ready|original|automated|check|here|playback|available)$/i;
     return String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !stop.test(w)).slice(0, 8).join(" ");
   },
   async wikiNet(text) {
@@ -5715,12 +5715,14 @@ const CapRail = {
       } catch (e) {}
     }
     if (!pages.length) return;
+    const shown = pages.filter((p) => p && p.thumbnail && p.thumbnail.source).slice(0, 4);
+    if (!shown.length) return;
     if (row.dataset.q !== q) {
       row.innerHTML = "";
       row.dataset.q = q;
     }
-    pages.filter((p) => p && p.thumbnail && (String(p.thumbnail.source).indexOf("openi") >= 0 || this.onTopic(p.title) || this.captionWords(p.title).split(" ").some((w) => w.length > 4 && q.indexOf(w) >= 0))).slice(0, 4).forEach((p) => {
-      this.add(p.thumbnail.source, "Slide · " + p.title);
+    shown.forEach((p) => {
+      this.add(p.thumbnail.source, "Slide · " + (p.title || q));
     });
     this.pushWidgets(q);
   },
@@ -5830,8 +5832,8 @@ const CapRail = {
       const found = String((out && out.data && out.data.text) || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3);
       found.forEach((w) => { if (this.screenWords.indexOf(w) < 0 && this.screenWords.length < 40) this.screenWords.push(w); });
       if (!found.length) return;
-      const phrase = found.join(" ");
-      if (!phrase) return;
+      const phrase = this.understand(found.join(" "));
+      if (!phrase || this.slideText) return;
       this.slideText = phrase;
       this.slideKey = "";
       this.slideNet(phrase);
@@ -14605,8 +14607,7 @@ window.addEventListener("message", (e) => {
   if (data.cc && data.text) {
     if (!data.follow) {
       const text = String(data.text || "").replace(/\s+/g, " ").trim();
-      const chrome = /meta image|rad atlas|rad review|academy|nucleus|ultimate|widget/i.test(text);
-      if (chrome) return;
+      if (/queue started|playable lesson|advances when/i.test(text)) return;
       const spoken = text.length > 42 && !/\|/.test(text);
       if (spoken) {
         CapRail.line = text;
