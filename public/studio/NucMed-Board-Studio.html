@@ -5612,17 +5612,32 @@ const CapRail = {
   },
   async readScreen() {
     this.watchPlayers();
+    this.readLecture();
+    if (this.slideText) this.slideNet(this.slideText);
+    if (this.line) this.wikiNet(this.line);
     if (this.videoId && !this._shotBusy) {
-      const names = ["hqdefault", "sddefault", "0", "1", "2", "3", "sd1", "sd2", "sd3", "hq1", "hq2", "hq3", "maxresdefault"];
+      const names = ["hq2", "sd2", "hq3"];
       const name = names[(this._shot || 0) % names.length];
       this._shot = (this._shot || 0) + 1;
       this._shotBusy = true;
       this.ocrFrame("https://i.ytimg.com/vi/" + this.videoId + "/" + name + ".jpg").finally(() => { this._shotBusy = false; });
     }
-    if (this.line) this.wikiNet(this.line);
+  },
+  readLecture() {
+    const frame = document.getElementById("mbFrame") || document.getElementById("hjFrame");
+    if (!frame) return;
+    let doc = null;
+    try { doc = frame.contentDocument; } catch (e) { return; }
+    if (!doc) return;
+    const cap = doc.querySelector(".player-caption, .caption");
+    const said = cap ? String(cap.textContent || "").replace(/\s+/g, " ").trim() : "";
+    if (said.length > 8) this.line = said;
+    const title = doc.querySelector("h1, h2");
+    const slide = title ? String(title.textContent || "").replace(/\s+/g, " ").trim() : "";
+    if (slide.length > 4) this.slideText = slide;
   },
   captionWords(text) {
-    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|them|then|just|like|gonna|going|know|yeah|okay|well|meta|image|images|turn|size|widget|atlas)$/i;
+    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|them|then|just|like|gonna|going|know|yeah|okay|well|meta|image|images|turn|size|widget|atlas|use|them|goal|video|fill|gap|approach|most|pretty|they|were|early|found|large|weak)$/i;
     return String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !stop.test(w)).slice(0, 8).join(" ");
   },
   async wikiNet(text) {
@@ -5643,9 +5658,16 @@ const CapRail = {
     document.body.classList.add("wiki-top");
     let pages = [];
     try {
-      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(word) + "&gsrlimit=4&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*").then((r) => r.json());
-      pages = Object.values((data.query && data.query.pages) || {});
-    } catch (e) { return; }
+      const data = await fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(word) + "&n=4").then((r) => r.json());
+      const row = (data.results || []).find((r) => r && r.url);
+      if (row) pages = [{ title: word, thumbnail: { source: row.url }, fullurl: row.url }];
+    } catch (e) {}
+    if (!pages.length) {
+      try {
+        const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(word) + "&gsrlimit=4&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*").then((r) => r.json());
+        pages = Object.values((data.query && data.query.pages) || {});
+      } catch (e) { return; }
+    }
     if (!host) return;
     const hit = pages.filter((p) => p && p.title && p.thumbnail && (this.onTopic(p.title) || this.captionWords(p.title).indexOf(word) >= 0))[0];
     if (!hit) return;
@@ -5680,14 +5702,21 @@ const CapRail = {
     if (tag) tag.textContent = ("1 Slide · " + q).slice(0, 48);
     let pages = [];
     try {
-      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=6&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*").then((r) => r.json());
-      pages = Object.values((data.query && data.query.pages) || {});
-    } catch (e) { return; }
+      const data = await fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(q) + "&n=6").then((r) => r.json());
+      pages = (data.results || []).filter((r) => r && r.url).map((r) => ({ title: r.caption || r.title || q, thumbnail: { source: r.url } }));
+    } catch (e) {}
+    if (pages.length < 2) {
+      try {
+        const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=6&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*").then((r) => r.json());
+        pages = pages.concat(Object.values((data.query && data.query.pages) || {}));
+      } catch (e) {}
+    }
+    if (!pages.length) return;
     if (row.dataset.q !== q) {
       row.innerHTML = "";
       row.dataset.q = q;
     }
-    pages.filter((p) => p && p.title && p.thumbnail && (this.onTopic(p.title) || this.captionWords(p.title).split(" ").some((w) => w.length > 4 && q.indexOf(w) >= 0))).slice(0, 4).forEach((p) => {
+    pages.filter((p) => p && p.thumbnail && (String(p.thumbnail.source).indexOf("openi") >= 0 || this.onTopic(p.title) || this.captionWords(p.title).split(" ").some((w) => w.length > 4 && q.indexOf(w) >= 0))).slice(0, 4).forEach((p) => {
       this.add(p.thumbnail.source, "Slide · " + p.title);
     });
   },
