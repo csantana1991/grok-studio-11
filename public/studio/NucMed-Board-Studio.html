@@ -2207,13 +2207,16 @@ body.medb-full .stage {
 }
 body.hj-full #capRail,
 body.medb-full #capRail {
-  bottom: 0; z-index: 240; height: 84px;
-  background: #1d4ed8; border-top: 1px solid #93c5fd;
+  display: flex !important;
+  bottom: 0; z-index: 400; height: 118px;
+  background: #f7f4ee; border-top: 1px solid #e4dcc8;
 }
-body.hj-full #capRail.on,
-body.medb-full #capRail.on { display: flex !important; }
 body.hj-full #capRail .cap-tag,
-body.medb-full #capRail .cap-tag { color: #fff; }
+body.medb-full #capRail .cap-tag { color: #1a1408; }
+body.hj-full #capRow button,
+body.medb-full #capRow button { background: #fff; color: #1a1408; border: 1px solid #e4dcc8; }
+body.hj-full .work,
+body.hj-full.film-widget .work { bottom: 118px !important; }
 body.medb-full #capPop { bottom: 84px; }
 #capRail {
   display: none; position: fixed; left: 0; right: 0; bottom: 52px; z-index: 86;
@@ -2238,7 +2241,7 @@ body.hj-full .work { left: 210px !important; right: 210px !important; bottom: 86
 body.hj-full #filmLeft,
 body.hj-full #filmRight { display: none !important; }
 body.hj-full .work,
-body.hj-full.film-widget .work { left: 0 !important; right: 0 !important; bottom: 86px !important; }
+body.hj-full.film-widget .work { left: 0 !important; right: 0 !important; bottom: 118px !important; }
 body.hj-full .stage,
 body.hj-full #hjFrame { width: 100% !important; max-width: none !important; }
 body.medb-full .work { left: 210px !important; right: 210px !important; bottom: 86px !important; }
@@ -2292,7 +2295,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 </div>
 <div class='backdrop' id='backdrop'></div>
 <div class="rru-exitbar" id="rruBar"><b>RAD REVIEW Ultimate</b><span>Full-page 33,000-case worklist · Image QA · live PubMed · same features as RAD REVIEW</span><button type="button" id="rruExit">Exit to Board Studio</button></div>
-<div id="capRail"><span class="cap-tag">Atlas</span><div id="capRow"></div></div>
+<div id="capRail"><span class="cap-tag">Atlas · Meta</span><div id="capRow"></div></div>
 <aside id="filmLeft" aria-label="Lecture images"></aside>
 <aside id="filmRight" aria-label="Widget panel"></aside>
 <div id="capPop"><button type="button" id="capPopX">Close</button><img alt="" referrerpolicy="no-referrer"><p></p></div>
@@ -5316,6 +5319,28 @@ const CapRail = {
     const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|after|before|their|there|they|them|then|also|only|most|more|some|such|been|being|which|while|where|will|would|could|should|follows|meets|used|basic|webinar|lecture|monday|short|travels|clinical|medicine|public|youtube)$/i;
     const words = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.test(w));
     return words.slice(0, 4).join(" ") || String(text || "").replace(/\s+/g, " ").trim().slice(0, 80);
+  },
+  async atlas(text) {
+    const q = this.queryOf(text);
+    if (!q || q.length < 3) return;
+    const key = "atlas|" + q;
+    if (this.atlasKey === key) return;
+    this.atlasKey = key;
+    const rail = document.getElementById("capRail");
+    if (rail) rail.classList.add("on");
+    if (typeof raSearch !== "function") { this.live(q); return; }
+    try {
+      const data = await raSearch(q, false);
+      const groups = (data && data.groups) || {};
+      const rows = (groups.articleFigures || []).concat(groups.studyPreviews || []);
+      rows.forEach((row) => {
+        const src = row && (row.imageUrl || row.url || row.thumb || row.src);
+        if (src) this.add(src, row.caption || row.title || q);
+      });
+      if (!rows.length) this.live(q);
+    } catch (e) {
+      this.live(q);
+    }
   },
   async live(text) {
     const q = this.queryOf(text);
@@ -13982,6 +14007,7 @@ window.addEventListener("message", (e) => {
     CapRail.cues = [];
     CapRail.topic = "";
     CapRail.scrubbed = "";
+    CapRail.atlasKey = "";
     SideFilm.seen = {};
     SideFilm.lastQ = "";
     const left = document.getElementById("filmLeft");
@@ -14001,6 +14027,7 @@ window.addEventListener("message", (e) => {
     const tag = document.querySelector("#capRail .cap-tag");
     if (tag) tag.textContent = String(data.text).replace(/\s+/g, " ").trim().slice(0, 48);
     CapRail.note(data.text);
+    CapRail.atlas(data.text);
     SideFilm.pull(data.text);
     if (!CapRail.cues.length) CapRail.scrub([], data.text);
   } else if (data.cc && typeof data.t === "number") CapRail.cueAt(data.t);
