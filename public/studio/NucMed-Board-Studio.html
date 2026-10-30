@@ -2156,6 +2156,24 @@ body.hj-full #hjFrame {
   flex:1 1 auto !important; width:100% !important; height:100% !important; min-height:100% !important;
   border:0 !important; display:block !important; background:#0c1210 !important;
 }
+#capRail {
+  display: none; position: fixed; left: 0; right: 0; bottom: 52px; z-index: 86;
+  height: 78px; padding: 6px 8px; gap: 8px; align-items: center;
+  background: rgba(7, 18, 28, .94); overflow-x: auto; overflow-y: hidden; white-space: nowrap;
+}
+#capRail.on { display: flex; }
+body.hj-full #capRail { bottom: 0; z-index: 180; }
+#capRail .cap-tag { flex: 0 0 auto; color: #9fc8c0; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
+#capRow { display: flex; gap: 8px; align-items: center; }
+#capRow button { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; height: 64px; padding: 0 8px 0 0; border: 0; border-radius: 10px; background: #123044; color: #e8f2f7; cursor: pointer; }
+#capRow img { width: 96px; height: 64px; object-fit: cover; border-radius: 10px 0 0 10px; background: #07141f; }
+#capRow span { display: block; max-width: 140px; font-size: 11px; line-height: 1.25; white-space: normal; overflow: hidden; }
+#capPop { position: fixed; left: 12px; right: 12px; bottom: 138px; z-index: 190; display: none; background: #0e1c28; color: #e8f2f7; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+body.hj-full #capPop { bottom: 88px; }
+#capPop.on { display: block; }
+#capPop img { width: 100%; max-height: 34vh; object-fit: contain; background: #000; display: block; }
+#capPop p { margin: 0; padding: 8px 12px 12px; font-size: 13px; line-height: 1.35; }
+#capPop button { position: absolute; top: 8px; right: 8px; border: 0; border-radius: 999px; background: #e8f2f7; color: #0e1c28; font-weight: 800; padding: 4px 10px; }
 #hjAtlasSheet { display:none; position:fixed; top:44px; right:0; bottom:0; width:min(560px,100%); z-index:85; overflow:auto; background:#0e1c28; box-shadow:-12px 0 32px rgba(0,0,0,.35); }
 body.hj-atlas #hjAtlasSheet { display:block; }
 body.tabs-up .app-tabs,
@@ -2181,6 +2199,8 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 </div>
 <div class='backdrop' id='backdrop'></div>
 <div class="rru-exitbar" id="rruBar"><b>RAD REVIEW Ultimate</b><span>Full-page 33,000-case worklist · Image QA · live PubMed · same features as RAD REVIEW</span><button type="button" id="rruExit">Exit to Board Studio</button></div>
+<div id="capRail"><span class="cap-tag">Image</span><div id="capRow"></div></div>
+<div id="capPop"><button type="button" id="capPopX">Close</button><img alt="" referrerpolicy="no-referrer"><p></p></div>
 <div class="rru-exitbar hj-exitbar" id="hjBar"><b>HJ Med</b><span>Live page</span><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
 <div id="hjAtlasSheet" aria-label="Grok 11 atlas"></div>
 <div class='app'>
@@ -5088,6 +5108,92 @@ async function liveSentenceImages(text) {
   try { LiveHero.paint(); } catch (e) {}
   try { paintAtlasFilm(); } catch (e) {}
 }
+const CapRail = {
+  last: "",
+  seq: 0,
+  cues: [],
+  videoId: "",
+  modality(text) {
+    const t = String(text || "").toLowerCase();
+    const rules = [
+      [/dotatate|somatostatin/, "dota"],
+      [/psma|lutetium/, "psma"],
+      [/pyrophosphate|\bpyp\b|amyloid/, "pyp"],
+      [/muga|ejection/, "muga"],
+      [/sestamibi|myocardial perfusion|\bmpi\b/, "mpi"],
+      [/thyroid|radioiodine|iodine-131/, "thyroid"],
+      [/parathyroid/, "para"],
+      [/hepatobiliary|\bhida\b|gallbladder/, "hida"],
+      [/ventilation|perfusion|\bv\/q\b|\bvq\b/, "vq"],
+      [/renal|kidney|mag3|dmsa/, "renal"],
+      [/bone scan|scintigraphy|skeleton/, "bone"],
+      [/mammogra/, "mammo"],
+      [/echocardiogra|\becho\b/, "echo"],
+      [/ultrasound|sonogra/, "us"],
+      [/positron|\bpet\b|\bfdg\b/, "pet"],
+      [/magnetic|mri|brain/, "mri"],
+      [/radiograph|x-ray|chest film/, "xray"],
+      [/computed|tomography|\bct\b/, "ct"]
+    ];
+    for (let i = 0; i < rules.length; i++) if (rules[i][0].test(t)) return rules[i][1];
+    return "ct";
+  },
+  note(text) {
+    const s = String(text || "").replace(/\s+/g, " ").trim();
+    if (s.length < 12 || s === this.last) return;
+    this.last = s;
+    const seq = ++this.seq;
+    clearTimeout(this._t);
+    this._t = setTimeout(() => { if (seq === this.seq) this.pull(s, seq); }, 700);
+  },
+  async pull(text, seq) {
+    const modality = this.modality(text);
+    let rank = 1;
+    for (let i = 0; i < text.length; i++) rank = (rank + text.charCodeAt(i) * (i + 3)) % 80000;
+    try {
+      const res = await fetch("/api/pmc/match?source=film&modality=" + modality + "&m=" + (rank + 1) + "&format=json");
+      if (!res.ok || seq !== this.seq) return;
+      const data = await res.json();
+      if (seq !== this.seq || !data.image) return;
+      this.add(data.image, data.caption || text);
+    } catch (e) {}
+  },
+  add(src, cap) {
+    const row = document.getElementById("capRow");
+    const rail = document.getElementById("capRail");
+    if (!row || !rail || row.querySelector('img[src="' + src.replace(/"/g, "") + '"]')) return;
+    const b = document.createElement("button");
+    b.type = "button";
+    const img = document.createElement("img");
+    img.alt = "";
+    img.referrerPolicy = "no-referrer";
+    img.src = src;
+    const label = document.createElement("span");
+    label.textContent = String(cap || "").slice(0, 90);
+    b.appendChild(img);
+    b.appendChild(label);
+    b.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); this.pop(src, cap); };
+    row.appendChild(b);
+    rail.classList.add("on");
+    rail.scrollLeft = rail.scrollWidth;
+  },
+  pop(src, cap) {
+    const pop = document.getElementById("capPop");
+    if (!pop) return;
+    const img = pop.querySelector("img");
+    const p = pop.querySelector("p");
+    if (img) img.src = src;
+    if (p) p.textContent = cap || "";
+    pop.classList.add("on");
+  },
+  cueAt(t) {
+    const lines = this.cues;
+    if (!lines.length) return;
+    let hit = lines[0];
+    for (let i = 0; i < lines.length; i++) if (lines[i].t <= t) hit = lines[i]; else break;
+    if (hit && hit.text) this.note(hit.text);
+  }
+};
 async function depictParagraph(text) {
   const s = String(text || "").replace(/\s+/g, " ").trim();
   if (s.split(/\s+/).length < 5) return;
@@ -5096,6 +5202,7 @@ async function depictParagraph(text) {
   ensureWikiDock();
   syncSpokenImages(s);
   showPhraseImages(s);
+  if (typeof CapRail !== "undefined") CapRail.note(s);
   await liveSentenceImages(s);
 }
 
@@ -5152,6 +5259,9 @@ function speakLesson(lesson) {
       if (!state.speaking || gen !== speakGen) { clearInterval(tick); return; }
       wi += 1;
       if (wi >= words.length) { clearInterval(tick); return; }
+      if (wi % 14 === 0 && wi) {
+        if (typeof CapRail !== "undefined") CapRail.note(words.slice(Math.max(0, wi - 14), wi).join(" "));
+      }
       const idx = words.slice(0, wi).join(" ").length + 1;
       if (typeof Theater !== "undefined") Theater.setSpoken(queue[state.para], idx);
     }, stepMs);
@@ -13286,6 +13396,22 @@ const MetaSide = {
 };
 document.getElementById("miDockBtn").onclick = () => MetaSide.toggle();
 document.getElementById("miRestore").onclick = () => MetaSide.toggle(false);
+window.addEventListener("message", (e) => {
+  if (!e.data || e.data.source !== "hj-caption") return;
+  if (e.origin !== "https://hj-med.vercel.app") return;
+  const data = e.data;
+  if (data.videoId && data.videoId !== CapRail.videoId && /^[A-Za-z0-9_-]{6,15}$/.test(data.videoId)) {
+    CapRail.videoId = data.videoId;
+    CapRail.cues = [];
+    fetch("/api/pmc/match?source=captions&v=" + encodeURIComponent(data.videoId))
+      .then((res) => res.json())
+      .then((body) => { if (data.videoId === CapRail.videoId) CapRail.cues = body.lines || []; })
+      .catch(() => {});
+  }
+  if (data.cc && typeof data.t === "number") CapRail.cueAt(data.t);
+  else if (data.cc && data.text) CapRail.note(data.text);
+});
+document.getElementById("capPopX").onclick = () => document.getElementById("capPop").classList.remove("on");
 window.addEventListener("message", (e) => {
   if (e.origin !== location.origin || !e.data) return;
   if (e.data.type === "meta-ready") {

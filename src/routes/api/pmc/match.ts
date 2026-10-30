@@ -54,6 +54,24 @@ export const Route = createFileRoute("/api/pmc/match")({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const q = (url.searchParams.get("q") || "").slice(0, 300);
+        if (url.searchParams.get("source") === "captions") {
+          const id = url.searchParams.get("v") || "";
+          if (!/^[A-Za-z0-9_-]{6,15}$/.test(id)) return Response.json({ lines: [] });
+          try {
+            const res = await fetch("https://www.youtube.com/api/timedtext?v=" + id + "&lang=en&fmt=json3", {
+              signal: AbortSignal.timeout(12000),
+              headers: { "User-Agent": "BoardStudio/1.0 (teaching)" },
+            });
+            const data = (await res.json()) as { events?: { tStartMs?: number; segs?: { utf8?: string }[] }[] };
+            const lines = (data.events || []).map((ev) => ({
+              t: (ev.tStartMs || 0) / 1000,
+              text: (ev.segs || []).map((seg) => seg.utf8 || "").join("").replace(/\s+/g, " ").trim(),
+            })).filter((line) => line.text && line.text !== "\n");
+            return Response.json({ lines });
+          } catch {
+            return Response.json({ lines: [] });
+          }
+        }
         if (url.searchParams.get("source") === "film") {
           const modality = url.searchParams.get("modality") || "ct";
           const asJson = url.searchParams.get("format") === "json";
