@@ -730,9 +730,23 @@ body.live-open .work { margin-right:0; }
 .live-pop.is-min { height:40px !important; width:300px !important; min-height:40px; }
 .live-pop.is-max { inset:56px 12px 90px 12px; width:auto !important; height:auto !important; }
 .live-pop .ra-live-body { overflow:auto; flex:1; padding:8px 10px; background:#f4faf8; }
-.live-pop .ra-live-view { display:none; flex:1; min-height:180px; flex-direction:column; }
+.live-pop .ra-live-view { display:none; flex:1; min-height:180px; flex-direction:column; background:#fff; }
 .live-pop .ra-live-view.on { display:flex; }
-.live-pop .ra-live-view iframe { flex:1; border:0; min-height:180px; }
+.live-pop .ra-live-view iframe { flex:1; border:0; min-height:180px; width:100%; background:#fff; }
+.live-pop.showing .ra-live-body { flex:0 0 auto; max-height:22vh; }
+.live-pop.showing .lp-grid, .live-pop.showing .lp-stat { display:none; }
+.live-pop.showing .ra-live-view.on { flex:1 1 auto; min-height:0; }
+.live-pop.showing .ra-live-view iframe { min-height:0; height:100%; }
+.live-pop.showing .ra-hero { max-height:34vh; width:100%; object-fit:contain; background:#07171b; }
+body.live-max #livePop.live-pop.showing {
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+  top:48px !important;
+  right:8px !important;
+  bottom:8px !important;
+  left:8px !important;
+}
 .live-pop .ra-card, .live-pop .ra-study { margin-bottom:8px; }
 .live-pop h3 { margin:0; font-size:14px; }
 .live-pop .lp-head { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-bottom:1px solid var(--line); gap:8px; }
@@ -5805,8 +5819,11 @@ function raPaintLessonHits(term, data){
     ${(!figs.length && !prev.length && !full.length) ? "<p>No RadAtlas hits yet. Wiki/PubMed tiles still load below.</p>" : ""}`;
   function openItem(url, title, preview){
     const view = document.getElementById("raLiveView");
+    const pop = document.getElementById("livePop");
     if (!view) return;
     view.classList.add("on");
+    if (pop) pop.classList.add("showing", "is-max");
+    document.body.classList.add("live-max");
     view.innerHTML = `<div class="panel-bar"><b>${raEsc(title||"Source")}</b><span>
       <button type="button" id="raLivePlay">▶ Play</button>
       <button type="button" id="raLiveHide">Hide</button>
@@ -5814,9 +5831,14 @@ function raPaintLessonHits(term, data){
       ${preview?`<img class="ra-hero" alt="" src="${raEsc(preview)}" referrerpolicy="no-referrer">`:""}
       <iframe title="RadAtlas finding" src="${raEsc(url)}" sandbox="allow-forms allow-popups allow-scripts allow-same-origin"></iframe>`;
     const h = document.getElementById("raLiveHide");
-    if (h) h.onclick = () => view.classList.remove("on");
+    if (h) h.onclick = () => {
+      view.classList.remove("on");
+      if (pop) pop.classList.remove("showing", "is-max");
+      document.body.classList.remove("live-max");
+    };
     const p = document.getElementById("raLivePlay");
     if (p) p.onclick = () => narrateLiveView();
+    try { view.scrollIntoView({ block: "nearest" }); } catch (e) {}
   }
   box.querySelectorAll("[data-ra]").forEach(b => b.onclick = () => {
     const k = b.dataset.ra, i = +b.dataset.i;
