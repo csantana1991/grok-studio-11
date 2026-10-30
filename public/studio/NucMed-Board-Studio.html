@@ -5307,9 +5307,48 @@ const CapRail = {
     if (p) p.textContent = cap || "";
     pop.classList.add("on");
   },
+  queryOf(text) {
+    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|after|before|their|there|they|them|then|also|only|most|more|some|such|been|being|which|while|where|will|would|could|should|follows|meets|used|basic|webinar|lecture|monday|short|travels|clinical|medicine|public|youtube)$/i;
+    const words = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.test(w));
+    return words.slice(0, 4).join(" ") || String(text || "").replace(/\s+/g, " ").trim().slice(0, 80);
+  },
+  async live(text) {
+    const q = this.queryOf(text);
+    if (!q || q.length < 3) return;
+    try {
+      const res = await fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(q) + "&n=4");
+      const data = await res.json();
+      (data.results || []).forEach((row) => { if (row && row.url) this.add(row.url, row.caption || q); });
+    } catch (e) {}
+  },
+  scrub(lines, title) {
+    const count = lines && lines.length ? lines.length : 0;
+    const key = (this.videoId || "") + "|" + (title || "") + "|" + count;
+    if (key === this.scrubbed) return;
+    this.scrubbed = key;
+    const queries = [];
+    const addQ = (q) => {
+      q = String(q || "").replace(/\s+/g, " ").trim();
+      if (q.length < 4 || queries.indexOf(q) >= 0) return;
+      queries.push(q);
+    };
+    addQ(title || this.topic || "");
+    if (count) {
+      const steps = Math.min(8, count);
+      for (let i = 0; i < steps; i++) {
+        const at = Math.round(i * (count - 1) / Math.max(1, steps - 1));
+        const line = lines[at];
+        if (line && line.text) addQ(this.queryOf(line.text));
+      }
+    }
+    queries.slice(0, 8).forEach((q, i) => { setTimeout(() => this.live(q), i * 400); });
+  },
   cueAt(t) {
     const lines = this.cues;
-    if (!lines.length) return;
+    if (!lines.length) {
+      if (this.topic) this.scrub([], this.topic);
+      return;
+    }
     let hit = lines[0];
     for (let i = 0; i < lines.length; i++) if (lines[i].t <= t) hit = lines[i]; else break;
     if (hit && hit.text) this.note(hit.text);
@@ -13936,6 +13975,8 @@ window.addEventListener("message", (e) => {
   if (data.videoId && data.videoId !== CapRail.videoId && /^[A-Za-z0-9_-]{6,15}$/.test(data.videoId)) {
     CapRail.videoId = data.videoId;
     CapRail.cues = [];
+    CapRail.topic = "";
+    CapRail.scrubbed = "";
     SideFilm.seen = {};
     SideFilm.lastQ = "";
     const left = document.getElementById("filmLeft");
@@ -13944,14 +13985,19 @@ window.addEventListener("message", (e) => {
     if (row) row.innerHTML = "";
     fetch("/api/pmc/match?source=captions&v=" + encodeURIComponent(data.videoId))
       .then((res) => res.json())
-      .then((body) => { if (data.videoId === CapRail.videoId) CapRail.cues = body.lines || []; })
-      .catch(() => {});
+      .then((body) => {
+        if (data.videoId !== CapRail.videoId) return;
+        CapRail.cues = body.lines || [];
+        CapRail.scrub(CapRail.cues, CapRail.topic);
+      })
+      .catch(() => { if (data.videoId === CapRail.videoId) CapRail.scrub([], CapRail.topic); });
   }
   if (data.cc && data.text) {
     const tag = document.querySelector("#capRail .cap-tag");
     if (tag) tag.textContent = String(data.text).replace(/\s+/g, " ").trim().slice(0, 48);
     CapRail.note(data.text);
     SideFilm.pull(data.text);
+    if (!CapRail.cues.length) CapRail.scrub([], data.text);
   } else if (data.cc && typeof data.t === "number") CapRail.cueAt(data.t);
 });
 window.addEventListener("message", (e) => {
