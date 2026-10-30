@@ -2161,7 +2161,8 @@ body.view-rru #rruFrame {
   height: 100% !important;
   min-height: 0 !important;
 }
-body.hj-full .hj-exitbar { display:flex !important; height:40px; min-height:40px; overflow:hidden; flex-wrap:nowrap; z-index:200; }
+body.hj-full .hj-exitbar { display:flex !important; height:40px; min-height:40px; overflow:hidden; flex-wrap:nowrap; z-index:200; align-items:center; }
+body.hj-full #hjSaid { flex:1; min-width:0; height:28px; margin:0 8px; border:0; border-radius:999px; background:#f7f4ee; color:#1a1408; padding:0 12px; font:inherit; }
 body.hj-full .hj-exitbar button { padding:6px 10px; font-size:13px; white-space:nowrap; }
 @media (max-width: 700px) {
   body.hj-full .hj-exitbar span { display:none !important; }
@@ -2214,7 +2215,9 @@ body.medb-full #capRail {
 body.hj-full #capRail .cap-tag,
 body.medb-full #capRail .cap-tag { color: #1a1408; }
 body.hj-full #capRow button,
-body.medb-full #capRow button { background: #fff; color: #1a1408; border: 1px solid #e4dcc8; }
+body.medb-full #capRow button { background: transparent; color: #1a1408; border: 0; padding: 0; box-shadow: none; }
+body.hj-full #capRow img,
+body.medb-full #capRow img { border: 0; border-radius: 6px; background: transparent; }
 body.hj-full .work,
 body.hj-full.film-widget .work { bottom: 118px !important; }
 body.medb-full #capPop { bottom: 84px; }
@@ -2303,7 +2306,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 <aside id="filmLeft" aria-label="Lecture images"></aside>
 <aside id="filmRight" aria-label="Widget panel"></aside>
 <div id="capPop"><button type="button" id="capPopX">Close</button><img alt="" referrerpolicy="no-referrer"><p></p></div>
-<div class="rru-exitbar hj-exitbar" id="hjBar"><b>HJ Med</b><span>Live page</span><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
+<div class="rru-exitbar hj-exitbar" id="hjBar"><b>HJ Med</b><input id="hjSaid" type="search" placeholder="Live search of what is said" autocomplete="off"><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
 <div class="rru-exitbar" id="mbBar"><b>Med-b</b><span>Live page</span><button type="button" id="mbAtlas">Atlas</button><button type="button" id="mbExit">Exit</button></div>
 <div id="hjAtlasSheet" aria-label="Grok 11 atlas"></div>
 <div class='app'>
@@ -5251,6 +5254,8 @@ const CapRail = {
     if (bit.length < 3) return;
     const tag = document.querySelector("#capRail .cap-tag");
     if (tag) tag.textContent = bit.slice(0, 48);
+    const said = document.getElementById("hjSaid");
+    if (said && document.activeElement !== said) said.value = bit.slice(0, 90);
     if (!this.topic && bit.length > 28) this.topic = bit.slice(0, 90);
     this.tail = ((this.tail || "") + " " + bit).trim().split(/\s+/).slice(-12).join(" ");
     const s = ((this.topic || "") + " " + this.tail).replace(/\s+/g, " ").trim();
@@ -13711,6 +13716,13 @@ const rruExit = document.getElementById("rruExit");
 if (rruExit) rruExit.onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("rru-full"); render(); };
 const hjExit = document.getElementById("hjExit");
 if (hjExit) hjExit.onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("hj-full"); document.body.classList.remove("hj-atlas"); render(); };
+const hjSaid = document.getElementById("hjSaid");
+if (hjSaid) hjSaid.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Enter") return;
+  ev.preventDefault();
+  CapRail.atlas(hjSaid.value);
+  CapRail.note(hjSaid.value);
+});
 const mbExit = document.getElementById("mbExit");
 if (mbExit) mbExit.onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("medb-full"); document.body.classList.remove("hj-atlas"); render(); };
 function toggleEmbedAtlas(){
