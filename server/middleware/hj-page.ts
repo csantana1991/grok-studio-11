@@ -30,22 +30,40 @@ const BRIDGE = `(function(){
   if (location.pathname === "/hj" || location.pathname === "/hj/") {
     history.replaceState(history.state, "", "/");
   }
-  document.addEventListener("click", function(e){
+  function here(raw){
+    if (!raw || raw.charAt(0) === "#" || raw.indexOf("mailto:") === 0 || raw.indexOf("javascript:") === 0) return "";
+    try {
+      var u = new URL(raw, OWN + "/");
+      if (u.origin !== OWN && u.origin !== location.origin) return "";
+      if (/\\.(mp4|webm|jpg|jpeg|png|svg|pdf|css|js|vtt)$/i.test(u.pathname)) return "";
+      return u.pathname + u.search + u.hash;
+    } catch (e) { return ""; }
+  }
+  function fixAnchors(){
+    var list = document.querySelectorAll("a[href]");
+    for (var i = 0; i < list.length; i++) {
+      var a = list[i];
+      if (a.target === "_blank") continue;
+      var next = here(a.getAttribute("href") || "");
+      if (!next) continue;
+      var abs = location.origin + next;
+      if (a.href !== abs) a.setAttribute("href", abs);
+    }
+  }
+  window.addEventListener("click", function(e){
     var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
     if (!a || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || a.target === "_blank") return;
-    var raw = a.getAttribute("href") || "";
-    if (!raw || raw.charAt(0) === "#" || raw.indexOf("mailto:") === 0) return;
-    var u;
-    try { u = new URL(raw, OWN + "/"); } catch (err) { return; }
-    if (u.origin !== OWN && u.origin !== location.origin) return;
-    if (/\.(mp4|webm|jpg|jpeg|png|svg|pdf|css|js|vtt)$/i.test(u.pathname)) return;
-    var next = u.pathname + u.search + u.hash;
-    if (a.getAttribute("href") !== next) a.setAttribute("href", location.origin + next);
+    var next = here(a.getAttribute("href") || a.href || "");
+    if (!next) return;
+    a.setAttribute("href", location.origin + next);
     e.preventDefault();
     e.stopImmediatePropagation();
-    history.pushState(null, "", u.pathname + u.search + u.hash);
+    history.pushState(null, "", next);
     window.dispatchEvent(new PopStateEvent("popstate"));
   }, true);
+  fixAnchors();
+  document.addEventListener("DOMContentLoaded", fixAnchors);
+  setInterval(fixAnchors, 500);
   var videoId = "";
   var cues = [];
   var last = "";
