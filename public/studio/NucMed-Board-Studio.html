@@ -5648,8 +5648,8 @@ const CapRail = {
     if (said && document.activeElement !== said) said.value = "2 Caption · " + words.join(" · ");
     for (let i = 0; i < words.length; i++) {
       if (this.seenCap[words[i]]) continue;
-      this.seenCap[words[i]] = 1;
-      await this.captionWord(words[i]);
+      const found = await this.captionWord(words[i]);
+      if (found) this.seenCap[words[i]] = 1;
     }
   },
   async captionWord(word) {
@@ -5670,9 +5670,9 @@ const CapRail = {
     }
     if (!host) return;
     const hit = pages.filter((p) => p && p.title && p.thumbnail && (this.onTopic(p.title) || this.captionWords(p.title).indexOf(word) >= 0))[0];
-    if (!hit) return;
+    if (!hit) return false;
     const href = hit.fullurl || ("https://en.wikipedia.org/wiki/" + encodeURIComponent(hit.title.replace(/ /g, "_")));
-    if (host.querySelector('[data-wiki="' + href.replace(/"/g, "") + '"]')) return;
+    if (host.querySelector('[data-wiki="' + href.replace(/"/g, "") + '"]')) return true;
     const src = hit.thumbnail.source;
     const b = document.createElement("button");
     b.type = "button";
@@ -5687,7 +5687,11 @@ const CapRail = {
     b.appendChild(label);
     b.onclick = () => window.open(href, "_blank", "noopener");
     host.insertBefore(b, host.firstChild);
+    host.scrollLeft = 0;
     while (host.children.length > 12) host.removeChild(host.lastChild);
+    this.pushWidgets(word);
+    if (typeof SideFilm !== "undefined") SideFilm.pull(word);
+    return true;
   },
   async slideNet(text) {
     const q = this.captionWords(text);
@@ -5719,6 +5723,8 @@ const CapRail = {
     pages.filter((p) => p && p.thumbnail && (String(p.thumbnail.source).indexOf("openi") >= 0 || this.onTopic(p.title) || this.captionWords(p.title).split(" ").some((w) => w.length > 4 && q.indexOf(w) >= 0))).slice(0, 4).forEach((p) => {
       this.add(p.thumbnail.source, "Slide · " + p.title);
     });
+    this.pushWidgets(q);
+    if (typeof SideFilm !== "undefined") SideFilm.pull(q);
   },
   pushWidgets(q) {
     const term = String(q || "").replace(/\s+/g, " ").trim();
