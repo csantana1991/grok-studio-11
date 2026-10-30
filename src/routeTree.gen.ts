@@ -10,6 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProgramProgramIdRouteImport } from './routes/program.$programId'
+import { Route as CourseCourseIdRouteImport } from './routes/course.$courseId'
+import { Route as CoverageRouteImport } from './routes/coverage'
+import { Route as LibraryRouteImport } from './routes/library'
+import { Route as BoardRouteImport } from './routes/board'
+import { Route as MedRouteImport } from './routes/med'
 import { Route as ApiRruAnalyzeRouteImport } from './routes/api/rru-analyze'
 import { Route as ApiPmcImgRouteImport } from './routes/api/pmc/img'
 import { Route as ApiPmcMatchRouteImport } from './routes/api/pmc/match'
@@ -18,6 +24,36 @@ import { Route as ApiPubmedRouteImport } from './routes/api/pubmed'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgramProgramIdRoute = ProgramProgramIdRouteImport.update({
+  id: '/program/$programId',
+  path: '/program/$programId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CourseCourseIdRoute = CourseCourseIdRouteImport.update({
+  id: '/course/$courseId',
+  path: '/course/$courseId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoverageRoute = CoverageRouteImport.update({
+  id: '/coverage',
+  path: '/coverage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoardRoute = BoardRouteImport.update({
+  id: '/board',
+  path: '/board',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MedRoute = MedRouteImport.update({
+  id: '/med',
+  path: '/med',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRruAnalyzeRoute = ApiRruAnalyzeRouteImport.update({
@@ -43,6 +79,12 @@ const ApiPubmedRoute = ApiPubmedRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/program/$programId': typeof ProgramProgramIdRoute
+  '/course/$courseId': typeof CourseCourseIdRoute
+  '/coverage': typeof CoverageRoute
+  '/library': typeof LibraryRoute
+  '/board': typeof BoardRoute
+  '/med': typeof MedRoute
   '/api/rru-analyze': typeof ApiRruAnalyzeRoute
   '/api/pmc/img': typeof ApiPmcImgRoute
   '/api/pmc/match': typeof ApiPmcMatchRoute
@@ -50,6 +92,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/program/$programId': typeof ProgramProgramIdRoute
+  '/course/$courseId': typeof CourseCourseIdRoute
+  '/coverage': typeof CoverageRoute
+  '/library': typeof LibraryRoute
+  '/board': typeof BoardRoute
+  '/med': typeof MedRoute
   '/api/rru-analyze': typeof ApiRruAnalyzeRoute
   '/api/pmc/img': typeof ApiPmcImgRoute
   '/api/pmc/match': typeof ApiPmcMatchRoute
@@ -58,6 +106,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/program/$programId': typeof ProgramProgramIdRoute
+  '/course/$courseId': typeof CourseCourseIdRoute
+  '/coverage': typeof CoverageRoute
+  '/library': typeof LibraryRoute
+  '/board': typeof BoardRoute
+  '/med': typeof MedRoute
   '/api/rru-analyze': typeof ApiRruAnalyzeRoute
   '/api/pmc/img': typeof ApiPmcImgRoute
   '/api/pmc/match': typeof ApiPmcMatchRoute
@@ -65,14 +119,20 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/rru-analyze' | '/api/pmc/img' | '/api/pmc/match' | '/api/pubmed'
+  fullPaths: '/' | '/program/$programId' | '/course/$courseId' | '/coverage' | '/library' | '/board' | '/med' | '/api/rru-analyze' | '/api/pmc/img' | '/api/pmc/match' | '/api/pubmed'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/rru-analyze' | '/api/pmc/img' | '/api/pmc/match' | '/api/pubmed'
-  id: '__root__' | '/' | '/api/rru-analyze' | '/api/pmc/img' | '/api/pmc/match' | '/api/pubmed'
+  to: '/' | '/program/$programId' | '/course/$courseId' | '/coverage' | '/library' | '/board' | '/med' | '/api/rru-analyze' | '/api/pmc/img' | '/api/pmc/match' | '/api/pubmed'
+  id: '__root__' | '/' | '/program/$programId' | '/course/$courseId' | '/coverage' | '/library' | '/board' | '/med' | '/api/rru-analyze' | '/api/pmc/img' | '/api/pmc/match' | '/api/pubmed'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ProgramProgramIdRoute: typeof ProgramProgramIdRoute
+  CourseCourseIdRoute: typeof CourseCourseIdRoute
+  CoverageRoute: typeof CoverageRoute
+  LibraryRoute: typeof LibraryRoute
+  BoardRoute: typeof BoardRoute
+  MedRoute: typeof MedRoute
   ApiRruAnalyzeRoute: typeof ApiRruAnalyzeRoute
   ApiPmcImgRoute: typeof ApiPmcImgRoute
   ApiPmcMatchRoute: typeof ApiPmcMatchRoute
@@ -86,6 +146,48 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/program/$programId': {
+      id: '/program/$programId'
+      path: '/program/$programId'
+      fullPath: '/program/$programId'
+      preLoaderRoute: typeof ProgramProgramIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/course/$courseId': {
+      id: '/course/$courseId'
+      path: '/course/$courseId'
+      fullPath: '/course/$courseId'
+      preLoaderRoute: typeof CourseCourseIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coverage': {
+      id: '/coverage'
+      path: '/coverage'
+      fullPath: '/coverage'
+      preLoaderRoute: typeof CoverageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/board': {
+      id: '/board'
+      path: '/board'
+      fullPath: '/board'
+      preLoaderRoute: typeof BoardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/med': {
+      id: '/med'
+      path: '/med'
+      fullPath: '/med'
+      preLoaderRoute: typeof MedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rru-analyze': {
@@ -121,6 +223,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ProgramProgramIdRoute: ProgramProgramIdRoute,
+  CourseCourseIdRoute: CourseCourseIdRoute,
+  CoverageRoute: CoverageRoute,
+  LibraryRoute: LibraryRoute,
+  BoardRoute: BoardRoute,
+  MedRoute: MedRoute,
   ApiRruAnalyzeRoute: ApiRruAnalyzeRoute,
   ApiPmcImgRoute: ApiPmcImgRoute,
   ApiPmcMatchRoute: ApiPmcMatchRoute,

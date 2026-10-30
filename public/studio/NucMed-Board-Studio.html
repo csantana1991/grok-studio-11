@@ -2177,8 +2177,12 @@ body.medb-full .stage {
   margin:0 !important; padding:0 !important; overflow:hidden !important; display:flex !important; flex-direction:column !important;
   background:#f6f1e8 !important;
 }
-body.medb-full #capRail { bottom: 0; z-index: 180; }
-body.medb-full #capPop { bottom: 88px; }
+body.medb-full #capRail {
+  display: flex !important; bottom: 0; z-index: 220; height: 96px;
+  background: #1d4ed8; border-top: 1px solid #93c5fd;
+}
+body.medb-full #capRail .cap-tag { color: #fff; }
+body.medb-full #capPop { bottom: 108px; }
 #capRail {
   display: none; position: fixed; left: 0; right: 0; bottom: 52px; z-index: 86;
   height: 78px; padding: 6px 8px; gap: 8px; align-items: center;
@@ -5167,12 +5171,16 @@ const CapRail = {
     return "ct";
   },
   note(text) {
-    const s = String(text || "").replace(/\s+/g, " ").trim();
+    const bit = String(text || "").replace(/\s+/g, " ").trim();
+    if (bit.length < 3) return;
+    if (!this.topic && bit.length > 28) this.topic = bit.slice(0, 90);
+    this.tail = ((this.tail || "") + " " + bit).trim().split(/\s+/).slice(-12).join(" ");
+    const s = ((this.topic || "") + " " + this.tail).replace(/\s+/g, " ").trim();
     if (s.length < 12 || s === this.last) return;
     this.last = s;
     const seq = ++this.seq;
     clearTimeout(this._t);
-    this._t = setTimeout(() => { if (seq === this.seq) this.pull(s, seq); }, 700);
+    this._t = setTimeout(() => { if (seq === this.seq) this.pull(s, seq); }, 400);
   },
   async pull(text, seq) {
     const modality = this.modality(text);
@@ -7886,7 +7894,16 @@ function renderMedB(){
   document.body.classList.remove("hj-full");
   document.body.classList.remove("atlas-open");
   const stage = $("#stage");
-  stage.innerHTML = `<iframe id="mbFrame" title="Med-b" src="https://noardstudiomannus.vercel.app/med" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" style="width:100%;height:100%;border:0;display:block;background:#f6f1e8"></iframe>`;
+  stage.innerHTML = `<iframe id="mbFrame" title="Med-b" src="/med" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" style="width:100%;height:100%;border:0;display:block;background:#f6f1e8"></iframe>`;
+  const row = document.getElementById("capRow");
+  if (row) row.innerHTML = "";
+  CapRail.last = "";
+  CapRail.topic = "";
+  CapRail.tail = "";
+  const rail = document.getElementById("capRail");
+  if (rail) rail.classList.add("on");
+  const tag = rail && rail.querySelector(".cap-tag");
+  if (tag) tag.textContent = "Images";
   if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>Med-b</b><span>333 modules, live page</span>`;
 }
 function renderVolume() {
@@ -13458,7 +13475,7 @@ document.getElementById("miDockBtn").onclick = () => MetaSide.toggle();
 document.getElementById("miRestore").onclick = () => MetaSide.toggle(false);
 window.addEventListener("message", (e) => {
   if (!e.data || e.data.source !== "hj-caption") return;
-  if (e.origin !== "https://hj-med.vercel.app" && e.origin !== "https://noardstudiomannus.vercel.app") return;
+  if (e.origin !== "https://hj-med.vercel.app" && e.origin !== "https://noardstudiomannus.vercel.app" && e.origin !== location.origin) return;
   const data = e.data;
   if (data.videoId && data.videoId !== CapRail.videoId && /^[A-Za-z0-9_-]{6,15}$/.test(data.videoId)) {
     CapRail.videoId = data.videoId;
