@@ -86,13 +86,19 @@ export const Route = createFileRoute("/api/pmc/match")({
         if (url.searchParams.get("source") === "openi") {
           const words = q.split(/[^A-Za-z0-9+-]+/).filter((w) => w.length >= 3).slice(0, 6);
           if (!words.length) return Response.json({ query: q, results: [] });
+          const start = Math.max(1, Number(url.searchParams.get("m") || 1) || 1);
+          const take = Math.min(24, Math.max(1, Number(url.searchParams.get("n") || 12) || 12));
           const tries = [words.slice(0, 3), words.slice(0, 2), words.slice(0, 1)];
           try {
             for (const terms of tries) {
               const search =
                 "https://openi.nlm.nih.gov/api/search?query=" +
                 encodeURIComponent(terms.join(" ")) +
-                "&n=12&m=1&it=x,c,m,p,u";
+                "&n=" +
+                take +
+                "&m=" +
+                start +
+                "&it=x,c,m,p,u";
               const res = await fetch(search, { signal: AbortSignal.timeout(8000) });
               if (!res.ok) continue;
               const data = (await res.json()) as {
@@ -100,7 +106,7 @@ export const Route = createFileRoute("/api/pmc/match")({
               };
               const results = (data.list || [])
                 .filter((row) => row.imgLarge && !JUNK.test(row.title || "") && !/e-poster|poster session/i.test(row.title || ""))
-                .slice(0, 12)
+                .slice(0, take)
                 .map((row) => ({
                   url: "https://openi.nlm.nih.gov" + row.imgLarge,
                   caption: row.title || q,

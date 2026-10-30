@@ -1705,7 +1705,66 @@ body.clip-on #lessonMp4 { display: block !important; z-index: 7 !important; opac
   max-height: none !important;
   overflow: visible !important;
 }
-#radRoot .rr-grid, #nbaRoot .rr-grid { align-items: start; flex: none !important; }
+#radRoot .rr-grid, #nbaRoot .rr-grid {
+  display: grid !important;
+  grid-template-columns: minmax(240px, 30%) minmax(280px, 1fr) minmax(280px, 34%) !important;
+  align-items: start;
+  gap: 12px;
+}
+.rr-dock {
+  background: #fff;
+  color: #111;
+  border: 1px solid #d5dde8;
+  border-radius: 12px;
+  min-height: 220px;
+  align-self: start;
+}
+.rr-dock .dock-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #0b1c2c;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 12px 12px 0 0;
+  font-size: 12px;
+}
+.rr-dock .dock-body { padding: 8px 8px 12px; }
+.rr-dock .dock-stat { margin: 0 0 8px; font-size: 12px; color: #111; }
+.rr-dock-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.rr-dock-grid button {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #d5dde8;
+  background: #fff;
+  padding: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  text-align: left;
+  color: #111;
+  cursor: pointer;
+}
+.rr-dock-grid img {
+  width: 100%;
+  height: 108px;
+  object-fit: contain;
+  background: #0b1220;
+}
+.rr-dock-grid span {
+  font-size: 10px;
+  line-height: 1.25;
+  padding: 4px 6px 6px;
+  max-height: 3.8em;
+  overflow: hidden;
+}
+.rr-dock .dock-cites { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: #111; }
+.rr-dock .dock-cites a { color: #1d4ed8; font-weight: 700; }
+.stage:has(#radRoot), .stage:has(#nbaRoot) { overflow: auto; }
 #radRoot .rr-listwrap, #nbaRoot .rr-listwrap {
   height: min(62vh, 560px) !important;
   max-height: min(62vh, 560px) !important;
@@ -6052,6 +6111,7 @@ function ensureCasePubMed(enc, force){
   const q = pubmedQueryFor(enc);
   if (!force && slot.pubmed && slot.pubmed.query === q && (slot.pubmed.loading || slot.pubmed.done)) {
     paintCasePubMed(slot);
+    try { paintCaseDock(enc); } catch (e) {}
     return;
   }
   slot.pubmed = { query:q, loading:true, done:false, papers:[], count:"0", error:"" };
@@ -6063,11 +6123,13 @@ function ensureCasePubMed(enc, force){
     CASE_IMG[key].pubmed = { query:q, loading:false, done:true, papers:data.papers || [], count:data.count || "0", error: data.ok === false ? (data.error || "failed") : "" };
     const gal = document.querySelector(".case-gal");
     if (gal && gal.dataset.key === key) paintCasePubMed(CASE_IMG[key]);
+    try { paintCaseDock(enc); } catch (e) {}
   }).catch(function(err){
     if (!CASE_IMG[key] || CASE_IMG[key].pubmedSeq !== seq) return;
     CASE_IMG[key].pubmed = { query:q, loading:false, done:true, papers:[], count:"0", error:(err && err.message) || "failed" };
     const gal = document.querySelector(".case-gal");
     if (gal && gal.dataset.key === key) paintCasePubMed(CASE_IMG[key]);
+    try { paintCaseDock(enc); } catch (e) {}
   });
 }
 async function liveSearchTerm(term){
@@ -7753,10 +7815,10 @@ async function fetchMoreFigures(enc, offset){
 async function fetchCaseFigures(enc, offset){
   const q = caseQuery(enc);
   const commonsP = fetchMoreFigures(enc, offset).catch(() => []);
-  const openiP = fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(q), { signal: AbortSignal.timeout(8000) })
+  const openiP = fetch("/api/pmc/match?source=openi&m=" + Math.max(1, Number(offset) || 1) + "&n=24&q=" + encodeURIComponent(q), { signal: AbortSignal.timeout(8000) })
     .then(r => r.ok ? r.json() : { results: [] })
     .then(d => (d.results || []).map(m => {
-      const img = m.permittedUse === "display" ? String(m.imageUrl || "") : "";
+      const img = String(m.imageUrl || m.url || "");
       const thumb = img.indexOf("https://openi.nlm.nih.gov/imgs/") === 0
         ? "/api/pmc/img?src=" + encodeURIComponent(img)
         : (/\.(jpe?g|png|gif|webp)(\?|$)/i.test(img) ? img : "");
@@ -10365,6 +10427,40 @@ function renderImageQA(){
 }
 
 
+function paintCaseDock(enc){
+  const dock = document.getElementById("rrDockBody") || document.getElementById("nbaDockBody");
+  if (!dock || !enc) return;
+  const key = caseKey(enc);
+  const slot = CASE_IMG[key];
+  const items = (slot && slot.items) || [];
+  const pm = slot && slot.pubmed;
+  const papers = (pm && pm.papers) || [];
+  const pics = items.slice(0, 60).map(function(it, i){
+    const label = imageDescribe(it, enc);
+    return '<button type="button" data-dock-i="' + i + '"><img alt="" src="' + escTxt(it.src) + '" referrerpolicy="no-referrer"><span>' + escTxt(String(label).slice(0, 90)) + '</span></button>';
+  }).join("");
+  const cites = papers.slice(0, 8).map(function(p){
+    return '<li><a href="https://pubmed.ncbi.nlm.nih.gov/' + escTxt(p.pmid) + '/" target="_blank" rel="noopener">PMID ' + escTxt(p.pmid) + '</a> · ' + escTxt(p.title) + '</li>';
+  }).join("");
+  const status = !pm ? "Opening PubMed for this case…" : (pm.loading ? "Searching PubMed…" : (pm.error ? ("PubMed " + pm.error) : ("PubMed · " + Number(pm.count || papers.length).toLocaleString() + " matches")));
+  dock.innerHTML = '<p class="dock-stat">' + escTxt(status) + " · " + items.length + " pictures, three across. Next 50 adds more rows downward.</p>"
+    + '<div class="rr-dock-grid">' + (pics || '<p style="grid-column:1/-1">No extra picture yet. Next 50 asks Open-i for this finding.</p>') + "</div>"
+    + (cites ? '<ol class="dock-cites">' + cites + "</ol>" : "");
+  dock.querySelectorAll("[data-dock-i]").forEach(function(b){
+    b.onclick = function(){
+      const it = items[+b.getAttribute("data-dock-i")];
+      const main = document.getElementById("caseMain");
+      const cap = document.getElementById("caseCap");
+      if (!it) return;
+      if (main) main.src = it.src;
+      if (cap) cap.textContent = imageDescribe(it, enc);
+      state.caseSel = state.caseSel || {};
+      state.caseTouched = state.caseTouched || {};
+      state.caseSel[key] = +b.getAttribute("data-dock-i");
+      state.caseTouched[key] = 1;
+    };
+  });
+}
 function bindCaseGallery(enc){
   if (!enc) return;
   const key = caseKey(enc);
@@ -10445,16 +10541,16 @@ function bindCaseGallery(enc){
         more.disabled = false;
         slot.moreNote = "";
         more.textContent = "Searching… 0 of 50";
-        const deadline = Date.now() + 9000;
+        const deadline = Date.now() + 14000;
         let stalled = false;
         let fresh = [];
         try {
           const seen = new Set((slot.items || []).map(it => it.src));
           slot.pending = (slot.pending || []).filter(it => it && it.src && !seen.has(it.src));
           slot.pending.forEach(it => seen.add(it.src));
-          let offset = slot.moreOffset || 50;
+          let offset = slot.moreOffset || 1;
           let emptyPages = 0;
-          for (let page = 0; slot.pending.length < 50 && page < 2 && emptyPages < 2 && Date.now() < deadline; page++) {
+          for (let page = 0; slot.pending.length < 50 && page < 3 && emptyPages < 2 && Date.now() < deadline; page++) {
             more.textContent = "Searching… " + Math.min(slot.pending.length, 50) + " of 50";
             const left = Math.max(1200, deadline - Date.now());
             const batch = await Promise.race([
@@ -10462,7 +10558,7 @@ function bindCaseGallery(enc){
               new Promise(resolve => setTimeout(() => resolve(null), Math.min(8000, left)))
             ]);
             if (!batch) { stalled = true; break; }
-            offset += 50;
+            offset += 24;
             let grew = false;
             batch.forEach(c => {
               if (!c.thumb || seen.has(c.thumb)) return;
@@ -10486,6 +10582,7 @@ function bindCaseGallery(enc){
           paint(slot, true);
           const stripNow = $("#caseStrip");
           if (stripNow) stripNow.scrollLeft = stripNow.scrollWidth;
+          try { paintCaseDock(enc); } catch (e2) {}
         } catch (err) {
           slot.moreNote = "Try Next 50 again";
         } finally {
@@ -10496,6 +10593,7 @@ function bindCaseGallery(enc){
           const countNow = $("#caseCount");
           if (typeof paintCasePubMed === "function") paintCasePubMed(slot);
           else if (countNow) countNow.textContent = (slot.items || []).length + " images for this case";
+          try { paintCaseDock(enc); } catch (e2) {}
         }
       };
     }
@@ -10503,6 +10601,7 @@ function bindCaseGallery(enc){
     const pmBtn = $("#casePubmedBtn");
     if (pmBtn) pmBtn.onclick = () => ensureCasePubMed(enc, true);
     try { paintCasePubMed(slot); } catch (e) {}
+    try { paintCaseDock(enc); } catch (e) {}
   };
   const slot = CASE_IMG[key] || (CASE_IMG[key] = { items: localCaseImages(enc, 2), offset: 0, pmcPage: 1, loading: false, fetched: false, query: caseQuery(enc) });
   paint(slot, false);
@@ -10952,6 +11051,10 @@ function renderAcademy(){
       <p class="rr-sub">${filtered.length.toLocaleString()} matching · ${plateV.ok.toLocaleString()}/${plateV.n.toLocaleString()} plates · Image QA <span data-iqa-progress>0 / 33,000</span></p>
       <div class="rr-grid">
         <div class="rr-listwrap" id="nbaListWrap"><div id="nbaSpacer"></div><div id="nbaWindow"></div></div>
+        <aside class="rr-dock" id="nbaDock">
+          <div class="dock-bar"><b>PubMed · this case</b><span>stays in this space</span></div>
+          <div class="dock-body" id="nbaDockBody"><p class="dock-stat">Click a case. Papers and pictures open here.</p></div>
+        </aside>
         <div class="rr-view">
           <div class="rr-mode">
             <button type="button" class="${state.nbaMode==="board"?"on":""}" data-mode="board">Board</button>
@@ -11113,6 +11216,10 @@ function renderRadReview() {
       <p><input id="rrSearch" placeholder="Search finding / station / accession"></p>
       <div class="rr-grid">
         <div class="rr-listwrap" id="rrListWrap"><div id="rrSpacer"></div><div id="rrWindow"></div></div>
+        <aside class="rr-dock" id="rrDock">
+          <div class="dock-bar"><b>PubMed · this case</b><span>stays in this space</span></div>
+          <div class="dock-body" id="rrDockBody"><p class="dock-stat">Click a case. Papers and pictures open here.</p></div>
+        </aside>
         <div class="rr-view">
           <div class="rr-casehead">
             <b>${enc ? enc.accession : ""} · ${enc ? enc.stationName : ""} · s${enc ? String(enc.slice).padStart(3,"0") : ""}</b>
@@ -11913,7 +12020,8 @@ async function raRun(){
     RAD_ATLAS.workspace = item;
     raPaintWorkspace();
   });
-  if (prev[0]) { RAD_ATLAS.workspace = { title: prev[0].title, subtitle: prev[0].meta ? (prev[0].credit || prev[0].collection) : (prev[0].collection+" · TCIA"), url: prev[0].fullStudyUrl, preview: prev[0].previewUrl, kind:"study", list:prev, index:0, imageCount:prev[0].imageCount, seriesUid:prev[0].seriesUid, collection:prev[0].collection }; raPaintWorkspace(); }
+  const livePrev = (prev || []).find(function(s){ return s && s.seriesUid; }) || prev[0];
+  if (livePrev) { RAD_ATLAS.workspace = { title: livePrev.title, subtitle: livePrev.meta ? (livePrev.credit || livePrev.collection) : (livePrev.collection+" · TCIA"), url: livePrev.fullStudyUrl, preview: livePrev.previewUrl, kind:"study", list:prev, index: Math.max(0, prev.indexOf(livePrev)), imageCount:livePrev.imageCount, seriesUid:livePrev.seriesUid, collection:livePrev.collection }; raPaintWorkspace(); }
   else if (figs[0]) { RAD_ATLAS.workspace = { title: figs[0].title, subtitle: figs[0].pmcid, url: figs[0].articleUrl, preview: figs[0].imageUrl, kind:"source" }; raPaintWorkspace(); }
   if (RAD_ATLAS.query && RAD_ATLAS.query.length >= 2) raPubmedSearch(RAD_ATLAS.query);
   try { liveSearchTerm(data.query); } catch (e) {}
@@ -12294,6 +12402,7 @@ const SeriesCine = {
     const named = String((item && (item.collection || item.title || item.subtitle)) || "").match(/TCGA-[A-Z0-9]+/);
     if (this.seriesUid) this.loadSeries(this.seriesUid);
     else if (named) this.resolveCollection(named[0]);
+    else if (item && item.collection) this.resolveCollection(String(item.collection).split("·")[0].trim());
   }
 };
 
