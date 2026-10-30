@@ -2407,7 +2407,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 <aside id="filmLeft" aria-label="Lecture images"></aside>
 <aside id="filmRight" aria-label="Widget panel"></aside>
 <div id="capPop"><button type="button" id="capPopX">Close</button><img alt="" referrerpolicy="no-referrer"><p></p></div>
-<div class="rru-exitbar hj-exitbar" id="hjBar"><b id="liveLabel">LIVE SEARCH</b><input id="hjSaid" type="search" placeholder="Live Wikipedia search" autocomplete="off"><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
+<div class="rru-exitbar hj-exitbar" id="hjBar"><b id="liveLabel">1 SLIDE · 2 CAPTION</b><input id="hjSaid" type="search" placeholder="Slide first, then the caption" autocomplete="off"><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
 <div id="wikiTop" aria-label="Wikipedia images from the captions"></div>
 <div class="rru-exitbar" id="mbBar"><b>Med-b</b><span>Live page</span><button type="button" id="mbAtlas">Atlas</button><button type="button" id="mbExit">Exit</button></div>
 <div id="mbWidgets">
@@ -5634,11 +5634,20 @@ const CapRail = {
     return "";
   },
   async readScreen() {
-    this.watchPlayers();
-    if (this.videoId) this.loadBoards(this.videoId);
-    if (this.line) this.wikiNet(this.line);
-    const slide = (this.screenWords || []).join(" ");
-    if (slide) this.slideNet(slide);
+    if (this._step) return;
+    this._step = true;
+    try {
+      this.watchPlayers();
+      if (this.videoId) {
+        const names = ["sd1", "sd2", "sd3", "hq1", "hq2", "hq3"];
+        const name = names[(this._shot || 0) % names.length];
+        this._shot = (this._shot || 0) + 1;
+        await this.ocrFrame("https://i.ytimg.com/vi/" + this.videoId + "/" + name + ".jpg");
+      }
+      if (this.line) await this.wikiNet(this.line);
+    } finally {
+      this._step = false;
+    }
   },
   async wikiNet(text) {
     const q = this.understand(text);
@@ -5649,7 +5658,7 @@ const CapRail = {
     if (host) host.classList.add("on");
     document.body.classList.add("wiki-top");
     const said = document.getElementById("hjSaid");
-    if (said && document.activeElement !== said && !/meta image|background/i.test(q)) said.value = q;
+    if (said && document.activeElement !== said) said.value = "2 Caption · " + q;
     const url = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=6&prop=pageimages|extracts|info&inprop=url&exintro=1&explaintext=1&exchars=140&pithumbsize=640&format=json&origin=*";
     let pages = [];
     try {
@@ -5694,7 +5703,7 @@ const CapRail = {
     if (!row || !rail) return;
     rail.classList.add("on");
     const tag = rail.querySelector(".cap-tag");
-    if (tag) tag.textContent = ("Slide · " + q).slice(0, 48);
+    if (tag) tag.textContent = ("1 Slide · " + q).slice(0, 48);
     let pages = [];
     try {
       const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=6&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*").then((r) => r.json());
@@ -5848,8 +5857,7 @@ const CapRail = {
     for (let i = 0; i < lines.length; i++) if (lines[i].t <= t) hit = lines[i]; else break;
     if (!hit || !hit.text || hit.text === this.line) return;
     this.line = hit.text;
-    this.wikiNetKey = "";
-    this.wikiNet(hit.text);
+    this.readScreen();
   }
 };
 const VidLift = {
@@ -14588,8 +14596,7 @@ window.addEventListener("message", (e) => {
       const spoken = text.length > 42 && !/\|/.test(text);
       if (spoken) {
         CapRail.line = text;
-        CapRail.wikiNetKey = "";
-        CapRail.wikiNet(text);
+        CapRail.readScreen();
       } else {
         CapRail.topic = text.slice(0, 120);
         CapRail.slideKey = "";
@@ -14601,8 +14608,7 @@ window.addEventListener("message", (e) => {
       if (/meta|image|atlas|academy|nucleus|review|widget|ultimate/i.test(bit) && !/pericard|tampon|effusion|cardio|myocard|murmur|hypertroph|ventric|echo|gradient|magnetic|thyroid|nodule/i.test(bit)) return;
       if (data.videoId) CapRail.useVideo(data.videoId, "");
       CapRail.line = bit;
-      CapRail.wikiNetKey = "";
-      CapRail.wikiNet(bit);
+      CapRail.readScreen();
     }
   } else if (data.cc && typeof data.t === "number") CapRail.cueAt(data.t);
 });
