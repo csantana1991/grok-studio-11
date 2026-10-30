@@ -19,9 +19,6 @@ const BRIDGE = `(function(){
       return location.origin + u.pathname + u.search + u.hash;
     } catch (e) { return url; }
   }
-  if (location.pathname === "/hj" || location.pathname === "/hj/") {
-    history.replaceState(history.state, "", "/");
-  }
   var push = history.pushState;
   var replace = history.replaceState;
   history.pushState = function(state, title, url){
@@ -30,6 +27,9 @@ const BRIDGE = `(function(){
   history.replaceState = function(state, title, url){
     return replace.call(this, state, title, url === undefined ? url : localHist(url));
   };
+  if (location.pathname === "/hj" || location.pathname === "/hj/") {
+    history.replaceState(history.state, "", "/");
+  }
   var videoId = "";
   var cues = [];
   var last = "";
@@ -122,7 +122,7 @@ export default async function hjPage(event: HjEvent, next: () => unknown): Promi
     redirect: "follow",
   });
   let html = await upstream.text();
-  const inject = `<base href="${HOST}/"><script>${BRIDGE}</script>`;
+  const inject = `<script>${BRIDGE}</script><base href="${HOST}/">`;
   html = html.includes("<head>") ? html.replace("<head>", "<head>" + inject) : inject + html;
   return new Response(method === "HEAD" ? null : html, {
     status: upstream.ok ? 200 : upstream.status,
