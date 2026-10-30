@@ -30,6 +30,20 @@ const BRIDGE = `(function(){
   if (location.pathname === "/hj" || location.pathname === "/hj/") {
     history.replaceState(history.state, "", "/");
   }
+  document.addEventListener("click", function(e){
+    var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+    if (!a || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || a.target === "_blank") return;
+    var raw = a.getAttribute("href") || "";
+    if (!raw || raw.charAt(0) === "#" || raw.indexOf("mailto:") === 0) return;
+    var u;
+    try { u = new URL(raw, OWN + "/"); } catch (err) { return; }
+    if (u.origin !== OWN && u.origin !== location.origin) return;
+    if (/\.(mp4|webm|jpg|jpeg|png|svg|pdf|css|js|vtt)$/i.test(u.pathname)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    history.pushState(null, "", u.pathname + u.search + u.hash);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }, true);
   var videoId = "";
   var cues = [];
   var last = "";
