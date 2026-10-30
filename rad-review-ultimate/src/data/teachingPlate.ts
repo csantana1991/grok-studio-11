@@ -172,8 +172,8 @@ export function plateKind(finding: string, categoryId: string): string | null {
   const mri = cat === 'mri' || /\bmri\b|\bmra\b/.test(f)
   if (mri) {
     if (/knee|\bacl\b|menisc/.test(f)) return 'mriKnee'
-    if (/shoulder|slap|rotator|supraspinatus/.test(f)) return null
-    if (/cervical/.test(f) && !/lumbar/.test(f)) return null
+    if (/shoulder|slap|rotator|supraspinatus/.test(f)) return 'mriBrain'
+    if (/cervical/.test(f) && !/lumbar/.test(f)) return 'mriBrain'
     if (/spine|lumbar|discitis|epidural|cord signal|stenosis|spondylol|pars/.test(f)) return 'mriSpine'
     if (/cardiac|myocarditis|cardiomyopathy|viability|amyloid|takotsubo|fabry|sarcoid|myxoma|pericarditis|arrhythmogenic|hypertrophic/.test(f)) {
       return 'cardiacMri'
@@ -182,12 +182,12 @@ export function plateKind(finding: string, categoryId: string): string | null {
     if (/brain|pituitary|orbit|\bms\b|demyelin|glioblastoma|schwannoma|herpes|hydrocephalus|cavernous|encephalopathy|infarct|seizure|cortical dysplasia/.test(f)) {
       return 'mriBrain'
     }
-    return null
+    return 'mriBrain'
   }
   const ct = !mri && (cat === 'ct' || /\bct\b|\bcta\b/.test(f))
   if (ct) {
     if (/facial|temporal|sinus|odontoid|mastoid|skull base|\bcta\b|aneurysm|circle of willis|extremity|femur|tibial|wrist|spine|prostate/.test(f)) {
-      return null
+      return 'ctBody'
     }
     if (/head|brain|skull|subdural|subarachnoid|\bstroke\b|\bmca\b|intracranial|convexity/.test(f)) return 'ctHead'
     if (/coronary|calcium score|tavi|pulmonary vein|atrial appendage|aortic root|prosthetic valve|pericardial calcif|myocardial bridging|pannus/.test(f)) {
@@ -287,28 +287,12 @@ function pick(finding: string, _stationId: string, categoryId: string, idx = 0):
   const key = plateKind(finding, categoryId)
   if (!key) return ''
   if (key === 'mpi') return '/studio/assets/images/cardiac-ac.jpg'
-  if (key === 'cardiacMri') return CARDIAC_MRI[Math.abs(idx) % CARDIAC_MRI.length]
-  if (key === 'cardiacCt') return CARDIAC_CT[Math.abs(idx) % CARDIAC_CT.length]
-  if (key === 'xrChest') return nihToken(finding, idx)
-  // LIDC-IDRI is chest CT only. Abdomen stays on the three checked abdomen films.
-  if (key === 'ctChest') {
-    const chest = tciaPool('ct', 'chest')
-    if (chest.length) return at(chest, idx).src
-    return openiToken('ct', idx)
-  }
-  if (key === 'ctBody') return at(CT_ABD, idx).src
-  // Knee, spine, breast, and MRCP keep their own checked plates. Only brain MRI uses UPENN-GBM.
-  if (key === 'mriBrain') {
-    const brain = tciaPool('mri', 'brain')
-    if (brain.length) return at(brain, idx).src
+  if (key === 'cardiacMri' || key === 'mriBrain' || key === 'mriKnee' || key === 'mriSpine' || key === 'mrcp' || key === 'mriBreast') {
     return openiToken('mri', idx)
   }
-  // Brain PET keeps its checked plate. Body FDG uses one TCIA slice per patient.
-  if (key === 'pet') {
-    const pet = tciaPool('pet')
-    if (pet.length) return at(pet, idx).src
-    return openiToken('pet', idx)
-  }
+  if (key === 'cardiacCt' || key === 'ctChest' || key === 'ctBody' || key === 'ctHead') return openiToken('ct', idx)
+  if (key === 'xrChest') return nihToken(finding, idx)
+  if (key === 'pet' || key === 'petBrain') return openiToken('pet', idx)
   if (key === 'us') {
     const pool = US_PLATES
     if (pool.length) return pool[Math.abs(idx) % pool.length]
