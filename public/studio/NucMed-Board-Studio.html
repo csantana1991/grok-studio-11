@@ -5459,7 +5459,7 @@ const CapRail = {
   medicalTitle(title) {
     const t = String(title || "");
     if (/ninja|warrior|kawasaki|aerospace|motorcycle|singer|concert|album|band\b|actor|film|movie|sacred|football|soccer|portrait|bicycle|weapon|wrestl|spacecraft|airline|rocket|festival/i.test(t)) return false;
-    return /heart|cardi|failur|ventric|atri|edema|lung|chest|anatom|arter|vein|myocard|eject|valve|aort|pulmon|medic|diseas|syndrom|clinic|patholog|radiolog|\bct\b|\bmri\b|x-ray|infarct|dyspn|congestion|organ|thorax|coronary|perfusion|ischemi|fluid|pleural|hepat|renal|neuro|bone|thyroid|nodule|lesion|tumor|cancer|pet\b|scan|magnet|tesla|proton|spin|resonance/i.test(t);
+    return /heart|cardi|failur|ventric|atri|edema|lung|chest|anatom|arter|vein|myocard|eject|valve|aort|pulmon|medic|diseas|syndrom|clinic|patholog|radiolog|\bct\b|\bmri\b|x-ray|infarct|dyspn|congestion|organ|thorax|coronary|perfusion|ischemi|fluid|pleural|hepat|renal|neuro|bone|thyroid|nodule|lesion|tumor|cancer|pet\b|scan|magnet|tesla|proton|spin|resonance|hypertroph|dilat|murmur|preload|kussmaul/i.test(t);
   },
   async atlas(text) {
     const q = this.queryOf(text);
@@ -5501,19 +5501,18 @@ const CapRail = {
         if (!mri) return true;
         return /mri|magnetic|tesla|proton|spin|nucle|resonance|field/i.test(p.title || "");
       }).slice(0, 8);
-      if (!rows.length) return;
+      const fresh = rows.filter((p) => p.thumbnail && p.thumbnail.source && !(this.seenTop && this.seenTop[p.thumbnail.source]));
+      if (!fresh.length) return;
       host.classList.add("on");
       document.body.classList.add("wiki-top");
-      if (host.dataset.q !== q) {
-        host.querySelectorAll("button").forEach((node) => node.remove());
-        host.dataset.q = q;
-      }
+      host.querySelectorAll("button").forEach((node) => node.remove());
+      host.dataset.q = q;
+      this.seenTop = this.seenTop || {};
       const said = document.getElementById("hjSaid");
       if (said && document.activeElement !== said) said.value = q;
-      document.body.classList.add("wiki-top");
-      rows.forEach((p) => {
+      fresh.forEach((p) => {
         const src = p.thumbnail.source;
-        if (host.querySelector('img[src="' + src.replace(/"/g, "") + '"]')) return;
+        this.seenTop[src] = 1;
         const cap = "Wikipedia · " + (p.title || q);
         const b = document.createElement("button");
         b.type = "button";
@@ -5530,7 +5529,7 @@ const CapRail = {
         add(src, cap);
         if (typeof LiveHero !== "undefined") LiveHero.add({ src, cap, term: q, kind: "wiki-live", raw: p.title || q });
       });
-      while (host.children.length > 24) host.removeChild(host.firstChild);
+      while (host.children.length > 8) host.removeChild(host.lastChild);
       const payload = { source: "atlas-figures", items: rows.slice(0, 2).map((p) => ({ src: p.thumbnail.source, title: p.title || q, href: p.fullurl || "" })) };
       document.querySelectorAll("iframe").forEach((frame) => {
         try { frame.contentWindow.postMessage(payload, "*"); } catch (e) {}
@@ -5554,20 +5553,71 @@ const CapRail = {
     if (this._follow) return;
     this.wikiOff = 0;
     this._spin = 0;
-    this._follow = setInterval(() => {
-      if (this._busy) return;
-      const box = document.getElementById("hjSaid");
-      const base = this.line || this.topic || (box && box.value) || "";
-      if (!base || base.length < 3) return;
-      const words = this.queryOf(base).split(/\s+/).filter(Boolean);
-      this._spin = (this._spin || 0) + 1;
-      const phrase = words.join(" ");
-      const q = phrase || base;
-      this.wikiOff = ((this.wikiOff || 0) + 4) % 32;
-      this.liveKey = "";
-      this._busy = true;
-      Promise.resolve(this.live(q, this.wikiOff)).finally(() => { this._busy = false; });
-    }, 2200);
+    this.seenTop = this.seenTop || {};
+    this.screenWords = this.screenWords || [];
+    this._follow = setInterval(() => { this.readScreen(); }, 2000);
+    this.readScreen();
+  },
+  nextScreenPhrase() {
+    const stop = /^(that|this|with|from|what|when|your|have|they|them|then|about|there|their|which|would|could|should|really|into|over|lecture|yeah|okay|well|just|like|gonna|going|know|right|look|here|cause|causes)$/i;
+    const bag = (this.screenWords && this.screenWords.length) ? this.screenWords.join(" ") : (this.line || this.topic || ((document.getElementById("hjSaid") || {}).value) || "");
+    const words = String(bag).toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.test(w));
+    if (!words.length) return "";
+    this._win = (this._win || 0) + 1;
+    const i = this._win % words.length;
+    const slice = [];
+    for (let k = 0; k < 3 && k < words.length; k++) slice.push(words[(i + k) % words.length]);
+    return slice.join(" ");
+  },
+  async readScreen() {
+    if (this._busy) return;
+    const phrase = this.nextScreenPhrase();
+    if (!phrase) return;
+    if (this.videoId) this.loadBoards(this.videoId);
+    this._busy = true;
+    this.liveKey = "";
+    this.wikiOff = ((this.wikiOff || 0) + 6) % 72;
+    try { await this.live(phrase, this.wikiOff); }
+    finally { this._busy = false; }
+  },
+  loadBoards(id) {
+    if (!id || this._boardId === id) return;
+    this._boardId = id;
+    this.screenWords = [];
+    const names = ["sd1", "sd2", "sd3", "hq1", "hq2", "hq3"];
+    let chain = Promise.resolve();
+    names.forEach((name) => {
+      chain = chain.then(() => this.ocrFrame("https://i.ytimg.com/vi/" + id + "/" + name + ".jpg"));
+    });
+  },
+  loadTess() {
+    if (this._tessReady) return this._tessReady;
+    this._tessReady = new Promise((resolve) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+      s.onload = () => resolve(window.Tesseract || null);
+      s.onerror = () => resolve(null);
+      document.head.appendChild(s);
+    });
+    return this._tessReady;
+  },
+  async ocrFrame(url) {
+    try {
+      const Tesseract = await this.loadTess();
+      if (!Tesseract) return;
+      if (!this._worker) this._worker = await Tesseract.createWorker("eng");
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      const ok = await new Promise((resolve) => { img.onload = () => resolve(true); img.onerror = () => resolve(false); img.src = url; });
+      if (!ok || !img.naturalWidth) return;
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext("2d").drawImage(img, 0, 0);
+      const out = await this._worker.recognize(canvas);
+      const found = String((out && out.data && out.data.text) || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3);
+      found.forEach((w) => { if (this.screenWords.indexOf(w) < 0 && this.screenWords.length < 40) this.screenWords.push(w); });
+    } catch (e) {}
   },
   scrub(lines, title) {
     const count = lines && lines.length ? lines.length : 0;
@@ -14306,6 +14356,10 @@ window.addEventListener("message", (e) => {
     if (left) left.innerHTML = "";
     if (row) row.innerHTML = "";
     if (top) top.innerHTML = "";
+    CapRail.seenTop = {};
+    CapRail.screenWords = [];
+    CapRail._boardId = "";
+    CapRail.loadBoards(data.videoId);
     fetch("/api/pmc/match?source=captions&v=" + encodeURIComponent(data.videoId))
       .then((res) => res.json())
       .then((body) => {
