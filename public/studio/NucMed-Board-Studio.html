@@ -5626,48 +5626,46 @@ const CapRail = {
     return String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !stop.test(w)).slice(0, 8).join(" ");
   },
   async wikiNet(text) {
-    const q = this.captionWords(text);
-    if (!q || q.length < 4 || /meta image|turn size/i.test(q)) return;
-    if (this.wikiNetKey === q) return;
-    this.wikiNetKey = q;
+    const words = this.captionWords(text).split(" ").filter((w) => w.length > 3 && !/meta|image|turn|size/.test(w));
+    if (!words.length) return;
+    this.seenCap = this.seenCap || {};
+    const said = document.getElementById("hjSaid");
+    if (said && document.activeElement !== said) said.value = "2 Caption · " + words.join(" · ");
+    for (let i = 0; i < words.length; i++) {
+      if (this.seenCap[words[i]]) continue;
+      this.seenCap[words[i]] = 1;
+      await this.captionWord(words[i]);
+    }
+  },
+  async captionWord(word) {
     const host = document.getElementById("wikiTop");
     if (host) host.classList.add("on");
     document.body.classList.add("wiki-top");
-    const said = document.getElementById("hjSaid");
-    if (said && document.activeElement !== said) said.value = "2 Caption · " + q;
-    const url = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=6&prop=pageimages|extracts|info&inprop=url&exintro=1&explaintext=1&exchars=140&pithumbsize=640&format=json&origin=*";
     let pages = [];
     try {
-      const data = await fetch(url).then((r) => r.json());
+      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(word) + "&gsrlimit=4&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*").then((r) => r.json());
       pages = Object.values((data.query && data.query.pages) || {});
     } catch (e) { return; }
     if (!host) return;
-    if (host.dataset.q !== q) {
-      host.innerHTML = "";
-      host.dataset.q = q;
-    }
-    pages.filter((p) => p && p.title && p.thumbnail && (this.onTopic(p.title) || this.captionWords(p.title).split(" ").some((w) => w.length > 4 && q.indexOf(w) >= 0))).slice(0, 3).forEach((p) => {
-      const href = p.fullurl || ("https://en.wikipedia.org/wiki/" + encodeURIComponent(p.title.replace(/ /g, "_")));
-      if (host.querySelector('[data-wiki="' + href.replace(/"/g, "") + '"]')) return;
-      const src = p.thumbnail && p.thumbnail.source;
-      const b = document.createElement("button");
-      b.type = "button";
-      b.dataset.wiki = href;
-      if (src) {
-        const img = document.createElement("img");
-        img.alt = "";
-        img.referrerPolicy = "no-referrer";
-        img.src = src;
-        b.appendChild(img);
-      }
-      const label = document.createElement("span");
-      label.textContent = "Caption · " + p.title;
-      b.appendChild(label);
-      b.onclick = () => window.open(href, "_blank", "noopener");
-      host.insertBefore(b, host.firstChild);
-    });
-    while (host.children.length > 8) host.removeChild(host.lastChild);
-    this.pushWidgets(q);
+    const hit = pages.filter((p) => p && p.title && p.thumbnail && (this.onTopic(p.title) || this.captionWords(p.title).indexOf(word) >= 0))[0];
+    if (!hit) return;
+    const href = hit.fullurl || ("https://en.wikipedia.org/wiki/" + encodeURIComponent(hit.title.replace(/ /g, "_")));
+    if (host.querySelector('[data-wiki="' + href.replace(/"/g, "") + '"]')) return;
+    const src = hit.thumbnail.source;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.wiki = href;
+    const img = document.createElement("img");
+    img.alt = "";
+    img.referrerPolicy = "no-referrer";
+    img.src = src;
+    b.appendChild(img);
+    const label = document.createElement("span");
+    label.textContent = "Caption · " + word;
+    b.appendChild(label);
+    b.onclick = () => window.open(href, "_blank", "noopener");
+    host.insertBefore(b, host.firstChild);
+    while (host.children.length > 12) host.removeChild(host.lastChild);
   },
   async slideNet(text) {
     const q = this.captionWords(text);
@@ -5747,6 +5745,7 @@ const CapRail = {
       this.screenWords = [];
       this._boardId = "";
       this.line = "";
+      this.seenCap = {};
       const top = document.getElementById("wikiTop");
       if (top) top.innerHTML = "";
       this.loadBoards(id);
@@ -14540,6 +14539,7 @@ window.addEventListener("message", (e) => {
     CapRail.cues = [];
     CapRail.topic = "";
     CapRail.line = "";
+    CapRail.seenCap = {};
     CapRail.wikiOff = 0;
     CapRail.liveKey = "";
     CapRail.scrubbed = "";
