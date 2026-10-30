@@ -5452,15 +5452,33 @@ const CapRail = {
   },
   queryOf(text) {
     const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|after|before|their|there|they|them|then|also|only|most|more|some|such|been|being|which|while|where|will|would|could|should|follows|meets|used|basic|webinar|lecture|monday|short|travels|clinical|medicine|medical|public|youtube|ninja|nerd|warrior|channel|official|meta|image|images|atlas|academy|nucleus|review|ultimate|widget|search|imaging|clear|results|shown|verified|target|dicom|catalog)$/i;
-    const words = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.test(w));
+    const words = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => (w.length > 3 || /^(mri|pet|t1|t2)$/.test(w)) && !stop.test(w));
     let q = words.slice(0, 5).join(" ");
     if (/tesla|magnet|spin|nuclei|proton|resonance|\bmri\b/.test(String(text || "").toLowerCase()) && !/\bmri\b/.test(q)) q = (q + " MRI").trim();
     return q;
   },
   medicalTitle(title) {
     const t = String(title || "");
-    if (/ninja|warrior|kawasaki|aerospace|motorcycle|singer|concert|album|band\b|actor|film|movie|sacred|football|soccer|portrait|bicycle|weapon|wrestl|spacecraft|airline|rocket|festival|chinese medicine|traditional chinese|game ?pad|controller|nintendo/i.test(t)) return false;
-    return /heart|cardi|failur|ventric|atri|edema|lung|chest|anatom|arter|vein|myocard|eject|valve|aort|pulmon|medic|diseas|syndrom|clinic|patholog|radiolog|\bct\b|\bmri\b|x-ray|infarct|dyspn|congestion|organ|thorax|coronary|perfusion|ischemi|fluid|pleural|hepat|renal|neuro|bone|thyroid|nodule|lesion|tumor|cancer|pet\b|scan|magnet|tesla|proton|spin|resonance|hypertroph|dilat|murmur|preload|kussmaul|pericard|tamponad|effusion/i.test(t);
+    if (/ninja|warrior|kawasaki|aerospace|motorcycle|singer|concert|album|band\b|actor|film|movie|sacred|football|soccer|portrait|bicycle|weapon|wrestl|spacecraft|airline|rocket|festival|chinese medicine|traditional chinese|game ?pad|controller|nintendo|ancient|iran|faravahar|agnew|metacarpal|carpal|automobile|vehicle|\bcars?\b|painting|manuscript|mythology|empire|religion|flag of|history of/i.test(t)) return false;
+    return /heart|cardi|failur|ventric|atri|edema|lung|chest|anatom|arter|vein|myocard|eject|valve|aort|pulmon|medic|diseas|syndrom|patholog|radiolog|\bct\b|\bmri\b|x-ray|infarct|dyspn|congestion|organ|thorax|coronary|perfusion|ischemi|fluid|pleural|hepat|renal|neuro|bone|thyroid|nodule|lesion|tumor|cancer|pet\b|scan|magnet|tesla|proton|spin|resonance|hypertroph|dilat|murmur|preload|kussmaul|pericard|tamponad|effusion/i.test(t);
+  },
+  anchor() {
+    const bag = ((this.topic || "") + " " + (this.line || "") + " " + ((this.screenWords || []).join(" "))).toLowerCase();
+    if (/abdominal|abdomen|\bbody\b/.test(bag) && /mri|magnetic/.test(bag)) return "abdominal MRI";
+    if (/\bmri\b|magnetic resonance/.test(bag)) return "MRI";
+    if (/pericard|tamponad/.test(bag)) return "pericardial disease";
+    if (/cardiomyopath|hypertrophic|\bhocm\b/.test(bag)) return "cardiomyopathy";
+    return "";
+  },
+  onTopic(title) {
+    const t = String(title || "");
+    if (!this.medicalTitle(t)) return false;
+    const a = this.anchor();
+    if (a === "abdominal MRI") return /mri|magnetic|abdomen|abdominal|liver|hepatic|kidney|renal|spleen|pancrea|biliary|gall|pulse|gradient|echo|spin|\bt1\b|\bt2\b|protocol|radiolog|bowel|pelvis/i.test(t);
+    if (a === "MRI") return /mri|magnetic|pulse|gradient|echo|spin|tesla|resonance|sequence/i.test(t);
+    if (a === "pericardial disease") return /pericard|tampon|effusion/i.test(t);
+    if (a === "cardiomyopathy") return /cardiomyopath|hypertroph|heart|ventric|myocard/i.test(t);
+    return true;
   },
   async atlas(text) {
     const q = this.queryOf(text);
@@ -5498,11 +5516,11 @@ const CapRail = {
       if (!host) return;
       const mri = /\bmri\b|magnetic|tesla/i.test(q);
       const rows = (pages || []).filter((p) => {
-        if (!p || !p.thumbnail || !p.thumbnail.source || !this.medicalTitle(p.title)) return false;
+        if (!p || !p.thumbnail || !p.thumbnail.source || !this.onTopic(p.title)) return false;
         if (!mri) return true;
         return /mri|magnetic|tesla|proton|spin|nucle|resonance|field/i.test(p.title || "");
       }).slice(0, 8);
-      const fresh = rows.filter((p) => p.thumbnail && p.thumbnail.source && !(this.seenTop && this.seenTop[p.thumbnail.source]));
+      const fresh = rows.filter((p) => p.thumbnail && p.thumbnail.source && !(this.seenTop && this.seenTop[p.thumbnail.source])).slice(0, 2);
       if (!fresh.length) return;
       host.classList.add("on");
       document.body.classList.add("wiki-top");
@@ -5555,28 +5573,22 @@ const CapRail = {
     this._spin = 0;
     this.seenTop = this.seenTop || {};
     this.screenWords = this.screenWords || [];
-    this._follow = setInterval(() => { this.readScreen(); }, 1000);
+    this._follow = setInterval(() => { this.readScreen(); }, 5000);
     this.readScreen();
   },
   nextScreenPhrase() {
-    const stop = /^(that|this|with|from|what|when|your|have|they|them|then|about|there|their|which|would|could|should|really|into|over|lecture|yeah|okay|well|just|like|gonna|going|know|right|look|here|cause|causes|meta|image|images|atlas|academy|nucleus|review|ultimate|widget|search|imaging|clear|youtube|ninja|nerd|public|clinical|medicine|medical|rad|board|studio|results|open)$/i;
-    const raw = (this.topic && this.topic.length > 8) ? this.topic : ((this.line && this.line.length > 8) ? this.line : ((this.screenWords && this.screenWords.length) ? this.screenWords.join(" ") : ((document.getElementById("hjSaid") || {}).value) || ""));
-    const words = String(raw).toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.test(w));
-    if (!words.length) return "";
-    this._win = (this._win || 0) + 1;
-    const i = this._win % words.length;
-    const slice = [];
-    for (let k = 0; k < 3 && k < words.length; k++) slice.push(words[(i + k) % words.length]);
-    return slice.join(" ");
+    const anchor = this.anchor();
+    const raw = ((this.line || "") + " " + (this.topic || "")).toLowerCase();
+    const extra = raw.match(/pulse sequence|gradient echo|spin echo|\bt1\b|\bt2\b|protocol|liver|kidney|spleen|pancreas|axial/);
+    if (anchor && extra) return anchor + " " + extra[0];
+    if (anchor) return anchor;
+    return "";
   },
   async readScreen() {
     this.watchPlayers();
     const phrase = this.nextScreenPhrase();
     if (!phrase) return;
     if (this.videoId) this.loadBoards(this.videoId);
-    this.liveKey = "";
-    this.wikiOff = ((this.wikiOff || 0) + 6) % 72;
-    this.live(phrase, this.wikiOff);
     this.wikiNet(phrase);
   },
   async wikiNet(text) {
@@ -5590,7 +5602,7 @@ const CapRail = {
       document.body.classList.add("wiki-top");
     }
     const said = document.getElementById("hjSaid");
-    if (said && document.activeElement !== said) said.value = q;
+    if (said && document.activeElement !== said && !/meta image|background/i.test(q)) said.value = q;
     const url = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=6&prop=pageimages|extracts|info&inprop=url&exintro=1&explaintext=1&exchars=140&pithumbsize=640&format=json&origin=*";
     let pages = [];
     try {
@@ -5598,7 +5610,13 @@ const CapRail = {
       pages = Object.values((data.query && data.query.pages) || {});
     } catch (e) { return; }
     if (!host) return;
-    pages.filter((p) => p && p.title && !/ninja|motorcycle|album|football|singer/i.test(p.title)).slice(0, 6).forEach((p) => {
+    if (host.dataset.q !== q) {
+      host.innerHTML = "";
+      host.dataset.q = q;
+      const row = document.getElementById("capRow");
+      if (row) row.innerHTML = "";
+    }
+    pages.filter((p) => p && p.title && this.onTopic(p.title)).slice(0, 2).forEach((p) => {
       const href = p.fullurl || ("https://en.wikipedia.org/wiki/" + encodeURIComponent(p.title.replace(/ /g, "_")));
       if (host.querySelector('[data-wiki="' + href.replace(/"/g, "") + '"]')) return;
       const src = p.thumbnail && p.thumbnail.source;
@@ -5617,6 +5635,7 @@ const CapRail = {
       b.appendChild(label);
       b.onclick = () => window.open(href, "_blank", "noopener");
       host.insertBefore(b, host.firstChild);
+      if (src) this.add(src, "Wikipedia · " + p.title);
     });
     while (host.children.length > 14) host.removeChild(host.lastChild);
     this.pushWidgets(q);
@@ -5726,12 +5745,11 @@ const CapRail = {
       const out = await this._worker.recognize(canvas);
       const found = String((out && out.data && out.data.text) || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3);
       found.forEach((w) => { if (this.screenWords.indexOf(w) < 0 && this.screenWords.length < 40) this.screenWords.push(w); });
-      if (found.length > 1) {
-        const phrase = found.slice(0, 4).join(" ");
-        this.wikiNetKey = "";
-        this.wikiNet(phrase);
-        this.pushWidgets(phrase);
-      }
+      if (!found.length) return;
+      const phrase = this.anchor() || found.slice(0, 4).join(" ");
+      if (!/mri|abdomen|abdominal|pulse sequence|gradient|liver|pericard|cardiomyopath/i.test(phrase)) return;
+      this.wikiNetKey = "";
+      this.wikiNet(phrase);
     } catch (e) {}
   },
   scrub(lines, title) {
