@@ -188,6 +188,16 @@ const BRIDGE = `(function(){
     }
     var capEl = document.querySelector(".player-caption strong");
     var lesson = capEl ? (capEl.textContent || "").replace(/\\s+/g, " ").trim() : "";
+    if (!lesson) {
+      var nodes = document.querySelectorAll("h1,h2,h3,h4,li");
+      for (var n = 0; n < nodes.length; n++) {
+        var s = (nodes[n].textContent || "").replace(/\\s+/g, " ").trim();
+        if (s.length < 8 || s.length > 90) continue;
+        if (/acgme|case-in-point|youtube|public viewing|disclaimer|board studio|independent|reproduction/i.test(s)) continue;
+        lesson = s;
+        break;
+      }
+    }
     if (lesson && lesson !== lessonSent) { lessonSent = lesson; post(lesson); }
     var base = spoken || lesson;
     if (base && spin % 3 === 0) {

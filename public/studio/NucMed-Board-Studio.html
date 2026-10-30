@@ -2312,7 +2312,45 @@ body.medb-full.film-widget .work { left: 0 !important; right: 0 !important; bott
   body.hj-full.film-widget .work, body.medb-full.film-widget .work { right: min(480px, 48vw) !important; }
   body.medb-full.film-widget .work { right: 0 !important; }
   body.medb-full #filmRight { display: none !important; }
+  body.medb-full.film-widget #filmRight {
+    display: flex !important;
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 92px;
+    width: 100% !important;
+    height: 46vh;
+    z-index: 230;
+  }
+  body.medb-full.film-widget .work { bottom: calc(46vh + 92px) !important; right: 0 !important; }
 }
+#mbWidgets { display: none; }
+body.medb-full #mbWidgets {
+  display: flex;
+  position: fixed;
+  top: 52px;
+  left: 0;
+  right: 0;
+  z-index: 220;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 6px 8px;
+  background: rgba(14, 28, 40, .94);
+}
+body.medb-full #mbWidgets button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #1c3a4e;
+  color: #f6f1e8;
+  font-size: 12px;
+  font-weight: 700;
+}
+body.medb-full #mbWidgets button.on { background: #2ee6c8; color: #082027; }
+body.medb-full .work { top: 96px !important; }
 #capRail .cap-tag { flex: 0 0 auto; color: #9fc8c0; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
 #atlasMute { flex: 0 0 auto; height: 28px; border: 0; border-radius: 999px; background: #1a1408; color: #f7f4ee; font-size: 12px; font-weight: 700; padding: 0 10px; cursor: pointer; }
 #capRow { display: flex; gap: 8px; align-items: center; }
@@ -2357,6 +2395,15 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 <div class="rru-exitbar hj-exitbar" id="hjBar"><b id="liveLabel">LIVE SEARCH</b><input id="hjSaid" type="search" placeholder="Words from the captions" autocomplete="off"><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
 <div id="wikiTop" aria-label="Wikipedia images from the captions"></div>
 <div class="rru-exitbar" id="mbBar"><b>Med-b</b><span>Live page</span><button type="button" id="mbAtlas">Atlas</button><button type="button" id="mbExit">Exit</button></div>
+<div id="mbWidgets">
+  <button type="button" data-view="radatlas">Rad Atlas</button>
+  <button type="button" data-view="radreview">RAD REVIEW</button>
+  <button type="button" data-view="rrultimate">Ultimate</button>
+  <button type="button" data-view="metaimage">Meta Image</button>
+  <button type="button" data-view="academy">Academy</button>
+  <button type="button" data-view="nucleus">Nucleus</button>
+  <button type="button" data-view="caseqa">Q+A</button>
+</div>
 <div id="hjAtlasSheet" aria-label="Grok 11 atlas"></div>
 <div class='app'>
 <aside class='sidebar panel-wrap' id='sidebar' data-panel-body='nav'>
@@ -8470,12 +8517,14 @@ function renderMedB(){
   const row = document.getElementById("capRow");
   if (row) row.innerHTML = "";
   CapRail.last = "";
-  CapRail.topic = "";
+  CapRail.topic = "radiology";
   CapRail.tail = "";
   const rail = document.getElementById("capRail");
-  if (rail) rail.classList.remove("on");
+  if (rail) rail.classList.add("on");
   const tag = rail && rail.querySelector(".cap-tag");
-  if (tag) tag.textContent = "Images";
+  if (tag) tag.textContent = "Live search";
+  CapRail.live("radiology magnetic resonance");
+  CapRail.keepFollowing();
   if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>Med-b</b><span>333 modules, live page</span>`;
   if (typeof VidLift !== "undefined") { VidLift.box = null; VidLift.place(null); }
 }
@@ -13893,6 +13942,19 @@ const hjAtlasBtn = document.getElementById("hjAtlas");
 if (hjAtlasBtn) hjAtlasBtn.onclick = toggleEmbedAtlas;
 const mbAtlasBtn = document.getElementById("mbAtlas");
 if (mbAtlasBtn) mbAtlasBtn.onclick = toggleEmbedAtlas;
+document.querySelectorAll("#mbWidgets button").forEach((b) => {
+  b.onclick = () => {
+    const same = document.body.classList.contains("film-widget") && SideFilm.view === b.dataset.view;
+    if (same) {
+      document.body.classList.remove("film-widget");
+      b.classList.remove("on");
+      return;
+    }
+    const topic = CapRail.line || CapRail.topic || "radiology";
+    SideFilm.open(b.dataset.view, topic);
+    CapRail.live(topic);
+  };
+});
 $("#rate").onchange = e => { state.rate = parseFloat(e.target.value); };
 (function bindPlayAll(){
   const b = document.getElementById("playAllBtn");
@@ -14191,6 +14253,8 @@ const SideFilm = {
       });
     }
     const use = view === "nucleus" ? "academy" : (view || "radatlas");
+    this.view = view || "radatlas";
+    document.querySelectorAll("#mbWidgets button").forEach((b) => b.classList.toggle("on", b.dataset.view === (view || "radatlas")));
     right.querySelectorAll(".film-tabs button").forEach((b) => b.classList.toggle("on", b.dataset.view === (view || "radatlas")));
     const frame = right.querySelector("iframe");
     const src = "/studio/NucMed-Board-Studio.html?view=" + encodeURIComponent(use) + "&embed=1&q=" + encodeURIComponent(this.title || "");
