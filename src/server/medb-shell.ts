@@ -180,12 +180,6 @@ const BRIDGE = `(function(){
       var m = src.match(/youtube(?:-nocookie)?\\.com\\/embed\\/([A-Za-z0-9_-]{6,15})/) || src.match(/[?&]v=([A-Za-z0-9_-]{6,15})/);
       if (!m) continue;
       loadCues(m[1]);
-      if (!fr.id) fr.id = "ytcap" + j;
-      try {
-        var win = fr.contentWindow;
-        win.postMessage(JSON.stringify({ event: "listening", id: fr.id, channel: "widget" }), "*");
-        win.postMessage(JSON.stringify({ event: "command", func: "getCurrentTime", args: [], id: fr.id, channel: "widget" }), "*");
-      } catch (e) {}
     }
     var capEl = document.querySelector(".player-caption strong");
     var lesson = capEl ? (capEl.textContent || "").replace(/\\s+/g, " ").trim() : "";

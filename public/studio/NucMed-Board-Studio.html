@@ -5690,7 +5690,6 @@ const CapRail = {
     host.scrollLeft = 0;
     while (host.children.length > 12) host.removeChild(host.lastChild);
     this.pushWidgets(word);
-    if (typeof SideFilm !== "undefined") SideFilm.pull(word);
     return true;
   },
   async slideNet(text) {
@@ -5724,13 +5723,16 @@ const CapRail = {
       this.add(p.thumbnail.source, "Slide · " + p.title);
     });
     this.pushWidgets(q);
-    if (typeof SideFilm !== "undefined") SideFilm.pull(q);
   },
   pushWidgets(q) {
     const term = String(q || "").replace(/\s+/g, " ").trim();
     if (term.length < 3 || /meta image/i.test(term)) return;
     const msg = { type: "studio-query", q: term };
     document.querySelectorAll("iframe").forEach((frame) => {
+      const src = frame.getAttribute("src") || "";
+      if (frame.id === "mbFrame" || frame.id === "hjFrame") return;
+      if (/youtube|youtu\.be|player/.test(src)) return;
+      if (!/NucMed-Board-Studio\.html|embed=1/.test(src)) return;
       try { frame.contentWindow.postMessage(msg, "*"); } catch (e) {}
     });
   },
