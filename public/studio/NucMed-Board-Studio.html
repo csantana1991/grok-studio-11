@@ -2178,13 +2178,16 @@ body.medb-full .stage {
   background:#f6f1e8 !important;
 }
 body.medb-full #capRail {
-  display: flex !important; bottom: 0; z-index: 220; height: 96px;
+  bottom: 0; z-index: 220; height: 72px;
   background: #1d4ed8; border-top: 1px solid #93c5fd;
 }
+body.medb-full #capRail.on { display: flex !important; }
+body.medb-full:has(#capRail.on) .work { bottom: 72px !important; }
 body.medb-full #capRail .cap-tag { color: #fff; }
-body.medb-full #capPop { bottom: 108px; }
-#vidPills { display: none; position: fixed; z-index: 210; gap: 8px; overflow-x: auto; padding: 4px 2px; pointer-events: auto; }
-body.hj-full #vidPills, body.medb-full #vidPills { display: flex; }
+body.medb-full #capPop { bottom: 84px; }
+#vidPills { display: none; position: fixed; z-index: 210; gap: 8px; overflow-x: auto; padding: 4px 2px; pointer-events: none; }
+body.hj-full #vidPills:not([hidden]), body.medb-full #vidPills:not([hidden]) { display: flex; }
+#vidPills button { pointer-events: auto; }
 #vidPills[hidden] { display: none !important; }
 #vidPills button { flex: 0 0 auto; border: 1.5px solid #1e3a5f; background: #fff; color: #12315c; border-radius: 999px; padding: 8px 14px; font-weight: 750; font-size: 14px; white-space: nowrap; }
 #vidPills button.on { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
@@ -5377,29 +5380,25 @@ const VidLift = {
     return `<button type="button" class="vl-card" data-src="${this.esc(src)}" data-cap="${this.esc(r.finding)}">${img}<span><b>${this.esc(r.accession || r.studyKey || "")}</b>${this.esc(r.finding)} · ${this.esc(r.stationName || "")}</span></button>`;
   },
   place(box) {
-    if (box) this.box = box;
+    if (box && box.width > 80 && box.height > 100) this.box = box;
     const pills = document.getElementById("vidPills");
     const lift = document.getElementById("vidLift");
     const frame = document.getElementById("mbFrame") || document.getElementById("hjFrame");
     if (!pills || !frame) return;
-    if (!(document.body.classList.contains("hj-full") || document.body.classList.contains("medb-full"))) {
+    const full = document.body.classList.contains("hj-full") || document.body.classList.contains("medb-full");
+    const b = this.box;
+    const video = full && b && b.width > 80 && b.height > 100;
+    if (!video) {
       pills.hidden = true;
       if (lift) lift.classList.remove("on");
       return;
     }
     pills.hidden = false;
     const fr = frame.getBoundingClientRect();
-    const b = this.box;
-    const hj = document.body.classList.contains("hj-full");
-    let top = fr.top + (hj ? 96 : Math.min(280, fr.height * 0.55));
-    let left = fr.left + 8;
-    let width = Math.max(120, fr.width - 16);
-    if (b && b.width) {
-      top = fr.top + b.top + b.height - 48;
-      left = fr.left + b.left;
-      width = b.width;
-    }
-    top = Math.max(fr.top + 8, Math.min(top, fr.bottom - 52));
+    let top = fr.top + Math.max(0, b.top) + 8;
+    let left = fr.left + Math.max(0, b.left) + 8;
+    let width = Math.max(120, Math.min(b.width - 16, fr.width - 16));
+    top = Math.max(fr.top + 4, Math.min(top, fr.bottom - 56));
     pills.style.top = top + "px";
     pills.style.left = left + "px";
     pills.style.width = width + "px";
@@ -8176,7 +8175,7 @@ function renderMedB(){
   CapRail.topic = "";
   CapRail.tail = "";
   const rail = document.getElementById("capRail");
-  if (rail) rail.classList.add("on");
+  if (rail) rail.classList.remove("on");
   const tag = rail && rail.querySelector(".cap-tag");
   if (tag) tag.textContent = "Images";
   if ($("#playerInfo")) $("#playerInfo").innerHTML = `<b>Med-b</b><span>333 modules, live page</span>`;
