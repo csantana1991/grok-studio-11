@@ -2205,12 +2205,14 @@ body.medb-full .stage {
   margin:0 !important; padding:0 !important; overflow:hidden !important; display:flex !important; flex-direction:column !important;
   background:#f6f1e8 !important;
 }
+body.hj-full #capRail,
 body.medb-full #capRail {
-  bottom: 0; z-index: 220; height: 72px;
+  bottom: 0; z-index: 240; height: 84px;
   background: #1d4ed8; border-top: 1px solid #93c5fd;
 }
+body.hj-full #capRail.on,
 body.medb-full #capRail.on { display: flex !important; }
-body.medb-full:has(#capRail.on) .work { bottom: 72px !important; }
+body.hj-full #capRail .cap-tag,
 body.medb-full #capRail .cap-tag { color: #fff; }
 body.medb-full #capPop { bottom: 84px; }
 #capRail {
@@ -2285,7 +2287,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 </div>
 <div class='backdrop' id='backdrop'></div>
 <div class="rru-exitbar" id="rruBar"><b>RAD REVIEW Ultimate</b><span>Full-page 33,000-case worklist · Image QA · live PubMed · same features as RAD REVIEW</span><button type="button" id="rruExit">Exit to Board Studio</button></div>
-<div id="capRail"><span class="cap-tag">Image</span><div id="capRow"></div></div>
+<div id="capRail"><span class="cap-tag">Atlas</span><div id="capRow"></div></div>
 <aside id="filmLeft" aria-label="Lecture images"></aside>
 <aside id="filmRight" aria-label="Widget panel"></aside>
 <div id="capPop"><button type="button" id="capPopX">Close</button><img alt="" referrerpolicy="no-referrer"><p></p></div>
@@ -5235,6 +5237,8 @@ const CapRail = {
   note(text) {
     const bit = String(text || "").replace(/\s+/g, " ").trim();
     if (bit.length < 3) return;
+    const tag = document.querySelector("#capRail .cap-tag");
+    if (tag) tag.textContent = bit.slice(0, 48);
     if (!this.topic && bit.length > 28) this.topic = bit.slice(0, 90);
     this.tail = ((this.tail || "") + " " + bit).trim().split(/\s+/).slice(-12).join(" ");
     const s = ((this.topic || "") + " " + this.tail).replace(/\s+/g, " ").trim();
@@ -5250,7 +5254,14 @@ const CapRail = {
     const clinical = /positron|annihilation|fluorine|fdg|photon|detector|coincidence|shock|hypotension|cardiogenic|septic|perfusion|lactate|vasodilat|thyroid|iodine|myocardial|ischemia|embolism|nodule|pneumonia|tracer|radioisotope/;
     const words = String(text).toLowerCase().replace(/[^a-z0-9+ ]/g, " ").split(/\s+/).filter(w => w.length > 3 && !stop.test(w));
     const picked = words.filter(w => clinical.test(w));
-    const it = (picked.length ? picked : words).slice(0, 3).join(" ") || modality;
+    const it = (picked.length ? picked : words).slice(0, 4).join(" ") || modality;
+    const q = it || String(text).slice(0, 80);
+    try {
+      const res = await fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(q) + "&n=6");
+      const data = await res.json();
+      if (seq !== this.seq) return;
+      (data.results || []).forEach((row) => { if (row && row.url) this.add(row.url, row.caption || q); });
+    } catch (e) {}
     if (typeof VidLift !== "undefined") {
       VidLift.hits(text).forEach(r => {
         const src = r.plate && typeof plateSrc === "function" ? plateSrc(r.plate) : "";
@@ -13936,11 +13947,12 @@ window.addEventListener("message", (e) => {
       .then((body) => { if (data.videoId === CapRail.videoId) CapRail.cues = body.lines || []; })
       .catch(() => {});
   }
-  if (data.cc && typeof data.t === "number") CapRail.cueAt(data.t);
-  else if (data.cc && data.text) {
+  if (data.cc && data.text) {
+    const tag = document.querySelector("#capRail .cap-tag");
+    if (tag) tag.textContent = String(data.text).replace(/\s+/g, " ").trim().slice(0, 48);
     CapRail.note(data.text);
     SideFilm.pull(data.text);
-  }
+  } else if (data.cc && typeof data.t === "number") CapRail.cueAt(data.t);
 });
 window.addEventListener("message", (e) => {
   if (!e.data || e.data.type !== "hj-widget") return;
