@@ -5619,6 +5619,47 @@ const CapRail = {
       host.insertBefore(b, host.firstChild);
     });
     while (host.children.length > 14) host.removeChild(host.lastChild);
+    this.pushWidgets(q);
+  },
+  pushWidgets(q) {
+    const term = String(q || "").replace(/\s+/g, " ").trim();
+    if (term.length < 3 || /meta image/i.test(term)) return;
+    const msg = { type: "studio-query", q: term };
+    document.querySelectorAll("iframe").forEach((frame) => {
+      try { frame.contentWindow.postMessage(msg, "*"); } catch (e) {}
+    });
+  },
+  scrubBeforePlay(id, title) {
+    if (!id || this._scrubId === id) return;
+    this._scrubId = id;
+    const phrases = [];
+    const add = (p) => {
+      p = this.queryOf(p);
+      if (!p || p.length < 4 || phrases.indexOf(p) >= 0 || /meta image/i.test(p)) return;
+      phrases.push(p);
+    };
+    add(title || this.topic || "");
+    const run = () => {
+      phrases.forEach((p, i) => {
+        setTimeout(() => {
+          this.wikiNetKey = "";
+          this.wikiNet(p);
+          this.pushWidgets(p);
+        }, i * 400);
+      });
+    };
+    fetch("/api/pmc/match?source=captions&v=" + encodeURIComponent(id))
+      .then((r) => r.json())
+      .then((body) => {
+        const lines = (body && body.lines) || [];
+        const steps = Math.min(8, lines.length);
+        for (let i = 0; i < steps; i++) {
+          const at = Math.round(i * (lines.length - 1) / Math.max(1, steps - 1));
+          if (lines[at] && lines[at].text) add(lines[at].text);
+        }
+        run();
+      })
+      .catch(run);
   },
   watchPlayers() {
     const frames = document.querySelectorAll("iframe");
@@ -5642,6 +5683,7 @@ const CapRail = {
       const top = document.getElementById("wikiTop");
       if (top) top.innerHTML = "";
       this.loadBoards(id);
+      this.scrubBeforePlay(id, title || this.topic);
     }
     const words = String(title || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !/^(meta|image|images|atlas|academy|nucleus|review|ultimate|widget|search|imaging|clear|youtube|clinical|medicine|medical)$/.test(w));
     this.screenWords = this.screenWords || [];
@@ -5684,6 +5726,12 @@ const CapRail = {
       const out = await this._worker.recognize(canvas);
       const found = String((out && out.data && out.data.text) || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3);
       found.forEach((w) => { if (this.screenWords.indexOf(w) < 0 && this.screenWords.length < 40) this.screenWords.push(w); });
+      if (found.length > 1) {
+        const phrase = found.slice(0, 4).join(" ");
+        this.wikiNetKey = "";
+        this.wikiNet(phrase);
+        this.pushWidgets(phrase);
+      }
     } catch (e) {}
   },
   scrub(lines, title) {
@@ -14221,8 +14269,13 @@ try {
       const frame = document.getElementById("miFrame");
       const send = () => { try { frame.contentWindow.postMessage({ type: "meta-search", q: lectureFocus(term) }, location.origin); } catch (e) {} };
       if (frame) { frame.addEventListener("load", send); setTimeout(send, 400); setTimeout(send, 1200); }
-    } else if (state.view === "academy") {
+    } else if (state.view === "caseqa") {
+      CapRail.topic = term;
+      CapRail.wikiNetKey = "";
+      if (typeof CapRail.wikiNet === "function") CapRail.wikiNet(term);
+    } else if (state.view === "nucleus" || state.view === "academy") {
       const focus = lectureFocus(term);
+      state.view = "academy";
       state.nbaQuery = focus === "cardiomegaly" || focus === "edema" ? "heart" : focus;
       state.nbaSel = 0;
       state.nbaMod = "ALL";
@@ -14438,6 +14491,7 @@ window.addEventListener("message", (e) => {
     CapRail.screenWords = [];
     CapRail._boardId = "";
     CapRail.loadBoards(data.videoId);
+    CapRail.scrubBeforePlay(data.videoId, data.text || "");
     fetch("/api/pmc/match?source=captions&v=" + encodeURIComponent(data.videoId))
       .then((res) => res.json())
       .then((body) => {
