@@ -1968,7 +1968,17 @@ body.clip-on #lessonMp4 { display: block !important; z-index: 7 !important; opac
   body.view-rru #playerDock,
   body.view-rru #winBar,
   body.view-rru #dockHandle { display: none !important; }
-  body.view-rru .stage { padding: 0 !important; overflow: hidden !important; }
+  html:has(body.view-rru),
+body.view-rru,
+body.view-rru .app,
+body.view-rru .main,
+body.view-rru .work,
+body.view-rru .stage,
+body.view-rru .rru-host,
+body.view-rru #rruFrame {
+  height: 100% !important;
+  min-height: 100% !important;
+}
   body.view-rru .rru-host {
     flex: 1 1 auto;
     min-height: 0 !important;
