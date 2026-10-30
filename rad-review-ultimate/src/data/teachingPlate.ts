@@ -11,6 +11,24 @@ import type { LiveMatch } from './liveMatch'
 import type { StudyKind } from './caseDossier'
 import { US_PLATES } from './us-plates'
 
+/** Cardiac pictures checked by looking at the file. Not 800 copies of one slide. */
+const CARDIAC_MRI = [
+  'https://openi.nlm.nih.gov/imgs/512/248/11060229/PMC11060229_ms9-86-3042-g002.png',
+  '/studio/assets/dr/ct-396.jpg',
+  'https://openi.nlm.nih.gov/imgs/512/195/8392323/PMC8392323_diagnostics-11-01388-g004.png',
+  '/studio/assets/dr/cardio-394.jpg',
+  'https://openi.nlm.nih.gov/imgs/512/392/5591936/PMC5591936_CMMM2017-8350680.001.png',
+  'https://upload.wikimedia.org/wikipedia/commons/1/1e/Cardiac_mri_slice_sagittal_bionerd.jpg',
+]
+const CARDIAC_CT = [
+  'https://openi.nlm.nih.gov/imgs/512/281/9164334/PMC9164334_12872_2022_2690_Fig1_HTML.png',
+  '/studio/assets/dr/cardio-393.jpg',
+  'https://openi.nlm.nih.gov/imgs/512/294/6032537/PMC6032537_jbsr-99-2-872-g3.png',
+  '/studio/assets/dr/cardio-395.jpg',
+  'https://openi.nlm.nih.gov/imgs/512/13/11881242/PMC11881242_44215_2025_200_Fig3_HTML.png',
+  'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Coronary_CT_Angiography_Scan.jpg/500px-Coronary_CT_Angiography_Scan.jpg',
+]
+
 const DR = '/studio/assets/dr/'
 
 /** First file of each pool was checked by eye. The label is that picture, not the case sentence. */
@@ -52,6 +70,7 @@ const KIND_LABEL: Record<string, string> = {
   thyroid: 'Thyroid scan example',
   mammo: 'Mammogram example',
   ctChest: 'Chest CT example',
+  cardiacCt: 'Cardiac CT example',
   ctBody: 'Abdomen CT example',
   ctHead: 'Brain MRI example',
   us: 'Ultrasound example',
@@ -110,6 +129,9 @@ export function plateKind(finding: string, categoryId: string): string | null {
     if (/head|brain|facial|temporal|sinus|odontoid|spine|extremity|limb|femur|tibial|wrist|pelvis|prostate/.test(f)) {
       return null
     }
+    if (/coronary|calcium score|tavi|pulmonary vein|atrial appendage|aortic root|prosthetic valve|pericardial calcif|myocardial bridging|pannus/.test(f)) {
+      return 'cardiacCt'
+    }
     if (/chest|lung|pulmonary|\bpe\b|aort|pneumothorax|thymoma|bronch|emphysema|nodule|lymphang|miliary|covid|mediastin|coronary|calcium score|tavi|pulmonary vein|atrial appendage|aortic root|prosthetic valve/.test(f)) {
       return 'ctChest'
     }
@@ -157,6 +179,8 @@ const FILE_KIND: [string, StudyKind][] = [
 export function knownPlateKind(url: string): StudyKind | null {
   const u = url.toLowerCase()
   if (u.includes('ultrasound_scan_nd') || u.includes('case-us-')) return 'us'
+  if (CARDIAC_MRI.some((file) => u.includes((file.split('/').pop() || file).toLowerCase()))) return 'mri'
+  if (CARDIAC_CT.some((file) => u.includes((file.split('/').pop() || file).toLowerCase()))) return 'ct'
   for (const [file, kind] of FILE_KIND) {
     if (u.endsWith(file)) return kind
   }
@@ -168,7 +192,8 @@ function pick(finding: string, _stationId: string, categoryId: string, idx = 0):
   const key = plateKind(finding, categoryId)
   if (!key) return ''
   if (key === 'mpi') return '/studio/assets/images/cardiac-ac.jpg'
-  if (key === 'cardiacMri') return '/studio/assets/dr/ct-396.jpg'
+  if (key === 'cardiacMri') return CARDIAC_MRI[Math.abs(idx) % CARDIAC_MRI.length]
+  if (key === 'cardiacCt') return CARDIAC_CT[Math.abs(idx) % CARDIAC_CT.length]
   if (key === 'us') {
     const pool = US_PLATES
     if (!pool.length) return ''
