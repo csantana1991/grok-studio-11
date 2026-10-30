@@ -2404,7 +2404,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 <aside id="filmLeft" aria-label="Lecture images"></aside>
 <aside id="filmRight" aria-label="Widget panel"></aside>
 <div id="capPop"><button type="button" id="capPopX">Close</button><img alt="" referrerpolicy="no-referrer"><p></p></div>
-<div class="rru-exitbar hj-exitbar" id="hjBar"><b id="liveLabel">LIVE SEARCH</b><input id="hjSaid" type="search" placeholder="Words from the captions" autocomplete="off"><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
+<div class="rru-exitbar hj-exitbar" id="hjBar"><b id="liveLabel">LIVE SEARCH</b><input id="hjSaid" type="search" placeholder="Live Wikipedia search" autocomplete="off"><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
 <div id="wikiTop" aria-label="Wikipedia images from the captions"></div>
 <div class="rru-exitbar" id="mbBar"><b>Med-b</b><span>Live page</span><button type="button" id="mbAtlas">Atlas</button><button type="button" id="mbExit">Exit</button></div>
 <div id="mbWidgets">
@@ -5577,6 +5577,48 @@ const CapRail = {
     this.liveKey = "";
     this.wikiOff = ((this.wikiOff || 0) + 6) % 72;
     this.live(phrase, this.wikiOff);
+    this.wikiNet(phrase);
+  },
+  async wikiNet(text) {
+    const q = this.queryOf(text);
+    if (!q || q.length < 3 || /meta image/i.test(q)) return;
+    if (this.wikiNetKey === q) return;
+    this.wikiNetKey = q;
+    const host = document.getElementById("wikiTop");
+    if (host) {
+      host.classList.add("on");
+      document.body.classList.add("wiki-top");
+    }
+    const said = document.getElementById("hjSaid");
+    if (said && document.activeElement !== said) said.value = q;
+    const url = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=6&prop=pageimages|extracts|info&inprop=url&exintro=1&explaintext=1&exchars=140&pithumbsize=640&format=json&origin=*";
+    let pages = [];
+    try {
+      const data = await fetch(url).then((r) => r.json());
+      pages = Object.values((data.query && data.query.pages) || {});
+    } catch (e) { return; }
+    if (!host) return;
+    pages.filter((p) => p && p.title && !/ninja|motorcycle|album|football|singer/i.test(p.title)).slice(0, 6).forEach((p) => {
+      const href = p.fullurl || ("https://en.wikipedia.org/wiki/" + encodeURIComponent(p.title.replace(/ /g, "_")));
+      if (host.querySelector('[data-wiki="' + href.replace(/"/g, "") + '"]')) return;
+      const src = p.thumbnail && p.thumbnail.source;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.wiki = href;
+      if (src) {
+        const img = document.createElement("img");
+        img.alt = "";
+        img.referrerPolicy = "no-referrer";
+        img.src = src;
+        b.appendChild(img);
+      }
+      const label = document.createElement("span");
+      label.textContent = "Wikipedia · " + p.title;
+      b.appendChild(label);
+      b.onclick = () => window.open(href, "_blank", "noopener");
+      host.insertBefore(b, host.firstChild);
+    });
+    while (host.children.length > 14) host.removeChild(host.lastChild);
   },
   watchPlayers() {
     const frames = document.querySelectorAll("iframe");
@@ -14025,12 +14067,23 @@ if (rruExit) rruExit.onclick = () => { stopSpeech(); closeNav(); state.view = "h
 const hjExit = document.getElementById("hjExit");
 if (hjExit) hjExit.onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("hj-full"); document.body.classList.remove("hj-atlas"); render(); };
 const hjSaid = document.getElementById("hjSaid");
-if (hjSaid) hjSaid.addEventListener("keydown", (ev) => {
-  if (ev.key !== "Enter") return;
-  ev.preventDefault();
-  CapRail.atlas(hjSaid.value);
-  CapRail.note(hjSaid.value);
-});
+if (hjSaid) {
+  hjSaid.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Enter") return;
+    ev.preventDefault();
+    CapRail.wikiNetKey = "";
+    CapRail.topic = hjSaid.value;
+    CapRail.wikiNet(hjSaid.value);
+    CapRail.note(hjSaid.value);
+  });
+  hjSaid.addEventListener("input", () => {
+    clearTimeout(hjSaid._wiki);
+    hjSaid._wiki = setTimeout(() => {
+      CapRail.wikiNetKey = "";
+      CapRail.wikiNet(hjSaid.value);
+    }, 400);
+  });
+}
 const mbExit = document.getElementById("mbExit");
 if (mbExit) mbExit.onclick = () => { stopSpeech(); closeNav(); state.view = "home"; state.examBank = null; document.body.classList.remove("medb-full"); document.body.classList.remove("hj-atlas"); render(); };
 function toggleEmbedAtlas(){
@@ -14401,6 +14454,7 @@ window.addEventListener("message", (e) => {
       if (chrome) return;
       CapRail.topic = text.slice(0, 120);
       CapRail.line = text;
+      CapRail.wikiNetKey = "";
       CapRail.seenTop = {};
       CapRail.screenWords = CapRail.queryOf(text).split(/\s+/).filter(Boolean);
       const next = CapRail.queryOf(text);
