@@ -7677,6 +7677,7 @@ function renderHome() {
         </div>
         <div class="pager"><button class="primary" id="startBtn">Start with the blueprint →</button>
         <button class="primary" id="resBtn" style="margin-left:8px">Start the residency year</button>
+        <button class="primary" id="hjHome" style="flex:1 1 100%">HJ Med</button>
         <span class="primary" id="homeDl" style="display:inline-block;margin-left:8px">Open a case from the list. The lectures play here.</span></div>
         <p class="disclaimer">Educational review aid only. Not affiliated with any residency, hospital, ABNM, ABR, NMTCB, NRC, or SNMMI. Not a guarantee of passing or of a residency slot. Volume numbers in the residency blueprint are study targets, not an official census. Confirm clinical numbers against current labels, NRC text, and society guidelines.</p>
       </div>
@@ -7694,6 +7695,8 @@ function renderHome() {
   $("#startBtn").onclick = () => openModule("welcome");
   const resBtn = $("#resBtn");
   if (resBtn) resBtn.onclick = () => startHjYear();
+  const hjHome = $("#hjHome");
+  if (hjHome) hjHome.onclick = () => startHjYear();
   $("#playerInfo").innerHTML = `<b>NucMed Board Studio</b><span>Select a module and press play</span>`;
   $("#playBtn").onclick = () => { if (state.view === "home") openModule("welcome"); };
 }
