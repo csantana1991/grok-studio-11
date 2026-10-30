@@ -206,8 +206,9 @@
   }
 
   function hitCard(r) {
-    var img = r.imageUrl && r.loadStatus === 'verified' && String(r.imageUrl).indexOf('https://') === 0
-      ? '<img alt="" src="' + esc(displaySrc(r.imageUrl)) + '">'
+    var src = String(r.imageUrl || '')
+    var img = r.loadStatus === 'verified' && (src.indexOf('https://') === 0 || src.indexOf('/library/') === 0)
+      ? '<img alt="" src="' + esc(displaySrc(src)) + '">'
       : '<div style="width:96px;height:96px;display:flex;align-items:center;justify-content:center;background:#111;border-radius:6px;font-size:11px;text-align:center;padding:4px">No web image</div>'
     var role = r.kind === 'image' ? 'Published reference' : r.kind === 'series' ? 'DICOM series, not a case' : 'Collection'
     return (

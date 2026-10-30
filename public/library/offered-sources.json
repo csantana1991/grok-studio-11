@@ -3,9 +3,9 @@
     "group": "X-ray",
     "name": "NIH ChestX-ray14",
     "href": "https://nihcc.app.box.com/v/ChestXray-NIHCC",
-    "statedSize": "112,120 frontal chest X-rays",
-    "access": "Not hosted here",
-    "why": "NIH says use is unrestricted if you link this download, cite the CVPR 2017 paper, and name the NIH Clinical Center. The files are a large download, so none were copied into this app."
+    "statedSize": "112,120 frontal chest X-rays. 3,686 are hosted here.",
+    "access": "3,686 shown, with credit",
+    "why": "This is not CC0. NIH allows use if you link nihcc.app.box.com/v/ChestXray-NIHCC, cite Wang et al., CVPR 2017, and name the NIH Clinical Center. The labels were mined from reports and are not confirmed reads. The other 108,434 files were not downloaded."
   },
   {
     "group": "X-ray",

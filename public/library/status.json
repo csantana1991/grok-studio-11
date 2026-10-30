@@ -1,11 +1,11 @@
 {
-  "verifiedAt": "2026-10-30T03:38:26Z",
+  "verifiedAt": "2026-10-30T03:56:33Z",
   "target": 33000,
-  "usableImages": 29314,
-  "gap": 3686,
-  "gapReason": "Wikipedia/Commons medical categories did not contain 33,000 images with a display license. Fish CT, identification photos, and unlicensed files were not counted.",
+  "usableImages": 33000,
+  "gap": 0,
+  "gapReason": "Closed with 3,686 NIH ChestX-ray14 files. They are not CC0. Attribution is required, and the labels are text-mined, not confirmed reports. MIMIC, CheXpert, Open-i, Radiopaedia, MedPix, Montgomery, and Shenzhen were not copied.",
   "counts": {
-    "images": 29314,
+    "images": 33000,
     "series": 1736,
     "studies": 0,
     "collections": 1,
@@ -19,7 +19,7 @@
     "restricted": 3713,
     "failed": 1,
     "pending": 7,
-    "usable": 29314
+    "usable": 33000
   },
   "sources": [
     {
@@ -306,13 +306,28 @@
       "access": "MediaWiki imageinfo API. LicenseShortName checked per file.",
       "licenseSummary": "Only CC BY, CC BY-SA, CC BY-ND, CC0, and public domain. NC excluded.",
       "note": "Each file is a Commons image with LicenseShortName allowing display and an image MIME type from the MediaWiki API. Non-medical categories were excluded."
+    },
+    {
+      "id": "nih-cxr",
+      "name": "NIH ChestX-ray14",
+      "href": "https://nihcc.app.box.com/v/ChestXray-NIHCC",
+      "imported": 3686,
+      "usable": 3686,
+      "skipped": 0,
+      "duplicate": 0,
+      "restricted": 108434,
+      "failed": 0,
+      "pending": 0,
+      "access": "Unrestricted use with required attribution. Not CC0 and not public-domain-without-credit.",
+      "licenseSummary": "Link the NIH download, cite Wang et al. CVPR 2017, and credit the NIH Clinical Center.",
+      "note": "3,686 unique chest radiographs are hosted. The other files in the 112,120 set were not downloaded."
     }
   ],
   "audit": {
     "manifest": "/library/audit-manifest.json",
-    "completion": false,
-    "usableImages": 29314,
-    "shortfall": 3686,
+    "completion": true,
+    "usableImages": 33000,
+    "shortfall": 0,
     "localRasterFiles": 1730,
     "uniqueLocalHashes": 1532,
     "duplicateExtraCopies": 198,
