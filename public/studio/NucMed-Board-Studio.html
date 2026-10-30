@@ -2116,6 +2116,29 @@ body.view-rru .stage {
   flex-direction: column !important;
 }
 body.view-rru .topbar-scroll { flex-wrap: nowrap !important; overflow-x: auto !important; }
+body.widget-embed .sidebar,
+body.widget-embed #colSplit,
+body.widget-embed .topbar,
+body.widget-embed #playerDock,
+body.widget-embed .player,
+body.widget-embed #hjBar,
+body.widget-embed #mbBar,
+body.widget-embed #rruBar,
+body.widget-embed #capRail,
+body.widget-embed #bootSplash { display: none !important; }
+body.widget-embed .app,
+body.widget-embed .main,
+body.widget-embed .work,
+body.widget-embed .stage {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: auto !important;
+}
 body.view-rru .rru-host {
   flex: 1 1 auto !important;
   width: 100% !important;
@@ -13627,10 +13650,36 @@ try {
 })();
 
 (function bootFromQuery(){
+  function applyStudioQuery(raw){
+    const term = String(raw || "").replace(/\s+/g, " ").trim().slice(0, 140);
+    if (term.length < 2) return;
+    if (state.view === "radatlas" && typeof raRun === "function") {
+      const input = document.getElementById("raQ");
+      if (input) input.value = term;
+      RAD_ATLAS.query = typeof raComposeQuery === "function" ? raComposeQuery() : term;
+      if (RAD_ATLAS.query.length >= 2) raRun();
+    } else if (state.view === "radreview") {
+      state.rrQuery = term;
+      const input = document.getElementById("rrSearch");
+      if (input) input.value = term;
+      renderRadReview();
+    }
+  }
+  window.addEventListener("message", (e) => {
+    if (!e.data || e.data.type !== "studio-query") return;
+    const fromHj = String(e.origin || "").indexOf("hj-med.vercel.app") >= 0;
+    if (!fromHj && e.origin !== location.origin) return;
+    applyStudioQuery(e.data.q);
+  });
   try {
     const q = new URLSearchParams(location.search);
+    if (q.get("embed") === "1") document.body.classList.add("widget-embed");
     if (q.get("mod")) openModule(q.get("mod"));
-    else if (q.get("view")) { state.view = q.get("view"); render(); }
+    else if (q.get("view")) {
+      state.view = q.get("view") === "nucleus" ? "academy" : q.get("view");
+      render();
+    }
+    if (q.get("q")) setTimeout(() => applyStudioQuery(q.get("q")), 700);
     if (q.get("atlas")) setTimeout(() => openAtlasDrawer(q.get("atlas") || state.moduleId), 50);
   } catch (e) {}
 })();
