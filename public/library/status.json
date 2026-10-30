@@ -1,11 +1,11 @@
 {
-  "verifiedAt": "2026-10-29T23:20:21Z",
+  "verifiedAt": "2026-10-30T02:31:57Z",
   "target": 33000,
-  "usableImages": 6,
-  "gap": 32994,
+  "usableImages": 206,
+  "gap": 32794,
   "gapReason": "33,000 is not met. Teaching-row encounters are not images. Sources that forbid copying, hide the license, require a data-use agreement, or only offer DICOM were not padded into the image count.",
   "counts": {
-    "images": 6,
+    "images": 206,
     "series": 1736,
     "studies": 0,
     "collections": 1,
@@ -13,13 +13,13 @@
     "framesNotCounted": 140981
   },
   "totals": {
-    "imported": 1743,
+    "imported": 1943,
     "skipped": 0,
     "duplicate": 0,
     "restricted": 3713,
     "failed": 1,
     "pending": 7,
-    "usable": 6
+    "usable": 206
   },
   "sources": [
     {
@@ -38,13 +38,13 @@
       "note": "Search and link only. Prior oa-catalog.json (3,707 URLs) uses a blanket phrase, not a per-image license, so those rows are excluded."
     },
     {
-      "imported": 6,
+      "imported": 106,
       "skipped": 0,
       "duplicate": 0,
       "restricted": 0,
       "failed": 0,
       "pending": 0,
-      "usable": 6,
+      "usable": 106,
       "id": "pmc",
       "name": "PubMed Central via Europe PMC",
       "href": "https://europepmc.org/RestfulWebService",
@@ -291,13 +291,28 @@
       "access": "Permission-to-publish page reviewed. No copy.",
       "licenseSummary": "All rights reserved. Publishing needs written permission.",
       "note": "Link only."
+    },
+    {
+      "id": "commons",
+      "name": "Wikimedia Commons",
+      "href": "https://commons.wikimedia.org/w/api.php",
+      "imported": 100,
+      "skipped": 0,
+      "duplicate": 0,
+      "restricted": 0,
+      "failed": 0,
+      "pending": 0,
+      "usable": 100,
+      "access": "MediaWiki imageinfo API. LicenseShortName checked per file.",
+      "licenseSummary": "Only CC BY, CC BY-SA, CC BY-ND, CC0, and public domain. NC excluded.",
+      "note": "Each thumbnail was checked and returned an image. These are references, not case matches."
     }
   ],
   "audit": {
     "manifest": "/library/audit-manifest.json",
     "completion": false,
-    "usableImages": 6,
-    "shortfall": 32994,
+    "usableImages": 206,
+    "shortfall": 32794,
     "localRasterFiles": 1730,
     "uniqueLocalHashes": 1532,
     "duplicateExtraCopies": 198,

@@ -107,7 +107,7 @@
       '</tbody></table>',
       '<div id="imgLibFind">',
       '<input id="imgLibQ" type="search" placeholder="Search the verified ledger" aria-label="Search the indexed library">',
-      '<select id="imgLibKind" aria-label="Record kind"><option value="">All kinds</option><option value="image">Images</option><option value="series">Series</option><option value="collection">Collections</option></select>',
+      '<select id="imgLibKind" aria-label="Record kind"><option value="">All kinds</option><option value="image" selected>Images</option><option value="series">Series</option><option value="collection">Collections</option></select>',
       '<select id="imgLibMod" aria-label="Modality"><option value="">All modalities</option><option>CT</option><option>PT</option><option>DX</option><option>MR</option><option>NM</option></select>',
       '</div>',
       '<div id="imgLibHits"><p>' + (recordsError || 'Ledger search loads when you type.') + '</p></div>',
@@ -129,6 +129,7 @@
     q.addEventListener('input', go)
     kind.addEventListener('change', go)
     mod.addEventListener('change', go)
+    runSearch('', 'image', '')
     var live = document.getElementById('imgLibLiveQ')
     var liveGo = document.getElementById('imgLibLiveGo')
     var health = document.getElementById('imgLibHealth')
@@ -138,9 +139,14 @@
     health.addEventListener('click', checkHealth)
   }
 
+  function displaySrc(url) {
+    if (/^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(url)) return '/api/pmc/img?src=' + encodeURIComponent(url)
+    return url
+  }
+
   function hitCard(r) {
     var img = r.imageUrl && r.loadStatus === 'verified' && String(r.imageUrl).indexOf('https://') === 0
-      ? '<img alt="" src="' + esc(r.imageUrl) + '">'
+      ? '<img alt="" src="' + esc(displaySrc(r.imageUrl)) + '">'
       : '<div style="width:96px;height:96px;display:flex;align-items:center;justify-content:center;background:#111;border-radius:6px;font-size:11px;text-align:center;padding:4px">No web image</div>'
     var role = r.kind === 'image' ? 'Published reference' : r.kind === 'series' ? 'DICOM series, not a case' : 'Collection'
     return (
@@ -264,7 +270,8 @@
     hits.sort(function (a, b) {
       return (a.kind === 'image' ? 0 : 1) - (b.kind === 'image' ? 0 : 1)
     })
-    var shown = hits.slice(0, 40)
+    var cap = kind === 'image' && !words.length ? 220 : 40
+    var shown = hits.slice(0, cap)
     if (!shown.length) {
       box.innerHTML = '<p>No indexed record matches. The search is not still loading.</p>'
       return
