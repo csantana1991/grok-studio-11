@@ -14683,7 +14683,10 @@ window.addEventListener("message", (e) => {
       .then((res) => res.json())
       .then((body) => {
         if (data.videoId !== CapRail.videoId) return;
-        CapRail.cues = body.lines || [];
+        const lines = (body && body.lines) || [];
+        if (!lines.length) return;
+        CapRail.cues = lines;
+        CapRail._cueI = -1;
         CapRail.scrub(CapRail.cues, CapRail.topic);
       })
       .catch(() => { if (data.videoId === CapRail.videoId) CapRail.scrub([], CapRail.topic); });
