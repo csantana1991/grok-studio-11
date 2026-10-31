@@ -5523,13 +5523,8 @@ const ScanLive = {
     this.slideNow = line;
     if (/congenital|achd|tetralog|septal defect|coarctation/.test(low) || /heart|cardiac|coronary|myocard/.test(low)) {
       this.topicKey = "heart";
-      const congenital = /congenital|achd|tetralog|septal defect|coarctation/.test(low);
-      this.note(congenital ? "Congenital heart imaging" : "Cardiac CT angiography", congenital
-        ? "Adult congenital heart disease is shown with cardiac CT and cardiac MRI: the chambers, the septa, the great arteries, and any shunt or obstruction."
-        : "Cardiac CT angiography times contrast to the coronary arteries, with ECG gating, and shows the heart and the coronary lumen.");
-      this.best("ct", congenital ? "congenital heart" : "cardiac CT", 0);
-      this.best("mri", "cardiac MRI", 0);
-      this.phrase(congenital ? "congenital heart CT MRI" : "cardiac CT angiography");
+      this.note(line.slice(0, 90), line);
+      this.phrase(line);
       return;
     }
     if (/stroke|ischemi|infarct|hemorrhag|middle cerebral|\bmca\b/.test(low)) {
@@ -5621,7 +5616,13 @@ const ScanLive = {
     await Promise.all(["xray", "ct", "mri", "pet"].map((kind) => this.best(kind, term, step)));
   },
   queries(kind, term) {
-    const slide = String(this.slideNow || term || "").toLowerCase();
+    const slide = String(term || this.slideNow || "").replace(/\s+/g, " ").trim();
+    if (slide.length > 8 && !/^(heart|abdomen|brain|mri|pet)$/.test(slide)) {
+      if (kind === "ct") return [slide + " CT"];
+      if (kind === "mri") return [slide + " MRI"];
+      if (kind === "xray") return [slide + " x-ray"];
+      return [slide + " PET"];
+    }
     if (/stroke|ischemi|infarct|hemorrhag|middle cerebral/.test(slide)) {
       if (kind === "ct") return ["ischemic stroke head CT", "CT angiography brain", "CT perfusion brain", "hemorrhage head CT"];
       if (kind === "mri") return ["DWI MRI stroke", "FLAIR MRI brain infarct", "brain MRI axial"];
@@ -5655,7 +5656,7 @@ const ScanLive = {
   modOk(kind, blob) {
     const t = String(blob || "").toLowerCase();
     const topic = String(this.topicKey || "").toLowerCase();
-    if (this.topicKey === "heart" && !/heart|cardiac|coronary|myocard|aorta|ventric|atrium|septal|congenital/.test(t)) return false;
+    if (this.topicKey === "heart" && !/heart|cardiac|coronary|myocard|aorta|ventric|atrium|septal|congenital|slice|scanner|gating|detector|mdct/.test(t)) return false;
     if (this.topicKey === "abdomen" && !/abdomen|pelvis|spleen|splenic|liver|kidney|uterus|endometri|bowel|aorta|mesenter|pancrea|angiograph/.test(t)) return false;
     if (kind === "ct") return /\bct\b|computed tomograph|angiograph/.test(t);
     if (kind === "mri") return /\bmri\b|magnetic resonance|flair|\bt1\b|\bt2\b/.test(t);
@@ -5715,7 +5716,7 @@ const ScanLive = {
   belongs(cap, src) {
     const t = (String(cap || "") + " " + String(src || "")).toLowerCase();
     if (/lizard|galliwasp|fourier|spectrum|\.pdf|book|novel|insect|plant|maize/.test(t)) return false;
-    if (this.topicKey === "heart" && !/heart|cardiac|coronary|myocard|aorta|ventric|atrium|septal|congenital/.test(t)) return false;
+    if (this.topicKey === "heart" && !/heart|cardiac|coronary|myocard|aorta|ventric|atrium|septal|congenital|slice|scanner|gating|detector|mdct/.test(t)) return false;
     if (this.topicKey === "abdomen" && !/abdomen|pelvis|spleen|splenic|liver|kidney|uterus|endometri|bowel|aorta|mesenter|pancrea|angiograph/.test(t)) return false;
     return /x-?ray|radiograph|\bct\b|computed tomograph|\bmri\b|magnetic resonance|pet[\/\- ]?ct|fdg|positron|scintigraph|tomograph|axial|coronal|sagittal|flair|gradient echo|pulse sequence|nuclear medicine/.test(t);
   },
@@ -6053,6 +6054,15 @@ const LectureSkills = {
     if (!document.body.classList.contains("hj-full") && !document.body.classList.contains("medb-full")) return;
     this.busy = true;
     try {
+      const title = this.readLecture();
+      if (title && title !== this.lecture) {
+        this.lecture = title;
+        this.slide = "";
+        this.sent = "";
+        this.lastWords = "";
+        this.clearRows();
+        this.show(title);
+      }
       const said = document.getElementById("hjSaid");
       const fallback = (said && said.value) || (typeof CapRail !== "undefined" && (CapRail.line || CapRail.topic)) || "";
       const canvas = await SlideGrab.capture();
@@ -6075,21 +6085,33 @@ const LectureSkills = {
     }
   },
   show(words) {
-    const incoming = this.subjectOf(words);
-    if (incoming) this.anchor = String(words || "").replace(/\s+/g, " ").trim().slice(0, 120);
-    const q = this.subjectOf(this.anchor);
+    const line = String(words || "").replace(/\s+/g, " ").trim().slice(0, 140);
+    if (line.length < 4 || /machine learning|board studio|subscribe|harvard system|mark as watched|next lecture|playable lesson/i.test(line)) return;
+    const looksTitle = /fellowship|residency|physics|disease|mri of|ct of|imaging of|carcinoma/i.test(line) && !/\bvs\b|versus|coverage|kvp|pitch/.test(line);
+    if (!this.lecture || (looksTitle && line !== this.lecture && !this.clash(this.lecture, line))) {
+      if (line !== this.lecture) {
+        this.lecture = line;
+        this.slide = "";
+        this.clearRows();
+      }
+    } else if (!this.clash(this.lecture, line)) {
+      this.slide = line;
+    }
+    const q = this.imageQuery();
     if (!q || q === this.sent) return;
     this.sent = q;
+    this.anchor = this.lecture || q;
     const said = document.getElementById("hjSaid");
     if (said && this.anchor && document.activeElement !== said) said.value = this.anchor;
     if (typeof CapRail !== "undefined") {
-      CapRail.topic = this.anchor || q;
+      CapRail.topic = q;
       CapRail.line = q;
       if (typeof CapRail.reelFor === "function") CapRail.reelFor(q);
     }
     if (typeof SideFilm !== "undefined") SideFilm.title = q;
     if (typeof ScanLive !== "undefined") {
-      ScanLive.topicKey = /heart|cardiac|coronary|congenital/.test(q) ? "heart" : /abdomen|pelvis|endometri|spleen/.test(q) ? "abdomen" : ScanLive.topicKey;
+      ScanLive.topicKey = this.family(this.lecture) || ScanLive.topicKey;
+      ScanLive.slideNow = q;
       if (ScanLive.phrase) ScanLive.phrase(q);
       if (ScanLive.fill) ScanLive.fill(q, 0);
     }
@@ -6099,15 +6121,56 @@ const LectureSkills = {
       try { frame.contentWindow.postMessage({ source: "lecture-words", q }, location.origin); } catch (e) {}
     });
   },
-  subjectOf(text) {
+  clean(text) {
+    return String(text || "").replace(/\s+/g, " ").replace(/\b(fellowship|residency|training program)\b/ig, "").trim().slice(0, 100);
+  },
+  family(text) {
     const t = String(text || "").toLowerCase();
-    if (/congenital|achd|tetralog|septal defect|coarct/.test(t)) return "congenital heart CT MRI";
-    if (/cardiac|heart|coronary|myocard/.test(t)) return "cardiac CT angiography";
-    if (/breast|mammo/.test(t)) return "breast mammography MRI";
-    if (/endometri|splenic|spleen|abdomen|pelvis|uterus|\bcta\b|\bmra\b/.test(t)) return "abdominal MRI CT pelvis";
-    if (/brain|stroke|cerebr/.test(t)) return "brain MRI stroke";
-    if (/lung|pulmonary|chest/.test(t)) return "chest CT lung";
+    if (/breast|mammo/.test(t)) return "breast";
+    if (/endometri|uterus|ovar|pelvis|spleen|splenic|liver|abdomen|bowel|pancrea|kidney|renal|prostat/.test(t)) return "abdomen";
+    if (/brain|stroke|cerebr|neuro|intracran/.test(t)) return "brain";
+    if (/cardiac|heart|coronary|myocard|congenital|\bachd\b/.test(t)) return "heart";
+    if (/lung|pulmonary|chest|thorax|pneumonia/.test(t)) return "chest";
+    if (/bone|fracture|spine|skeletal/.test(t)) return "bone";
+    if (/thyroid|parathyroid/.test(t)) return "neck";
     return "";
+  },
+  clash(a, b) {
+    const A = this.family(a);
+    const B = this.family(b);
+    return !!(A && B && A !== B);
+  },
+  imageQuery() {
+    const base = this.clean(this.lecture);
+    const slide = this.clean(this.slide);
+    if (!base) return slide;
+    if (!slide || slide.toLowerCase() === base.toLowerCase() || this.clash(base, slide)) return base;
+    return (base + " " + slide).replace(/\s+/g, " ").slice(0, 120);
+  },
+  clearRows() {
+    const pics = document.getElementById("qaPics");
+    if (pics) pics.innerHTML = "";
+    document.querySelectorAll("#modStrip .mod-row").forEach((row) => { row.innerHTML = ""; });
+    if (typeof CapRail !== "undefined") CapRail._reelQ = "";
+  },
+  readLecture() {
+    const id = document.body.classList.contains("hj-full") ? "hjFrame" : document.body.classList.contains("medb-full") ? "mbFrame" : "";
+    const frame = id && document.getElementById(id);
+    if (!frame) return "";
+    let doc = null;
+    try { doc = frame.contentDocument; } catch (e) { return ""; }
+    if (!doc || !doc.body) return "";
+    const text = (doc.body.innerText || "").replace(/\s+/g, " ");
+    let m = text.match(/Next lecture\s+(.{4,70}?)\s+(?:CTisus|YouTube|·)/);
+    if (m) return m[1].trim();
+    m = text.match(/\bMED-\d+\s+(.{4,80}?)\s+(?:lecture|NOT STARTED|Mark complete)/i);
+    if (m) return m[1].trim();
+    return "";
+  },
+  subjectOf(text) {
+    if (this.lecture) return this.imageQuery();
+    const line = this.clean(text);
+    return line.length >= 4 ? line : "";
   }
 };
 setInterval(() => LectureSkills.watch(), 1000);
@@ -6440,11 +6503,11 @@ const CapRail = {
       const pages = Object.values((data.query && data.query.pages) || {});
       const bad = /donut|doughnut|food|burger|cathedral|station|flag|coat of arms|map of|painting|portrait|church|calendar|eye|fundus|diagram|logo|icon|lizard|galliwasp|fourier|spectrum/i;
       const depicts = (title) => {
+        if (typeof LectureSkills !== "undefined" && LectureSkills.clash && LectureSkills.clash(focused, title)) return false;
         const T = String(title || "").toLowerCase();
         const L = focused.toLowerCase();
-        if (/cardiac|heart|coronary|congenital/.test(L)) return /heart|cardiac|coronary|myocard|aorta|ventric|septal|congenital/.test(T);
-        if (/breast|mammo/.test(L)) return /breast|mammo/.test(T);
-        if (/brain|stroke/.test(L)) return /brain|cerebr|stroke/.test(T);
+        const spec = L.match(/coverage|slice|detector|gating|temporal|dose|resolution|endometri|spleen|stroke/);
+        if (spec && T.indexOf(spec[0]) < 0 && /coronary arteries|angiography/.test(T)) return false;
         return true;
       };
       urls = pages.filter((p) => p && p.thumbnail && p.title && !bad.test(p.title) && depicts(p.title)).map((p) => p.thumbnail.source);
@@ -15609,7 +15672,7 @@ window.addEventListener("message", (e) => {
     const pics = document.getElementById("qaPics");
     if (pics) pics.innerHTML = "";
     if (typeof ScanLive !== "undefined") ScanLive.seenPhrase = {};
-    if (typeof LectureSkills !== "undefined") { LectureSkills.anchor = ""; LectureSkills.sent = ""; LectureSkills.lastWords = ""; }
+    if (typeof LectureSkills !== "undefined") { LectureSkills.anchor = ""; LectureSkills.lecture = ""; LectureSkills.slide = ""; LectureSkills.sent = ""; LectureSkills.lastWords = ""; }
     CapRail.seenTop = {};
     CapRail.screenWords = [];
     CapRail._boardId = "";

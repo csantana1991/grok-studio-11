@@ -204,24 +204,28 @@ const BRIDGE = `(function(){
     return m ? m[1] : "";
   }
   function queryFor(title){
-    var t = title.toLowerCase();
-    if (/breast|mammo|tomosynthesis/.test(t)) return "breast mammography MRI";
-    if (/cardiac|heart|coronary|myocard/.test(t)) return "cardiac CT angiography";
-    if (/brain|cerebr|stroke|neuro/.test(t)) return "brain MRI";
-    if (/chest|lung|pulmonary|thorax/.test(t)) return "chest CT lung";
-    if (/abdomen|liver|pancrea|bowel/.test(t)) return "abdominal CT";
-    return title + " radiology";
+    return String(title || "").replace(/\s+/g, " ").trim().slice(0, 120);
+  }
+  function familyOf(text){
+    var t = String(text || "").toLowerCase();
+    if (/breast|mammo/.test(t)) return "breast";
+    if (/endometri|uterus|ovar|pelvis|spleen|liver|abdomen|bowel|kidney|renal/.test(t)) return "abdomen";
+    if (/brain|stroke|cerebr|neuro/.test(t)) return "brain";
+    if (/cardiac|heart|coronary|myocard|congenital/.test(t)) return "heart";
+    if (/lung|pulmonary|chest|thorax/.test(t)) return "chest";
+    return "";
   }
   function onTopic(q, title){
     var T = String(title || "").toLowerCase();
-    if (offTopic(q, title)) return false;
-    if (/lizard|galliwasp|fourier|spectrum|novel|portrait|drawing|diagram|schematic|people|hospital/.test(T)) return false;
     var L = String(q || "").toLowerCase();
-    if (/cardiac|heart|coronary|congenital/.test(L)) return /heart|cardiac|coronary|myocard|aorta|ventric|septal|congenital/.test(T);
-    if (/breast|mammo/.test(L)) return /breast|mammo/.test(T);
-    if (/brain|stroke/.test(L)) return /brain|cerebr|stroke|head/.test(T);
-    if (/chest|lung/.test(L)) return /chest|lung|pulmon|thorax/.test(T);
-    return /ct|mri|x-ray|radiograph|pet|scan|angiograph/.test(T);
+    if (/lizard|galliwasp|fourier|spectrum|portrait|people|hospital|drawing/.test(T)) return false;
+    var Fq = familyOf(L), Ft = familyOf(T);
+    if (Fq && Ft && Fq !== Ft) return false;
+    var spec = L.match(/coverage|slice|detector|gating|temporal|dose|resolution|endometri|spleen|stroke|nodule|pneumonia|thyroid|breast|fracture/);
+    if (spec && T.indexOf(spec[0]) < 0 && /coronary arteries|ct angiography|angiography/.test(T)) return false;
+    if (Fq === "heart" && !/heart|cardiac|coronary|aorta|slice|scanner|gating|ct/.test(T)) return false;
+    if (Fq && !Ft && !/ct|mri|x-ray|radiograph|pet|scan|angiograph/.test(T)) return false;
+    return true;
   }
   function offTopic(lecture, title){
     var L = String(lecture || "").toLowerCase();
