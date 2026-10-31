@@ -2520,7 +2520,7 @@ body.scan-live.hj-full #wikiTop.on {
 }
 body.scan-live.medb-full #wikiTop { display: none !important; }
 body.scan-live.hj-full #wikiTop img,
-body.scan-live.medb-full #wikiTop img { width: 110px; height: 66px; }
+body.scan-live.medb-full #wikiTop img { width: 84px; height: 66px; }
 body.scan-live.hj-full #phraseDef,
 body.scan-live.medb-full #phraseDef {
   display: flex !important; flex-direction: row; gap: 16px; align-items: center;
@@ -6478,7 +6478,7 @@ const CapRail = {
         add(src, cap);
         if (typeof LiveHero !== "undefined") LiveHero.add({ src, cap, term: q, kind: "wiki-live", raw: p.title || q });
       });
-      while (host.children.length > 14) host.removeChild(host.lastChild);
+      while (host.children.length > 20) host.removeChild(host.lastChild);
       const payload = { source: "atlas-figures", items: rows.slice(0, 2).map((p) => ({ src: p.thumbnail.source, title: p.title || q, href: p.fullurl || "" })) };
       document.querySelectorAll("iframe").forEach((frame) => {
         try { frame.contentWindow.postMessage(payload, "*"); } catch (e) {}
@@ -6488,6 +6488,10 @@ const CapRail = {
       const wiki = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q + " medicine anatomy") + "&gsroffset=" + off + "&gsrlimit=16&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*";
       const data = await fetch(wiki).then((r) => r.json());
       paintTop(Object.values((data.query && data.query.pages) || {}));
+      if (/electrocardiogram|ecg|heart rate/i.test(q)) {
+        const more = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent("sinus rhythm QRS complex ECG lead") + "&gsrlimit=12&prop=pageimages&pithumbsize=640&format=json&origin=*").then((r) => r.json());
+        paintTop(Object.values((more.query && more.query.pages) || {}));
+      }
     } catch (e) {}
     try {
       const res = await fetch("/api/pmc/match?source=live&q=" + encodeURIComponent(q) + "&n=6");
