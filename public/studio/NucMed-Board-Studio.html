@@ -2148,14 +2148,36 @@ body.widget-embed.view-atlas .widget-play { display: none !important; }
 body.widget-embed.view-atlas .ra-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 body.widget-embed.view-atlas .ra-card img { width: 100%; height: 140px; object-fit: contain; background: #000; display: block; }
 body.medb-atlas.view-atlas #raList {
-  max-height: 280px;
-  min-height: 132px;
+  max-height: none !important;
+  min-height: 280px;
   overflow: auto;
-  margin: 8px 0 6px;
+  margin: 0;
   border-radius: 12px;
-  background: #f4faf8;
+  background: transparent;
+  flex: 1;
 }
-body.medb-atlas.view-atlas .ra-grid { flex: 0 1 auto; min-height: 0; }
+body.medb-atlas.view-atlas .ra-grid { display: block !important; flex: 1 1 auto; min-height: 0; }
+body.medb-atlas #livePop#livePop { display: none !important; }
+body.medb-atlas.view-atlas .ra-brand,
+body.medb-atlas.view-atlas #raForm,
+body.medb-atlas.view-atlas .ra-types,
+body.medb-atlas.view-atlas .ra-sugs,
+body.medb-atlas.view-atlas #raView,
+body.medb-atlas.view-atlas .ra-meta,
+body.medb-atlas.view-atlas #raList h3,
+body.medb-atlas.view-atlas .ra-foot,
+body.medb-atlas.view-atlas .ra-load,
+body.medb-atlas.view-atlas .ra-card > div,
+body.medb-atlas.view-atlas .ra-study > div,
+body.medb-atlas.view-atlas .ra-row,
+body.medb-atlas.view-atlas #raList > p { display: none !important; }
+body.medb-atlas.view-atlas .ra-card img,
+body.medb-atlas.view-atlas .ra-study img { height: 210px !important; width: 100%; object-fit: contain; background: #000; }
+body.medb-atlas.view-atlas .work {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+}
 
 body.widget-embed .app,
 body.widget-embed .main,
@@ -8618,6 +8640,7 @@ function ensureCasePubMed(enc, force){
   });
 }
 async function liveSearchTerm(term){
+  if (document.body.classList.contains("medb-atlas")) return;
   const q = String(term || "").replace(/\s+/g, " ").trim().slice(0, 90);
   if (q.length < 3) return;
   if (/^(next|question|score|play|home|atlas|widget|restore|minimize|maximize|board|studio|rad|review|yes|no)(\s+(question|case|row))?$/i.test(q)) return;
@@ -14866,7 +14889,8 @@ async function raRun(){
   const view = $("#raView");
   if (!list) return;
   const local = raFilterTitles(RAD_ATLAS.query);
-  list.innerHTML = `<p class="ra-load">Searching reference images and TCIA for “${raEsc(RAD_ATLAS.query)}”…</p>
+  const medbAtlas = document.body.classList.contains("medb-atlas");
+  list.innerHTML = medbAtlas ? "" : `<p class="ra-load">Searching reference images and TCIA for “${raEsc(RAD_ATLAS.query)}”…</p>
     <div class="ra-meta"><p>${local.length} local case titles match while live figures load.</p></div>
     <div class="ra-cards">${local.slice(0,12).map(c => `<article class="ra-card"><div><h4>${raEsc(c.title)}</h4><p>${raEsc(c.station||c.cat||"")}</p></div></article>`).join("")}</div>`;
   RAD_ATLAS.loading = true;
@@ -14927,7 +14951,17 @@ async function raRun(){
       images: (figs || []).slice(0, 12).map(f => ({ src: f.imageUrl, cap: f.title || f.caption || data.query })).filter(it => it.src)
     });
   } catch (e) {}
-  try { liveSearchTerm(data.query); } catch (e) {}
+  if (document.body.classList.contains("medb-atlas")) {
+    const shots = [];
+    (figs || []).forEach(function(f){ if (f && f.imageUrl) shots.push('<article class="ra-card"><img alt="" src="' + raEsc(f.imageUrl) + '" referrerpolicy="no-referrer"></article>'); });
+    (prev || []).forEach(function(s){ if (s && s.previewUrl) shots.push('<article class="ra-study"><img alt="" src="' + raEsc(s.previewUrl) + '" referrerpolicy="no-referrer"></article>'); });
+    list.innerHTML = '<div class="ra-cards">' + (shots.join("") || "<p>No images for this lecture yet.</p>") + "</div>";
+    document.body.classList.remove("live-open");
+    const pop = document.getElementById("livePop");
+    if (pop) pop.style.setProperty("display", "none", "important");
+  } else {
+    try { liveSearchTerm(data.query); } catch (e) {}
+  }
   bindWidgetPlay({ finding: "RadAtlas results for "+data.query+". "+figs.length+" article figures, "+prev.length+" study previews.", stationName:"ATLAS", categoryId:"nuclear" }, "radatlas");
   try { IQA.paintBadges(); } catch(e) {}
 }
