@@ -14898,8 +14898,9 @@ async function raRun(){
   const view = $("#raView");
   if (!list) return;
   const local = raFilterTitles(RAD_ATLAS.query);
-  const medbAtlas = document.body.classList.contains("medb-atlas");
-  list.innerHTML = medbAtlas ? "" : `<p class="ra-load">Searching reference images and TCIA for “${raEsc(RAD_ATLAS.query)}”…</p>
+  const medbAtlas = document.body.classList.contains("medb-atlas") || document.body.classList.contains("widget-embed");
+  if (medbAtlas && RAD_ATLAS._shownAt && Date.now() - RAD_ATLAS._shownAt < 28000 && list.querySelector("img")) return;
+  list.innerHTML = medbAtlas && list.querySelector("img") ? list.innerHTML : (medbAtlas ? "" : `<p class="ra-load">Searching reference images and TCIA for “${raEsc(RAD_ATLAS.query)}”…</p>
     <div class="ra-meta"><p>${local.length} local case titles match while live figures load.</p></div>
     <div class="ra-cards">${local.slice(0,12).map(c => `<article class="ra-card"><div><h4>${raEsc(c.title)}</h4><p>${raEsc(c.station||c.cat||"")}</p></div></article>`).join("")}</div>`;
   RAD_ATLAS.loading = true;
@@ -14960,14 +14961,30 @@ async function raRun(){
       images: (figs || []).slice(0, 12).map(f => ({ src: f.imageUrl, cap: f.title || f.caption || data.query })).filter(it => it.src)
     });
   } catch (e) {}
-  if (document.body.classList.contains("medb-atlas")) {
+  if (document.body.classList.contains("medb-atlas") || document.body.classList.contains("widget-embed")) {
     const shots = [];
     (figs || []).forEach(function(f){ if (f && f.imageUrl) shots.push('<article class="ra-card"><img alt="" src="' + raEsc(f.imageUrl) + '" referrerpolicy="no-referrer"></article>'); });
     (prev || []).forEach(function(s){ if (s && s.previewUrl) shots.push('<article class="ra-study"><img alt="" src="' + raEsc(s.previewUrl) + '" referrerpolicy="no-referrer"></article>'); });
-    list.innerHTML = '<div class="ra-cards">' + (shots.join("") || "<p>No images for this lecture yet.</p>") + "</div>";
+    RAD_ATLAS._shots = shots;
+    RAD_ATLAS._shotAt = 0;
+    RAD_ATLAS._shownAt = Date.now();
+    const page = shots.slice(0, 6);
+    list.innerHTML = '<div class="ra-cards">' + (page.join("") || "<p>No images for this lecture yet.</p>") + "</div>";
     document.body.classList.remove("live-open");
     const pop = document.getElementById("livePop");
     if (pop) pop.style.setProperty("display", "none", "important");
+    if (!RAD_ATLAS._shotTimer) {
+      RAD_ATLAS._shotTimer = setInterval(function(){
+        const all = RAD_ATLAS._shots || [];
+        const box = document.getElementById("raList");
+        if (!box || all.length <= 6) return;
+        RAD_ATLAS._shotAt = ((RAD_ATLAS._shotAt || 0) + 6) % all.length;
+        const start = RAD_ATLAS._shotAt;
+        const slice = all.slice(start, start + 6);
+        if (slice.length < 6) slice.push.apply(slice, all.slice(0, 6 - slice.length));
+        box.innerHTML = '<div class="ra-cards">' + slice.join("") + "</div>";
+      }, 18000);
+    }
   } else {
     try { liveSearchTerm(data.query); } catch (e) {}
   }
