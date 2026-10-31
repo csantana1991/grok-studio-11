@@ -218,7 +218,8 @@ const BRIDGE = `(function(){
   function onTopic(q, title){
     var T = String(title || "").toLowerCase();
     var L = String(q || "").toLowerCase();
-    if (/lizard|galliwasp|fourier|spectrum|portrait|people|hospital|drawing/.test(T)) return false;
+    if (/lizard|galliwasp|fourier|spectrum|portrait|people|hospital|radiologist/.test(T)) return false;
+    if (/drawing/.test(T) && !/ct|scanner|beam|detector/.test(T)) return false;
     var Fq = familyOf(L), Ft = familyOf(T);
     if (Fq && Ft && Fq !== Ft) return false;
     var spec = L.match(/coverage|slice|detector|gating|temporal|dose|resolution|endometri|spleen|stroke|nodule|pneumonia|thyroid|breast|fracture/);
