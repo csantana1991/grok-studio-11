@@ -416,27 +416,9 @@
       var img = document.createElement('img')
       img.alt = r.title || r.caption || 'Verified image'
       img.src = displaySrc(r.imageUrl)
-      img.style.cursor = 'pointer'
       img.onclick = function (ev) {
-        if (ev) { ev.preventDefault(); ev.stopPropagation() }
         if (!document.body.classList.contains('medb-full')) return
-        var box = document.getElementById('libPeek')
-        if (!box) {
-          box = document.createElement('aside')
-          box.id = 'libPeek'
-          box.innerHTML = '<button type="button">Close</button><img alt="" referrerpolicy="no-referrer"><p></p>'
-          box.querySelector('button').onclick = function (e) {
-            if (e) e.stopPropagation()
-            box.classList.remove('on')
-          }
-          document.body.appendChild(box)
-        }
-        var big = box.querySelector('img')
-        var cap = box.querySelector('p')
-        big.src = img.src
-        big.alt = img.alt
-        cap.textContent = img.alt
-        box.classList.add('on')
+        if (ev) { ev.preventDefault(); ev.stopPropagation() }
       }
       el.appendChild(img)
     })

@@ -2701,7 +2701,7 @@ body.medb-full #libPeek {
   overflow: hidden;
   box-shadow: 0 16px 40px rgba(0,0,0,.45);
 }
-body.medb-full #libPeek.on { display: block; }
+body.medb-full #libPeek.on { display: none !important; }
 body.medb-full #libPeek img {
   width: 100%;
   height: calc(100% - 42px);
@@ -5896,20 +5896,8 @@ const ScanLive = {
       cap.textContent = this.anatomy(kind, hit.title);
       b.appendChild(cap);
       b.onclick = (ev) => {
-        if (ev) ev.preventDefault();
         if (document.body.classList.contains("medb-full")) {
-          var box = document.getElementById("libPeek");
-          if (!box) {
-            box = document.createElement("aside");
-            box.id = "libPeek";
-            box.innerHTML = '<button type="button">Close</button><img alt="" referrerpolicy="no-referrer"><p></p>';
-            box.querySelector("button").onclick = (e) => { if (e) e.stopPropagation(); box.classList.remove("on"); };
-            document.body.appendChild(box);
-          }
-          box.querySelector("img").src = hit.src;
-          box.querySelector("img").alt = hit.title;
-          box.querySelector("p").textContent = hit.title;
-          box.classList.add("on");
+          if (ev) { ev.preventDefault(); ev.stopPropagation(); }
           return;
         }
         window.open(hit.page, "_blank", "noopener");
