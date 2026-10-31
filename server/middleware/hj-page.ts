@@ -222,10 +222,10 @@ const BRIDGE = `(function(){
     var Fq = familyOf(L), Ft = familyOf(T);
     if (Fq && Ft && Fq !== Ft) return false;
     var spec = L.match(/coverage|slice|detector|gating|temporal|dose|resolution|endometri|spleen|stroke|nodule|pneumonia|thyroid|breast|fracture/);
-    if (spec && T.indexOf(spec[0]) < 0 && /coronary arteries|ct angiography|angiography/.test(T)) return false;
-    if (Fq === "heart" && !/heart|cardiac|coronary|aorta|slice|scanner|gating|ct/.test(T)) return false;
-    if (Fq && !Ft && !/ct|mri|x-ray|radiograph|pet|scan|angiograph/.test(T)) return false;
-    return true;
+    if (spec && /coronary ct angiography|coronary arteries/.test(T) && T.indexOf(spec[0]) < 0) return false;
+    if (Fq && Ft && Fq !== Ft) return false;
+    if (Fq === "heart" && /stroke|breast|pulmonary angiogram|lung nodule/.test(T)) return false;
+    return /ct|mri|scan|heart|cardiac|tomograph|detector|slice|angiograph|radiograph|pet/.test(T);
   }
   function offTopic(lecture, title){
     var L = String(lecture || "").toLowerCase();
