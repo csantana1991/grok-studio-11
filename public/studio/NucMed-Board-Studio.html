@@ -2403,15 +2403,15 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 }
 #modStrip, #wikiDef { display: none; }
 body.scan-live #modStrip {
-  display: flex; position: fixed; left: 0; right: 0; bottom: 36px; height: 96px; z-index: 360;
-  gap: 6px; padding: 4px 6px; background: #101614; border-top: 1px solid #243028;
+  display: flex; position: fixed; left: 0; right: 0; bottom: 0; height: 112px; z-index: 400;
+  gap: 8px; padding: 6px 8px; background: #f7f4ee; border-top: 1px solid #e4dcc8;
   overflow: hidden;
 }
 body.scan-live #modStrip section {
   flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 4px;
 }
 body.scan-live #modStrip b {
-  color: #9fd9c8; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  color: #1a1408; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
 }
 body.scan-live #modStrip .mod-row {
   display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; min-height: 72px;
@@ -2450,7 +2450,7 @@ body.scan-live.hj-full.wiki-top .work,
 body.scan-live.medb-full.wiki-top .work,
 body.scan-live.hj-full.film-widget .work,
 body.scan-live.medb-full.film-widget .work {
-  left: 220px !important; right: 280px !important; width: auto !important; top: 96px !important; bottom: 160px !important; z-index: 1 !important;
+  left: 0 !important; right: 0 !important; width: auto !important; top: 96px !important; bottom: 112px !important; z-index: 1 !important;
   overflow: hidden !important;
 }
 body.scan-live.hj-full #hjFrame,
@@ -2460,9 +2460,10 @@ body.scan-live.medb-full #mbFrame {
 }
 body.scan-live.hj-full #capRail,
 body.scan-live.medb-full #capRail {
-  bottom: 0 !important; height: 28px !important; padding: 0 8px !important;
-  align-items: center; overflow: hidden !important;
+  display: none !important;
 }
+body.scan-live #wikiDef,
+body.scan-live #phraseDef { display: none !important; }
 #phraseDef { display: none; }
 body.scan-live #phraseDef {
   display: block !important; position: fixed; right: 0; width: 280px; top: 96px; bottom: 160px; z-index: 1200 !important;
@@ -5639,7 +5640,9 @@ const ScanLive = {
     const strip = document.getElementById("modStrip");
     const work = document.querySelector(".work");
     if (strip && work && document.body.classList.contains("scan-live")) {
-      const gap = Math.ceil(strip.getBoundingClientRect().height) + 44;
+      const gap = Math.ceil(strip.getBoundingClientRect().height);
+      work.style.setProperty("left", "0", "important");
+      work.style.setProperty("right", "0", "important");
       work.style.setProperty("bottom", gap + "px", "important");
       ["wikiDef", "phraseDef"].forEach((id) => {
         const el = document.getElementById(id);
