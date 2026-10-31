@@ -5685,8 +5685,10 @@ const SlideGrab = {
   last: "",
   busy: false,
   shot(fallback) {
+    const sentence = String(fallback || "").replace(/\s+/g, " ").trim();
+    if (sentence) this.pending = sentence;
     if (this.busy) return;
-    if (this.at && Date.now() - this.at < 4000) return;
+    if (this.at && Date.now() - this.at < 1200) return;
     this.at = Date.now();
     this.busy = true;
     this.capture().then(async (canvas) => {
@@ -5695,12 +5697,25 @@ const SlideGrab = {
         return;
       }
       const hash = this.sample(canvas);
-      if (!hash || hash === this.last) return;
+      const sentence = String(fallback || "").replace(/\s+/g, " ").trim();
+      if (!hash || hash === this.last) {
+        if (sentence && sentence !== this.said) {
+          this.said = sentence;
+          ScanLive.phrase(sentence);
+        }
+        return;
+      }
       this.last = hash;
       const text = await this.read(canvas);
-      const phrase = this.phraseOf(text) || fallback || "";
-      if (phrase) ScanLive.phrase(phrase);
-    }).catch(() => {}).finally(() => { this.busy = false; });
+      const phrase = this.phraseOf(text) || sentence;
+      if (phrase && phrase !== this.said) {
+        this.said = phrase;
+        ScanLive.phrase(phrase);
+      }
+    }).catch(() => {}).finally(() => {
+      this.busy = false;
+      if (this.pending && this.pending !== this.said) this.shot(this.pending);
+    });
   },
   sample(canvas) {
     try {
@@ -6473,6 +6488,7 @@ const CapRail = {
     this.line = hit.text;
     this.slideText = hit.text;
     this.slideKey = "";
+    if (typeof SlideGrab !== "undefined") SlideGrab.shot(hit.text);
     this.readScreen();
   }
 };

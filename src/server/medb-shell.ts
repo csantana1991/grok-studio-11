@@ -56,6 +56,7 @@ const BRIDGE = `(function(){
   var spoken = "";
   var lessonSent = "";
   var reportedId = "";
+  var lastSlide = "";
   var spin = 0;
   function post(text){
     text = String(text || "").replace(/\\s+/g, " ").trim();
@@ -74,10 +75,26 @@ const BRIDGE = `(function(){
       .catch(function(){});
   }
   function lineAt(t){
+    try { parent.postMessage({ source: "hj-caption", cc: true, t: t, videoId: videoId }, "*"); } catch (e) {}
     if (!cues.length) return;
     var hit = null;
     for (var i = 0; i < cues.length; i++) if (cues[i].t <= t + 0.3) hit = cues[i]; else break;
     if (hit && hit.text) post(hit.text);
+  }
+  function armPlayer(){
+    var frames = document.querySelectorAll("iframe");
+    for (var i = 0; i < frames.length; i++) {
+      var fr = frames[i];
+      var src = fr.getAttribute("src") || "";
+      if (src.indexOf("youtube") < 0) continue;
+      if (fr.getAttribute("data-arm") !== "1") {
+        fr.setAttribute("data-arm", "1");
+        if (src.indexOf("enablejsapi") < 0) {
+          fr.setAttribute("src", src + (src.indexOf("?") >= 0 ? "&" : "?") + "enablejsapi=1");
+        }
+      }
+      try { fr.contentWindow.postMessage(JSON.stringify({ event: "listening", id: "studio", channel: "widget" }), "*"); } catch (e) {}
+    }
   }
   window.addEventListener("message", function(e){
     if (String(e.origin || "").indexOf("youtube.com") < 0) return;
@@ -156,6 +173,7 @@ const BRIDGE = `(function(){
     try { window.parent.postMessage({ type: "hj-widget", view: view, title: title }, "*"); } catch (e) {}
   }
   function tick(){
+    armPlayer();
     mountDock();
     document.querySelectorAll("video, audio, track, source").forEach(retarget);
     var videos = document.querySelectorAll("video");
@@ -194,6 +212,12 @@ const BRIDGE = `(function(){
       }
     }
     if (lesson && lesson !== lessonSent) { lessonSent = lesson; post(lesson); }
+    var slideNode = document.querySelector(".media-player .player-caption, .media-player .slide-line, .player-caption");
+    var slide = slideNode ? (slideNode.textContent || "").replace(/\\s+/g, " ").trim() : "";
+    if (slide.length > 18 && slide !== lastSlide) {
+      lastSlide = slide;
+      post(slide);
+    }
     if (videoId && videoId !== reportedId && lessonSent) {
       reportedId = videoId;
       try { parent.postMessage({ source: "hj-caption", cc: true, videoId: videoId, text: lessonSent }, "*"); } catch (e) {}
