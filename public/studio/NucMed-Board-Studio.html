@@ -6810,11 +6810,17 @@ const CapRail = {
     if (q.length < 4) return;
     const host = document.getElementById("qaPics");
     if (!host) return;
+    const medb = document.body.classList.contains("medb-full");
+    const now = Date.now();
     if (q !== this._reelQ) {
+      if (medb && this._reelQ && now - (this._reelAt || 0) < 16000) return;
       this._reelQ = q;
       this._reelOff = 0;
+      this._reelAt = now;
       host.innerHTML = "";
     }
+    if (medb && (this._reelOff || 0) > 0 && now - (this._reelFetch || 0) < 18000) return;
+    this._reelFetch = now;
     const off = this._reelOff || 0;
     this._reelOff = off + 8;
     let urls = [];
@@ -16214,14 +16220,20 @@ window.addEventListener("message", (e) => {
   if (frame) frame.style.height = down ? Math.max(1700, Number(e.data.height) || 1700) + "px" : "";
 });
 (function keepRailsMoving() {
-  const step = () => {
+  let last = 0;
+  const step = (t) => {
+    requestAnimationFrame(step);
+    const medb = document.body.classList.contains("medb-full");
+    if (medb && t - last < 48) return;
+    last = t;
     ["wikiTop", "capRail", "qaPics"].forEach((id) => {
       const el = document.getElementById(id);
       if (!el || el.scrollWidth <= el.clientWidth + 12) return;
-      el.scrollLeft += 1.4;
+      if (medb && el.matches(":hover")) return;
+      const speed = medb && id === "qaPics" ? 0.45 : 1.4;
+      el.scrollLeft += speed;
       if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) el.scrollLeft = 0;
     });
-    requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
 })();
@@ -16259,7 +16271,7 @@ setInterval(() => {
       host.appendChild(img);
     });
   }
-}, 4000);
+}, 18000);
 document.getElementById("capPopX").onclick = () => document.getElementById("capPop").classList.remove("on");
 document.addEventListener("click", (e) => {
   const node = e.target.closest && e.target.closest("button, a");
