@@ -156,6 +156,8 @@ const BRIDGE = `(function(){
         win.postMessage(JSON.stringify({ event: "command", func: "getCurrentTime", args: [], id: fr.id, channel: "widget" }), "*");
       } catch (e) {}
     }
+    var named = lectureTitle();
+    if (named && named !== titleSent) { titleSent = named; post(named); }
     var heads = document.querySelectorAll("h1");
     for (var h = 0; h < heads.length; h++) {
       var s = (heads[h].textContent || "").replace(/\\s+/g, " ").trim();
