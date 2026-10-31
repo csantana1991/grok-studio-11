@@ -5417,6 +5417,10 @@ const ScanLive = {
     if (/queue started|playable lesson|introduction abdominal|appearancechoose/i.test(line)) return;
     this.heard[line] = 1;
     document.body.classList.add("scan-live");
+    const box = document.getElementById("hjSaid");
+    if (box && document.activeElement !== box) box.value = line;
+    const tag = document.querySelector("#capRail .cap-tag");
+    if (tag) tag.textContent = ("1 Slide · " + this.slideTerm(line)).slice(0, 56);
     this.phrase(line);
   },
   watch() {
@@ -6246,8 +6250,6 @@ const CapRail = {
     if (this._wikiAt && Date.now() - this._wikiAt < 4000) return;
     this._wikiAt = Date.now();
     this.seenCap = this.seenCap || {};
-    const said = document.getElementById("hjSaid");
-    if (said && document.activeElement !== said) said.value = "2 Caption · " + words.join(" · ");
     const fresh = words.find((w) => !this.seenCap[w]);
     const word = fresh || words[(this._spin || 0) % words.length];
     this._spin = (this._spin || 0) + 1;
@@ -15278,7 +15280,6 @@ window.addEventListener("message", (e) => {
       if (/brigham|harvard|hopkins|emory|residency/i.test(bit) && bit.split(" ").length < 6) return;
       if (CapRail.cues && CapRail.cues.length) return;
       if (data.videoId) CapRail.useVideo(data.videoId, "");
-      CapRail.line = bit;
       CapRail.readScreen();
     }
   } else if (data.cc && typeof data.t === "number") CapRail.cueAt(data.t);
