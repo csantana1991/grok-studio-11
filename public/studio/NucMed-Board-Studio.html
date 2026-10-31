@@ -2221,6 +2221,32 @@ body.hj-full .hj-exitbar button { padding:6px 10px; font-size:13px; white-space:
 }
 body.hj-full .app { display:block !important; height:100dvh !important; padding:0 !important; margin:0 !important; }
 body.hj-full .sidebar, body.hj-full .topbar, body.hj-full #colSplit, body.hj-full .player, body.hj-full #playerDock, body.hj-full #winBar, body.hj-full #dockHandle, body.hj-full #atlasDrawer, body.hj-full #atlasSplit, body.hj-full #bootSplash { display:none !important; }
+body.hj-full #hjMenu {
+  display: inline-flex !important;
+  align-items: center;
+  flex: 0 0 auto;
+  height: 32px;
+  margin-left: auto;
+  z-index: 2;
+}
+body.hj-full.nav-open .sidebar {
+  display: flex !important;
+  position: fixed !important;
+  z-index: 960 !important;
+  inset: 48px auto 0 0 !important;
+  width: min(88vw, 340px) !important;
+  max-width: 88vw !important;
+  height: auto !important;
+  transform: none !important;
+  visibility: visible !important;
+  overflow: auto !important;
+  background: #0e1c28 !important;
+}
+body.hj-full.nav-open .backdrop {
+  display: block !important;
+  z-index: 940 !important;
+}
+
 body.hj-full .main { display:flex !important; flex-direction:column !important; height:100dvh !important; min-height:0 !important; overflow:hidden !important; padding:0 !important; }
 body.hj-full .work {
   position:fixed !important; top:48px !important; left:0 !important; right:0 !important; bottom:0 !important;
@@ -2631,7 +2657,7 @@ body.scan-live #phraseDef p { margin: 0; font-size: 12px; line-height: 1.4; colo
 <aside id="filmLeft" aria-label="Lecture images"></aside>
 <aside id="filmRight" aria-label="Widget panel"></aside>
 <div id="capPop"><button type="button" id="capPopX">Close</button><img alt="" referrerpolicy="no-referrer"><p></p></div>
-<div class="rru-exitbar hj-exitbar" id="hjBar"><b id="liveLabel">1 SLIDE · 2 CAPTION</b><input id="hjSaid" type="search" placeholder="Slide first, then the caption" autocomplete="off"><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
+<div class="rru-exitbar hj-exitbar" id="hjBar"><b id="liveLabel">1 SLIDE · 2 CAPTION</b><input id="hjSaid" type="search" placeholder="Slide first, then the caption" autocomplete="off"><button type="button" id="hjMenu">Menu</button><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
 <div id="wikiTop" aria-label="Wikipedia images from the captions"></div>
 <div id="modStrip" aria-label="CT, MRI, and X-ray from the lecture">
   <section data-mod="xray"><b>X-ray</b><div class="mod-row"></div></section>
@@ -15357,6 +15383,8 @@ function setChromeOpen(open) {
   if (mark) mark.textContent = open ? "▴" : "▾";
 }
 $("#menuBtn").onclick = () => document.body.classList.toggle("nav-open");
+const hjMenu = document.getElementById("hjMenu");
+if (hjMenu) hjMenu.onclick = () => document.body.classList.toggle("nav-open");
 (function bindChromeToggle(){
   const btn = document.getElementById("chromeToggle");
   if (!btn) return;
