@@ -2650,13 +2650,19 @@ body.scan-live.hj-full #phraseDef article {
   white-space: normal;
 }
 body.scan-live.hj-full #phraseDef p { white-space: normal !important; }
+body.scan-live.hj-full #phraseDef { padding-top: 40px !important; }
 body.scan-live.hj-full #phraseNext {
-  position: sticky; top: 0; align-self: flex-end; z-index: 2;
+  display: inline-block !important;
+  position: absolute !important;
+  top: 8px !important;
+  right: 10px !important;
+  left: auto !important;
+  z-index: 8 !important;
   border: 0; border-radius: 999px; background: #2ee6c8; color: #082027;
-  font-weight: 700; font-size: 12px; padding: 4px 10px; cursor: pointer;
+  font-weight: 800; font-size: 13px; padding: 6px 12px; cursor: pointer;
 }
 #phraseNext { display: none; }
-body.scan-live.hj-full #phraseNext { display: inline-block; }
+body.scan-live.hj-full #phraseNext { display: inline-block !important; }
 body.scan-live.hj-full #phraseDef .shots { display: flex; gap: 6px; overflow: hidden; margin-top: 6px; }
 body.scan-live.hj-full #phraseDef .shots img { width: 72px; height: 48px; object-fit: cover; border-radius: 6px; flex: 0 0 auto; background: #000; }
 #capFilm { display: none; }
@@ -6086,13 +6092,12 @@ const ScanLive = {
   termAt: 0,
   termsSeen: {},
   nextTerm() {
-    const bank = ["electrocardiography", "sinus rhythm", "heart rate", "P wave", "PR interval", "QRS complex", "ST segment", "T wave", "QT interval", "atrial fibrillation", "tachycardia", "bradycardia"];
+    const bank = ["arrhythmia", "sinus bradycardia", "sinus rhythm", "bradycardia", "tachycardia", "heart rate", "electrocardiography", "P wave", "PR interval", "QRS complex", "ST segment", "T wave", "QT interval", "atrial fibrillation"];
     const cues = (typeof CapRail !== "undefined" && CapRail.cues) || [];
     const said = document.getElementById("hjSaid");
     const title = ((said && said.value) || "") + " " + ((typeof CapRail !== "undefined" && (CapRail.topic || CapRail.line)) || "");
     const lines = cues.map((c) => String((c && c.text) || c || "")).filter((line) => line.length > 12);
-    if (/ecg|ekg|electrocardiog/i.test(title) || /ecg|ekg/.test(lines.join(" ").toLowerCase())) lines.push.apply(lines, bank);
-    if (!lines.length) lines.push.apply(lines, bank);
+    lines.push.apply(lines, bank);
     this.keepNext();
     const start = this.termAt || 0;
     for (let n = 0; n < lines.length; n++) {
@@ -6109,6 +6114,11 @@ const ScanLive = {
       this.phrase(line);
       return;
     }
+    this.termsSeen = {};
+    this.termAt = 0;
+    const btn = document.getElementById("phraseNext");
+    if (btn) btn.textContent = "Next term";
+    this.phrase(bank[0]);
   },
   async cardPics(shots, term) {
     if (!shots || !term) return;
@@ -6225,6 +6235,10 @@ const ScanLive = {
 setInterval(() => { if (document.body.classList.contains("scan-live")) ScanLive.audit(); }, 1000);
 const phraseNext = document.getElementById("phraseNext");
 if (phraseNext) phraseNext.addEventListener("click", () => ScanLive.nextTerm());
+setInterval(() => {
+  if (!document.body.classList.contains("hj-full") || !document.body.classList.contains("scan-live")) return;
+  if (typeof ScanLive !== "undefined" && ScanLive.keepNext) ScanLive.keepNext();
+}, 1500);
 const SlideGrab = {
   last: "",
   busy: false,
