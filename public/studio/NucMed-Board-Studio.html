@@ -2403,7 +2403,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 }
 #modStrip, #wikiDef { display: none; }
 body.scan-live #modStrip {
-  display: flex; position: fixed; left: 0; right: 0; bottom: 96px; height: 112px; z-index: 380;
+  display: flex; position: fixed; left: 0; right: 0; bottom: 34px; height: 100px; z-index: 380;
   gap: 6px; padding: 6px; background: #101614; border-top: 1px solid #243028;
 }
 body.scan-live #modStrip section {
@@ -2422,7 +2422,7 @@ body.scan-live #modStrip img {
   width: 96px; height: 72px; object-fit: cover; border-radius: 6px; background: #000; display: block;
 }
 body.scan-live #wikiDef {
-  display: block; position: fixed; right: 0; width: 168px; top: 92px; bottom: 208px; z-index: 380;
+  display: block; position: fixed; right: 0; width: 168px; top: 92px; bottom: 134px; z-index: 380;
   overflow-x: hidden; overflow-y: auto; background: #0e1c28; color: #e8f2f7;
   border-left: 1px solid #1e3a4a; padding: 8px;
 }
@@ -2434,7 +2434,12 @@ body.scan-live.medb-full .work,
 body.scan-live.hj-full.wiki-top .work,
 body.scan-live.medb-full.wiki-top .work,
 body.scan-live.hj-full.film-widget .work {
-  left: 0 !important; right: 168px !important; width: auto !important; top: 92px !important; bottom: 208px !important;
+  left: 0 !important; right: 168px !important; width: auto !important; top: 92px !important; bottom: 134px !important;
+}
+body.scan-live.hj-full #capRail,
+body.scan-live.medb-full #capRail {
+  bottom: 0 !important; height: 34px !important; padding: 0 8px !important;
+  align-items: center; overflow: hidden !important;
 }
 </style></head>
 <body>
@@ -5382,14 +5387,28 @@ const ScanLive = {
   seen: {},
   dir: 1,
   tick(text) {
-    const words = (typeof CapRail !== "undefined" ? CapRail.captionWords(text) : "").split(" ").filter((w) => w.length > 3 && CapRail.medicalWord(w));
-    const term = words.slice(0, 3).join(" ");
+    const raw = ((text || "") + " " + this.onScreen()).toLowerCase();
+    const bodyMri = /body mri|abdominal|abdomen/.test(raw) && /mri|magnetic/.test(raw);
+    const words = (typeof CapRail !== "undefined" ? CapRail.captionWords(text) : "").split(" ").filter((w) => w.length > 3 && CapRail.medicalWord(w) && !/imaging|introduction|background|basic/.test(w));
+    const term = bodyMri ? "abdominal MRI liver" : (words.slice(0, 3).join(" ") || "");
     if (!term || term === this.last || this.busy) return;
     this.last = term;
+    this.bodyMri = bodyMri;
     this.busy = true;
     document.body.classList.add("scan-live");
     this.fill(term).finally(() => { this.busy = false; this.glide(); });
-    words.slice(0, 3).forEach((w) => this.define(w));
+    (bodyMri ? ["abdominal MRI", "liver", "magnetic resonance"] : words.slice(0, 3)).forEach((w) => this.define(w));
+  },
+  onScreen() {
+    const frames = ["mbFrame", "hjFrame"].map((id) => document.getElementById(id)).filter(Boolean);
+    const frame = frames.find((f) => f.getBoundingClientRect().height > 80) || frames[0];
+    if (!frame) return "";
+    try {
+      const doc = frame.contentDocument;
+      if (!doc) return "";
+      const node = doc.querySelector("h1, h2, .lesson-item.is-current strong");
+      return node ? node.textContent : "";
+    } catch (e) { return ""; }
   },
   async fill(term) {
     let atlas = null;
@@ -5405,7 +5424,9 @@ const ScanLive = {
     return /x-?ray|xray|radiograph|chest/.test(t);
   },
   async best(kind, term, atlas) {
-    const q = term + (kind === "xray" ? " chest x-ray radiograph" : kind === "ct" ? " CT" : " MRI");
+    const q = this.bodyMri
+      ? (kind === "mri" ? "axial abdominal MRI liver" : kind === "ct" ? "axial abdominal CT liver" : "abdominal radiograph")
+      : term + (kind === "xray" ? " chest x-ray radiograph" : kind === "ct" ? " CT" : " MRI");
     const words = term.split(" ");
     const hits = [];
     const add = (src, title, score, page) => {
@@ -5417,6 +5438,7 @@ const ScanLive = {
       (packed.figures || []).forEach((f) => {
         const blob = (f.modality || "") + " " + (f.title || "") + " " + (f.caption || "");
         if (!this.modOk(kind, blob)) return;
+        if (this.bodyMri && /brain|chest radiograph|hand|wrist|skull/.test(blob) && !/abdomen|liver|renal|spleen|pancrea/.test(blob)) return;
         let score = 8;
         words.forEach((w) => { if (blob.toLowerCase().indexOf(w) >= 0) score += 2; });
         add(f.imageUrl, f.title, score, f.articleUrl);
@@ -5427,6 +5449,7 @@ const ScanLive = {
       const src = f.imageUrl || f.previewUrl;
       const blob = (f.modality || "") + " " + (f.title || "") + " " + (f.caption || "") + " " + (f.collection || "") + " " + (f.badge || "");
       if (!src || !this.modOk(kind, blob)) return;
+      if (this.bodyMri && /brain|chest radiograph|hand|wrist|skull/.test(blob) && !/abdomen|liver|renal|spleen|pancrea/.test(blob)) return;
       let score = /meta|nih/i.test(blob) ? 7 : 4;
       words.forEach((w) => { if (blob.toLowerCase().indexOf(w) >= 0) score += 2; });
       add(src, f.title || f.caption, score, f.articleUrl || f.fullStudyUrl);
@@ -5457,6 +5480,7 @@ const ScanLive = {
         const info = (p.imageinfo || [])[0];
         const title = String(p.title || "");
         if (!info || !(info.thumburl || info.url) || !want.test(title) || skip.test(title)) return;
+        if (this.bodyMri && !/abdomen|liver|renal|spleen|pancrea|body|kidney/i.test(title)) return;
         add(info.thumburl || info.url, title.replace(/^File:/, ""), 1, "https://commons.wikimedia.org/wiki/" + encodeURIComponent(title.replace(/ /g, "_")));
       });
     } catch (e) {}
