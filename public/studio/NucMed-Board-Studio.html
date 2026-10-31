@@ -2434,7 +2434,7 @@ body.scan-live.medb-full .work,
 body.scan-live.hj-full.wiki-top .work,
 body.scan-live.medb-full.wiki-top .work,
 body.scan-live.hj-full.film-widget .work {
-  left: 0 !important; right: 168px !important; top: 92px !important; bottom: 208px !important;
+  left: 0 !important; right: 168px !important; width: auto !important; top: 92px !important; bottom: 208px !important;
 }
 </style></head>
 <body>
@@ -5389,41 +5389,44 @@ const ScanLive = {
     this.busy = true;
     document.body.classList.add("scan-live");
     Promise.all([
-      this.lane("xray", term + " x-ray radiograph", /x-?ray|radiograph/i),
-      this.lane("ct", term + " CT scan axial", /\bct\b|computed tomograph/i),
-      this.lane("mri", term + " MRI scan", /\bmri\b|magnetic resonance/i),
+      this.lane("xray", [term + " x-ray radiograph", "chest x-ray radiograph"], /x-?ray|radiograph/i),
+      this.lane("ct", [term + " CT scan axial", "axial CT scan"], /\bct\b|computed tomograph/i),
+      this.lane("mri", [term + " MRI scan", "brain MRI"], /\bmri\b|magnetic resonance/i),
       ...words.slice(0, 3).map((w) => this.define(w))
     ]).finally(() => { this.busy = false; this.glide(); });
   },
-  async lane(kind, q, want) {
+  async lane(kind, queries, want) {
     const host = document.querySelector('#modStrip [data-mod="' + kind + '"] .mod-row');
     if (!host) return;
-    let pages = [];
-    try {
-      const data = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=5&gsrsearch=" + encodeURIComponent(q) + "&prop=imageinfo&iiprop=url|mime&iiurlwidth=400&format=json&origin=*").then((r) => r.json());
-      pages = Object.values((data.query && data.query.pages) || {});
-    } catch (e) { return; }
-    let hits = pages.filter((p) => {
-      const info = (p.imageinfo || [])[0];
-      const title = String(p.title || "");
-      return info && (info.thumburl || info.url) && /image\//.test(info.mime || "image/jpeg") && want.test(title);
-    });
-    if (!hits.length) hits = pages.filter((p) => (p.imageinfo || [])[0] && ((p.imageinfo || [])[0].thumburl || (p.imageinfo || [])[0].url));
-    hits.slice(0, 3).forEach((p) => {
-      const info = (p.imageinfo || [])[0];
-      const src = info.thumburl || info.url;
-      if (host.querySelector('img[src="' + src.replace(/"/g, "") + '"]')) return;
-      const b = document.createElement("button");
-      b.type = "button";
-      const img = document.createElement("img");
-      img.alt = String(p.title || kind).replace(/^File:/, "");
-      img.referrerPolicy = "no-referrer";
-      img.src = src;
-      b.appendChild(img);
-      b.onclick = () => window.open("https://commons.wikimedia.org/wiki/" + encodeURIComponent(String(p.title || "").replace(/ /g, "_")), "_blank", "noopener");
-      host.appendChild(b);
-      while (host.children.length > 6) host.removeChild(host.firstChild);
-    });
+    const skip = /journal|cover|roentgenology|proceedings|volume|issue|textbook|poster/i;
+    for (let i = 0; i < queries.length; i++) {
+      let pages = [];
+      try {
+        const data = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=6&gsrsearch=" + encodeURIComponent(queries[i]) + "&prop=imageinfo&iiprop=url|mime&iiurlwidth=400&format=json&origin=*").then((r) => r.json());
+        pages = Object.values((data.query && data.query.pages) || {});
+      } catch (e) { continue; }
+      const hits = pages.filter((p) => {
+        const info = (p.imageinfo || [])[0];
+        const title = String(p.title || "");
+        return info && (info.thumburl || info.url) && /image\//.test(info.mime || "image/jpeg") && want.test(title) && !skip.test(title);
+      });
+      hits.slice(0, 3).forEach((p) => {
+        const info = (p.imageinfo || [])[0];
+        const src = info.thumburl || info.url;
+        if (host.querySelector('img[src="' + src.replace(/"/g, "") + '"]')) return;
+        const b = document.createElement("button");
+        b.type = "button";
+        const img = document.createElement("img");
+        img.alt = String(p.title || kind).replace(/^File:/, "");
+        img.referrerPolicy = "no-referrer";
+        img.src = src;
+        b.appendChild(img);
+        b.onclick = () => window.open("https://commons.wikimedia.org/wiki/" + encodeURIComponent(String(p.title || "").replace(/ /g, "_")), "_blank", "noopener");
+        host.appendChild(b);
+        while (host.children.length > 6) host.removeChild(host.firstChild);
+      });
+      if (host.children.length >= 2) return;
+    }
   },
   async define(term) {
     const host = document.getElementById("wikiDef");
