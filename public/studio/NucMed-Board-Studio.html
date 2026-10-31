@@ -2474,8 +2474,14 @@ body.scan-live #wikiDef p { margin: 0; font-size: 12px; line-height: 1.35; color
 body.scan-live.medb-full .work,
 body.scan-live.medb-full.wiki-top .work,
 body.scan-live.medb-full.film-widget .work {
-  left: 0 !important; right: 0 !important; width: auto !important; top: 0 !important; bottom: 168px !important; z-index: 1 !important;
+  left: 220px !important; right: 0 !important; width: auto !important; top: 0 !important; bottom: 168px !important; z-index: 1 !important;
   overflow: hidden !important;
+}
+@media (max-width: 980px) {
+  body.scan-live.medb-full #wikiDef { display: none !important; }
+  body.scan-live.medb-full .work,
+  body.scan-live.medb-full.wiki-top .work,
+  body.scan-live.medb-full.film-widget .work { left: 0 !important; }
 }
 body.scan-live.hj-full .work,
 body.scan-live.hj-full.wiki-top .work,
