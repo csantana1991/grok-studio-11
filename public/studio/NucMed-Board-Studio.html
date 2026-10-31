@@ -15544,6 +15544,17 @@ window.addEventListener("message", (e) => {
   };
   requestAnimationFrame(step);
 })();
+(function readBar() {
+  const step = () => {
+    const el = document.getElementById("phraseDef");
+    if (el && !el.matches(":hover") && el.scrollWidth > el.clientWidth + 12) {
+      el.scrollLeft += 0.45;
+      if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) el.scrollLeft = 0;
+    }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+})();
 setInterval(() => {
   if (!document.body.classList.contains("medb-full")) return;
   const said = document.getElementById("hjSaid");
