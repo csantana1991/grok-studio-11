@@ -68,11 +68,11 @@ const BRIDGE = `(function(){
   var cues = [];
   var last = "";
   var titleSent = "";
-  function post(text){
+  function post(text, t){
     text = String(text || "").replace(/\\s+/g, " ").trim();
     if (text.length < 8 || text === last) return;
     last = text;
-    try { parent.postMessage({ source: "hj-caption", cc: true, text: text, videoId: videoId }, "*"); } catch (e) {}
+    try { parent.postMessage({ source: "hj-caption", cc: true, text: text, t: t, videoId: videoId }, "*"); } catch (e) {}
   }
   function loadCues(id){
     if (!id || id === videoId) return;
@@ -87,7 +87,7 @@ const BRIDGE = `(function(){
     if (!cues.length) return;
     var hit = null;
     for (var i = 0; i < cues.length; i++) if (cues[i].t <= t + 0.3) hit = cues[i]; else break;
-    if (hit && hit.text) post(hit.text);
+    if (hit && hit.text) post(hit.text, t);
   }
   window.addEventListener("message", function(e){
     if (String(e.origin || "").indexOf("youtube.com") < 0) return;
