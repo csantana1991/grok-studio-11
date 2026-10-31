@@ -5421,7 +5421,7 @@ const ScanLive = {
   hear(text) {
     const line = String(text || "").replace(/\s+/g, " ").trim();
     if (line.length < 18 || this.heard[line]) return;
-    if (/queue started|playable lesson|introduction abdominal|appearancechoose/i.test(line)) return;
+    if (/queue started|playable lesson|introduction abdominal|appearancechoose|final fantasy|square enix|video game|yoichi|last order/i.test(line)) return;
     this.heard[line] = 1;
     document.body.classList.add("scan-live");
     this.audit();
@@ -5767,6 +5767,7 @@ const ScanLive = {
     const t = String(title || "").toLowerCase();
     const blob = (String(term || "") + " " + String(line || "")).toLowerCase();
     if (/fatty liver|hepatic steatosis|cirrhosis/.test(t) && !/fatty|steatosis|cirrhosis/.test(blob)) return false;
+    if (/fantasy|video game|square enix|yoichi|anime|nintendo|playstation|album|movie|film/.test(t + " " + blob)) return false;
     if (/^magnetic resonance imaging( of the brain)?$/.test(t)) return false;
     if (this.seenPage && this.seenPage[t]) return false;
     return true;
@@ -6323,7 +6324,11 @@ const CapRail = {
           .then((r) => r.json())
           .then((data) => {
             const pages = Object.values((data.query && data.query.pages) || {});
-            const extract = String((pages[0] && pages[0].extract) || "");
+            const page = pages[0] || {};
+            const extract = String(page.extract || "");
+            const title = String(page.title || "");
+            if (/fantasy|video game|square enix|yoichi|anime|nintendo|playstation|album|movie|film|band\b|president/.test((title + " " + extract).toLowerCase())) return;
+            if (!/medic|radio|nuclear|imag|scan|pharm|anatom|disease|tracer|dose|heart|brain|liver/.test((title + " " + extract).toLowerCase())) return;
             const bits = extract.split(/(?<=[.?!])\s+/).map((s) => s.replace(/\s+/g, " ").trim()).filter((s) => s.length > 40 && s.length < 220);
             if (bits.length && !(this.cues && this.cues.length)) {
               this.cues = bits.map((text, i) => ({ t: i * 8, text }));
@@ -6335,6 +6340,11 @@ const CapRail = {
       }
     }
     const lines = this.cues || [];
+    if (lines.some((l) => /final fantasy|square enix|yoichi|video game|last order/i.test(l.text || ""))) {
+      this.cues = [];
+      this.line = "";
+      return;
+    }
     if (!lines.length) return;
     if (this.clock && Date.now() - (this._clockAt || 0) < 4000) return;
     const now = Date.now();
