@@ -2416,7 +2416,12 @@ body.scan-live #modStrip .mod-row {
   display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; min-height: 72px;
 }
 body.scan-live #modStrip button {
-  flex: 0 0 auto; border: 0; padding: 0; background: transparent; cursor: pointer;
+  flex: 0 0 auto; border: 0; padding: 0; background: transparent; cursor: pointer; position: relative;
+}
+body.scan-live #modStrip button span {
+  position: absolute; left: 2px; right: 2px; bottom: 2px; padding: 1px 3px;
+  background: rgba(0,0,0,.72); color: #fff; font-size: 9px; line-height: 1.2; border-radius: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 body.scan-live #modStrip img {
   width: 78px; height: 64px; object-fit: cover; border-radius: 6px; background: #000; display: block;
@@ -5484,6 +5489,12 @@ const ScanLive = {
   },
   queries(kind, term) {
     const slide = String(this.slideNow || term || "").toLowerCase();
+    if (/heart|cardiac|chf|failure|pulmonary/.test(slide)) {
+      if (kind === "ct") return ["axial chest CT", "cardiac CT angiography", "CT pulmonary angiogram", "axial abdomen CT"];
+      if (kind === "xray") return ["chest x-ray cardiomegaly", "chest radiograph heart"];
+      if (kind === "mri") return ["cardiac MRI", "chest MRI"];
+      if (kind === "pet") return ["FDG PET chest", "cardiac PET"];
+    }
     if (/gradient echo|rf pulse|flip angle|pulse sequence/.test(slide)) {
       if (kind === "mri") return ["gradient echo MRI brain", "axial brain MRI", "spine MRI", "abdominal MRI"];
       if (kind === "ct") return ["head CT scan", "axial brain CT", "abdominal CT axial"];
@@ -5498,10 +5509,18 @@ const ScanLive = {
   },
   modOk(kind, blob) {
     const t = String(blob || "").toLowerCase();
-    if (kind === "ct") return /\bct\b|computed tomograph/.test(t);
+    if (kind === "ct") return /\bct\b|computed tomograph/.test(t) && /chest|lung|heart|cardiac|abdomen|liver|brain|head|aorta|pelvis|kidney|mediastin/.test(t);
     if (kind === "mri") return /\bmri\b|magnetic resonance|flair|\bt1\b|\bt2\b/.test(t);
     if (kind === "pet") return /\bpet\b|fdg|positron|scintigraph/.test(t);
     return /x-?ray|xray|radiograph/.test(t);
+  },
+  anatomy(kind, title) {
+    const t = String(title || "").toLowerCase();
+    const place = /heart|cardiac/.test(t) ? "Heart" : /lung|chest|pulmonary|mediastin/.test(t) ? "Chest" : /abdomen|liver|kidney/.test(t) ? "Abdomen" : /brain|head/.test(t) ? "Head" : /aorta/.test(t) ? "Aorta" : /pelvis/.test(t) ? "Pelvis" : "CT";
+    if (kind === "ct") return place;
+    if (kind === "mri") return place === "CT" ? "MRI" : place;
+    if (kind === "pet") return "PET";
+    return "X-ray";
   },
   async best(kind, term, round) {
     const list = this.queries(kind, term).map((q) => q.replace(/\s+/g, " ").trim()).filter(Boolean);
@@ -5527,6 +5546,9 @@ const ScanLive = {
       img.referrerPolicy = "no-referrer";
       img.src = hit.src;
       b.appendChild(img);
+      const cap = document.createElement("span");
+      cap.textContent = this.anatomy(kind, hit.title);
+      b.appendChild(cap);
       b.onclick = () => window.open(hit.page, "_blank", "noopener");
       host.appendChild(b);
     });
@@ -5544,7 +5566,7 @@ const ScanLive = {
   },
   belongs(cap, src) {
     const t = (String(cap || "") + " " + String(src || "")).toLowerCase();
-    if (/standing|group of|conference|ceremony|portrait|photograph|staff|students|crowd|audience|podium|graduation|\bmeeting\b|posing|class photo|\bpeople\b|\bpersons\b|men standing|women standing/.test(t)) return false;
+    if (/standing|group of|conference|ceremony|portrait|photograph|staff|students|crowd|audience|podium|graduation|\bmeeting\b|posing|class photo|\bpeople\b|\bpersons\b|men standing|women standing|insect|butterfly|beetle/.test(t)) return false;
     return /x-?ray|radiograph|\bct\b|computed tomograph|\bmri\b|magnetic resonance|pet[\/\- ]?ct|fdg|positron|scintigraph|tomograph|axial|coronal|sagittal|flair|gradient echo|pulse sequence|nuclear medicine/.test(t);
   },
   audit() {
@@ -5571,14 +5593,14 @@ const ScanLive = {
   },
   async commons(kind, q, add, round) {
     const want = kind === "ct" ? /\bct\b|computed tomograph/i : kind === "mri" ? /\bmri\b|magnetic resonance/i : kind === "pet" ? /\bpet\b|fdg|positron/i : /x-?ray|radiograph/i;
-    const skip = /journal|cover|warning|plant|maize|logo|icon|symbol|diagram|illustration|poster|people|person|standing|conference|ceremony|portrait|photograph|staff|students|crowd|audience|podium|graduation|meeting|posing|class photo|group of/i;
+    const skip = /journal|cover|warning|plant|maize|logo|icon|symbol|diagram|illustration|poster|people|person|standing|conference|ceremony|portrait|photograph|staff|students|crowd|audience|podium|graduation|meeting|posing|class photo|group of|insect|butterfly|beetle|moth|map of|flag/i;
     const offset = (Number(round) || 0) * 3;
     try {
       const data = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=8&gsroffset=" + offset + "&gsrsearch=" + encodeURIComponent(q) + "&prop=imageinfo&iiprop=url|mime&iiurlwidth=400&format=json&origin=*").then((r) => r.json());
       Object.values((data.query && data.query.pages) || {}).forEach((p) => {
         const info = (p.imageinfo || [])[0];
         const title = String(p.title || "");
-        if (!info || !(info.thumburl || info.url) || !want.test(title) || skip.test(title) || !this.belongs(title, info.thumburl || info.url)) return;
+        if (!info || !(info.thumburl || info.url) || !this.modOk(kind, title) || skip.test(title) || !this.belongs(title, info.thumburl || info.url)) return;
         add(info.thumburl || info.url, title.replace(/^File:/, ""), "https://commons.wikimedia.org/wiki/" + encodeURIComponent(title.replace(/ /g, "_")));
       });
     } catch (e) {}
