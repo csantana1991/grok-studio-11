@@ -2342,6 +2342,20 @@ body.medb-full.film-widget .work { left: 0 !important; right: 0 !important; bott
   }
   body.medb-full.film-widget .work { bottom: calc(46vh + 92px) !important; right: 0 !important; }
 }
+body.medb-full.film-widget #filmRight,
+body.hj-full.film-widget #filmRight {
+  display: flex !important;
+  position: fixed;
+  top: 108px;
+  right: 10px;
+  bottom: 112px;
+  width: min(520px, 42vw);
+  z-index: 460;
+  background: #0e1c28;
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.45);
+}
 #mbWidgets { display: none; }
 body.medb-full #mbWidgets {
   display: flex;
@@ -15123,7 +15137,8 @@ document.querySelectorAll("#mbWidgets button").forEach((b) => {
       b.classList.remove("on");
       return;
     }
-    const topic = CapRail.line || CapRail.topic || "radiology";
+    const said = document.getElementById("hjSaid");
+    const topic = (said && said.value && !/slide first|playable lesson|openpediatrics/i.test(said.value) ? said.value : "") || CapRail.line || CapRail.topic || "radiology";
     SideFilm.open(b.dataset.view, topic);
     CapRail.live(topic);
   };
