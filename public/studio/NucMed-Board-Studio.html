@@ -2422,7 +2422,7 @@ body.scan-live #modStrip img {
   width: 78px; height: 64px; object-fit: cover; border-radius: 6px; background: #000; display: block;
 }
 body.scan-live #wikiDef {
-  display: block; position: fixed; left: 0; right: auto; width: 200px; top: 96px; bottom: 120px; z-index: 380;
+  display: block !important; position: fixed; left: 0; right: auto; width: 220px; top: 96px; bottom: 120px; z-index: 1200 !important;
   overflow-x: hidden; overflow-y: auto; background: #0e1c28; color: #e8f2f7;
   border-right: 1px solid #1e3a4a; padding: 8px;
 }
@@ -2442,8 +2442,9 @@ body.scan-live.hj-full .work,
 body.scan-live.medb-full .work,
 body.scan-live.hj-full.wiki-top .work,
 body.scan-live.medb-full.wiki-top .work,
-body.scan-live.hj-full.film-widget .work {
-  left: 200px !important; right: 260px !important; width: auto !important; top: 96px !important; bottom: 120px !important;
+body.scan-live.hj-full.film-widget .work,
+body.scan-live.medb-full.film-widget .work {
+  left: 220px !important; right: 280px !important; width: auto !important; top: 96px !important; bottom: 120px !important; z-index: 1 !important;
 }
 body.scan-live.hj-full #capRail,
 body.scan-live.medb-full #capRail {
@@ -2452,7 +2453,7 @@ body.scan-live.medb-full #capRail {
 }
 #phraseDef { display: none; }
 body.scan-live #phraseDef {
-  display: block; position: fixed; right: 0; width: 260px; top: 96px; bottom: 120px; z-index: 380;
+  display: block !important; position: fixed; right: 0; width: 280px; top: 96px; bottom: 120px; z-index: 1200 !important;
   overflow-x: hidden; overflow-y: auto; background: #101820; color: #e8f2f7;
   border-left: 1px solid #1e3a4a; padding: 10px;
 }
@@ -5409,6 +5410,27 @@ const ScanLive = {
   seen: {},
   seenPhrase: {},
   dir: 1,
+  heard: {},
+  hear(text) {
+    const line = String(text || "").replace(/\s+/g, " ").trim();
+    if (line.length < 18 || this.heard[line]) return;
+    if (/queue started|playable lesson|introduction abdominal|appearancechoose/i.test(line)) return;
+    this.heard[line] = 1;
+    document.body.classList.add("scan-live");
+    this.phrase(line);
+  },
+  watch() {
+    const frames = ["mbFrame", "hjFrame"].map((id) => document.getElementById(id)).filter(Boolean);
+    const frame = frames.find((f) => f.getBoundingClientRect().height > 80) || frames[0];
+    if (!frame) return;
+    let doc = null;
+    try { doc = frame.contentDocument; } catch (e) { return; }
+    if (!doc) return;
+    const root = doc.querySelector(".media-player, .player-column") || doc.body;
+    const lines = String(root.innerText || "").split(/\n+/).map((s) => s.replace(/\s+/g, " ").trim());
+    const hit = lines.find((s) => s.length > 18 && s.length < 220 && /gradient echo|rf pulse|flip angle|pulse sequence|magnetization|precession/i.test(s));
+    if (hit) this.hear(hit);
+  },
   tick(text) {
     const raw = ((text || "") + " " + this.onScreen()).toLowerCase();
     const words = (typeof CapRail !== "undefined" ? CapRail.captionWords(text) : "").split(" ").filter((w) => w.length > 3 && CapRail.medicalWord(w) && !/imaging|introduction|background|basic/.test(w));
@@ -6138,7 +6160,12 @@ const CapRail = {
     this.advanceCue();
     if (this.line) this.wikiNet(this.line);
     if (this.slideText) this.slideNet(this.slideText);
-    if (typeof ScanLive !== "undefined") ScanLive.tick(this.line || this.slideText || "");
+    if (typeof ScanLive !== "undefined") {
+      ScanLive.tick(this.line || this.slideText || "");
+      ScanLive.hear(this.line || "");
+      ScanLive.hear(this.slideText || "");
+      ScanLive.watch();
+    }
     if (typeof SlideGrab !== "undefined") SlideGrab.shot("");
   },
   advanceCue() {
