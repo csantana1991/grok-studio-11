@@ -186,7 +186,12 @@ const BRIDGE = `(function(){
   var stock = ["/meta-image/films/mri-ax-09.webp","/meta-image/films/mri-sag-06.webp","/meta-image/films/ct-th-axi-40.webp","/meta-image/films/pet-ax.webp","/meta-image/films/pet-mip.webp","/meta-image/films/xpa-a.webp"];
   function paintLive(){
     var row = filmRow("hjLive", "top");
-    addFilms(row, stock);
+    if (row.children.length < 8) addFilms(row, stock);
+    if (row.scrollWidth <= row.clientWidth + 24 && row.children.length) {
+      var clones = [];
+      for (var c = 0; c < row.children.length; c++) clones.push(row.children[c].cloneNode(true));
+      for (var n = 0; n < clones.length; n++) row.appendChild(clones[n]);
+    }
     if (!window.__hjLiveFetched) {
       window.__hjLiveFetched = 1;
       fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent("congestive heart failure CT MRI") + "&gsrlimit=8&prop=pageimages&pithumbsize=320&format=json&origin=*")
