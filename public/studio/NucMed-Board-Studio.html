@@ -5711,7 +5711,6 @@ const ScanLive = {
     this.slideNow = line;
     if (/congenital|achd|tetralog|septal defect|coarctation/.test(low) || /heart|cardiac|coronary|myocard/.test(low)) {
       this.topicKey = "heart";
-      this.note(line.slice(0, 90), line);
       this.phrase(line);
       return;
     }
@@ -5745,10 +5744,10 @@ const ScanLive = {
       this.phrase("region of interest");
       return;
     }
-    if (line.length < 48 || /machine learning|artificial intelligence|subfields|board studio|page was/.test(low)) return;
+    if (/machine learning|artificial intelligence|subfields|board studio|page was/.test(low)) return;
+    if (/ninja nerd|clinical medicine/i.test(line) && !/\brate\b|rhythm|qrs|interval|\bwave\b|segment|tachycard|brady|fibrill|sinus|\becg\b|\bekg\b/.test(low)) return;
     this.topicKey = this.slideTerm(line);
-    this.note(line.slice(0, 90), line);
-    this.phrase(this.topicKey);
+    this.phrase(line);
   },
   watch() {
     const frames = ["mbFrame", "hjFrame"].map((id) => document.getElementById(id)).filter(Boolean);
@@ -6014,6 +6013,7 @@ const ScanLive = {
   },
   livePhrase(line) {
     const raw = String(line || "");
+    if (/\becg\b|\bekg\b|electrocardiog/i.test(raw) && !/rate|rhythm|qrs|interval|wave|segment|tachycard|brady|fibrill|axis|sinus|stemi/i.test(raw)) return "electrocardiography";
     if (/atrial fibrillation|a-?fib/i.test(raw)) return "atrial fibrillation";
     if (/atrial flutter/i.test(raw)) return "atrial flutter";
     if (/tachycard/i.test(raw)) return "tachycardia";
@@ -6028,35 +6028,50 @@ const ScanLive = {
     if (/\bqrs\b/i.test(raw)) return "QRS complex";
     if (/fibrillat/i.test(raw)) return "fibrillation ECG";
     const stop = /^(the|and|for|with|that|this|from|away|just|having|they|them|then|about|or|if|are|was|what|when|your|have|into|over|than|second|step|is|be|a|an|of|to|in|on)$/;
-    const words = raw.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.test(w) && !/ninja|nerd|clinical|medicine|interpretation|lecture/.test(w));
+    const short = { ecg: 1, ekg: 1, qrs: 1, mri: 1, pet: 1, roi: 1 };
+    const words = raw.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => (w.length > 3 || short[w]) && !stop.test(w) && !/ninja|nerd|clinical|medicine|interpretation|lecture|youtube/.test(w));
     return words.slice(0, 3).join(" ");
+  },
+  keepNext() {
+    const host = document.getElementById("phraseDef");
+    if (!host) return null;
+    let btn = document.getElementById("phraseNext");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.id = "phraseNext";
+      btn.type = "button";
+      btn.textContent = "Next term";
+      btn.addEventListener("click", () => ScanLive.nextTerm());
+      host.prepend(btn);
+    }
+    return btn;
   },
   async phrase(text) {
     const line = String(text || "").replace(/\s+/g, " ").trim();
-    if (line.length < 16) return;
+    if (line.length < 3) return;
     if (/queue started|playable lesson|advances when|imaging medical|brigham|harvard|hopkins/i.test(line)) return;
     const key = line.toLowerCase().slice(0, 160);
     if (this.seenPhrase[key]) return;
     this.seenPhrase[key] = 1;
     document.body.classList.add("scan-live");
     this.audit();
-    const term = this.livePhrase(line);
+    const term = this.livePhrase(line) || line;
     if (!term || term.length < 3) return;
     const found = await this.lookup(term);
     const host = document.getElementById("phraseDef");
     if (!host) return;
+    this.keepNext();
     const card = document.createElement("article");
     const h = document.createElement("strong");
-    h.textContent = line.slice(0, 140);
+    h.textContent = (found && found.title) || term;
     card.appendChild(h);
-    if (found && this.fits(term, found.title, line)) {
-      const em = document.createElement("em");
-      em.textContent = found.title;
-      const p = document.createElement("p");
-      p.textContent = found.extract.slice(0, 280);
-      card.appendChild(em);
-      card.appendChild(p);
+    const p = document.createElement("p");
+    if (found && found.extract && this.fits(term, found.title, line)) {
+      p.textContent = found.extract.slice(0, 420);
+    } else {
+      p.textContent = "Wikipedia had no definition for " + term + ".";
     }
+    card.appendChild(p);
     const shots = document.createElement("div");
     shots.className = "shots";
     card.appendChild(shots);
@@ -6073,9 +6088,14 @@ const ScanLive = {
   termAt: 0,
   termsSeen: {},
   nextTerm() {
+    const bank = ["electrocardiography", "sinus rhythm", "heart rate", "P wave", "PR interval", "QRS complex", "ST segment", "T wave", "QT interval", "atrial fibrillation", "tachycardia", "bradycardia"];
     const cues = (typeof CapRail !== "undefined" && CapRail.cues) || [];
+    const said = document.getElementById("hjSaid");
+    const title = ((said && said.value) || "") + " " + ((typeof CapRail !== "undefined" && (CapRail.topic || CapRail.line)) || "");
     const lines = cues.map((c) => String((c && c.text) || c || "")).filter((line) => line.length > 12);
-    if (!lines.length) return;
+    if (/ecg|ekg|electrocardiog/i.test(title) || /ecg|ekg/.test(lines.join(" ").toLowerCase())) lines.push.apply(lines, bank);
+    if (!lines.length) lines.push.apply(lines, bank);
+    this.keepNext();
     const start = this.termAt || 0;
     for (let n = 0; n < lines.length; n++) {
       const i = (start + n) % lines.length;
@@ -16110,7 +16130,10 @@ window.addEventListener("message", (e) => {
     if (row) row.innerHTML = "";
     if (top) top.innerHTML = "";
     const defs = document.getElementById("phraseDef");
-    if (defs) defs.innerHTML = "";
+    if (defs) {
+      Array.from(defs.querySelectorAll("article")).forEach((node) => node.remove());
+      if (typeof ScanLive !== "undefined" && ScanLive.keepNext) ScanLive.keepNext();
+    }
     const pics = document.getElementById("qaPics");
     if (pics) pics.innerHTML = "";
     if (typeof ScanLive !== "undefined") ScanLive.seenPhrase = {};
