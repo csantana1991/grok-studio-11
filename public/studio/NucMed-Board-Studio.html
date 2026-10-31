@@ -15494,7 +15494,7 @@ window.addEventListener("message", (e) => {
     }
     if (!data.follow) {
       const text = String(data.text || "").replace(/\s+/g, " ").trim();
-      if (/queue started|playable lesson|advances when/i.test(text)) return;
+      if (/queue started|playable lesson|advances when|openpediatrics|choose play all|play this lesson|queue advance/i.test(text)) return;
       const spoken = text.length > 42 && !/\|/.test(text);
       if (spoken) {
         CapRail.line = text;
