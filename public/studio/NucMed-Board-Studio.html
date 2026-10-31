@@ -2450,7 +2450,7 @@ body.scan-live.hj-full.wiki-top .work,
 body.scan-live.medb-full.wiki-top .work,
 body.scan-live.hj-full.film-widget .work,
 body.scan-live.medb-full.film-widget .work {
-  left: 0 !important; right: 0 !important; width: auto !important; top: 96px !important; bottom: 120px !important; z-index: 1 !important;
+  left: 0 !important; right: 0 !important; width: auto !important; top: 96px !important; bottom: 130px !important; z-index: 1 !important;
   overflow: hidden !important;
 }
 body.scan-live.hj-full #hjFrame,
@@ -2462,8 +2462,30 @@ body.scan-live.hj-full #capRail,
 body.scan-live.medb-full #capRail {
   display: none !important;
 }
-body.scan-live #wikiDef,
-body.scan-live #phraseDef { display: none !important; }
+body.scan-live.hj-full #wikiTop.on,
+body.scan-live.medb-full #wikiTop.on {
+  display: flex !important; top: auto !important; left: 0; right: 0; bottom: 48px; height: 78px;
+  background: #f7f4ee; z-index: 420; border-top: 1px solid #e4dcc8;
+}
+body.scan-live.hj-full #wikiTop img,
+body.scan-live.medb-full #wikiTop img { width: 110px; height: 66px; }
+body.scan-live.hj-full #phraseDef,
+body.scan-live.medb-full #phraseDef {
+  display: flex !important; flex-direction: row; gap: 16px; align-items: center;
+  position: fixed; left: 0; right: 0; bottom: 0; top: auto !important; width: auto !important; height: 48px;
+  z-index: 430; overflow-x: auto; overflow-y: hidden; background: #101010; color: #f4f1ea;
+  border-left: 0; padding: 0 12px;
+}
+body.scan-live.hj-full #phraseDef article,
+body.scan-live.medb-full #phraseDef article {
+  display: flex; gap: 8px; align-items: baseline; margin: 0; padding: 0; border: 0; flex: 0 0 auto;
+}
+body.scan-live.hj-full #phraseDef p,
+body.scan-live.medb-full #phraseDef p {
+  margin: 0; white-space: nowrap; color: #f4f1ea; font-size: 13px;
+}
+body.scan-live.hj-full #modStrip,
+body.scan-live.medb-full #modStrip { display: none !important; }
 body.scan-live #phraseDef article { margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid #1e3344; }
 body.scan-live #phraseDef strong { display: block; color: #f3e2b3; font-size: 13px; line-height: 1.35; margin-bottom: 4px; }
 body.scan-live #phraseDef em { display: block; color: #8fd0ff; font-style: normal; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
@@ -5432,6 +5454,7 @@ const ScanLive = {
     if (tag) tag.textContent = ("1 Slide · " + this.slideTerm(line)).slice(0, 56);
     this.phrase(line);
     this.insight(line);
+    if (typeof CapRail !== "undefined") CapRail.wikiNet(line);
   },
   note(title, text) {
     const host = document.getElementById("phraseDef");
@@ -5497,7 +5520,7 @@ const ScanLive = {
     if (!doc) return;
     const root = doc.querySelector(".media-player, .player-column, .slide, main") || doc.body;
     const lines = String(root.innerText || "").split(/\n+/).map((s) => s.replace(/\s+/g, " ").trim());
-    const hit = lines.find((s) => s.length > 36 && s.length < 240 && /quantit|region of interest|\broi\b|dosimetr|gradient echo|rf pulse|flip angle|heart failure|stroke|ischemi|infarct/.test(s) && !/machine learning|artificial intelligence|subfields|board studio/i.test(s));
+    const hit = lines.find((s) => s.length > 12 && s.length < 240 && /quantit|region of interest|\broi\b|dosimetr|gradient echo|rf pulse|flip angle|heart failure|systolic|diastolic|congestive|stroke|ischemi|infarct|radiotracer|nerve stimulation/.test(s) && !/machine learning|artificial intelligence|subfields|board studio/i.test(s));
     if (hit) this.hear(hit);
   },
   tick(text) {
@@ -5632,20 +5655,14 @@ const ScanLive = {
     return /x-?ray|radiograph|\bct\b|computed tomograph|\bmri\b|magnetic resonance|pet[\/\- ]?ct|fdg|positron|scintigraph|tomograph|axial|coronal|sagittal|flair|gradient echo|pulse sequence|nuclear medicine/.test(t);
   },
   audit() {
-    const strip = document.getElementById("modStrip");
     const work = document.querySelector(".work");
-    if (strip && work && document.body.classList.contains("scan-live")) {
-      const gap = Math.ceil(strip.getBoundingClientRect().height) + 4;
+    if (work && document.body.classList.contains("scan-live")) {
       work.style.setProperty("left", "0", "important");
       work.style.setProperty("right", "0", "important");
-      work.style.setProperty("bottom", gap + "px", "important");
+      work.style.setProperty("bottom", "130px", "important");
       work.style.setProperty("overflow", "hidden", "important");
-      ["wikiDef", "phraseDef"].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.style.setProperty("bottom", gap + "px", "important");
-      });
     }
-    document.querySelectorAll("#modStrip img, #capRow img, #wikiTop img, #leftPics img").forEach((img) => {
+    document.querySelectorAll("#modStrip img").forEach((img) => {
       const label = img.alt || (img.parentElement ? img.parentElement.textContent : "");
       if (this.belongs(label, img.src)) return;
       const node = img.closest("button") || img;
@@ -6273,8 +6290,10 @@ const CapRail = {
         const el = document.getElementById(id);
         if (!el || !el.classList.contains("on")) return;
         if (el.scrollWidth <= el.clientWidth + 12) return;
-        el.scrollLeft += 1;
-        if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 1) el.scrollLeft = 0;
+        el.scrollLeft += id === "wikiTop" ? -1 : 1;
+        if (id === "wikiTop") {
+          if (el.scrollLeft <= 0) el.scrollLeft = el.scrollWidth;
+        } else if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 1) el.scrollLeft = 0;
       });
     };
     this._march = requestAnimationFrame(step);
