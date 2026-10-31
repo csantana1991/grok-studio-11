@@ -2488,6 +2488,15 @@ body.scan-live.hj-full.wiki-top .work,
 body.scan-live.hj-full.film-widget .work {
   top: 98px !important; left: 0 !important; right: 0 !important; bottom: 72px !important; width: 100% !important;
 }
+body.scan-live.medb-full #wikiDef {
+  width: 200px !important; max-width: 200px !important; z-index: 2 !important;
+  box-sizing: border-box !important; overflow: hidden !important;
+}
+body.scan-live.medb-full .work,
+body.scan-live.medb-full.wiki-top .work,
+body.scan-live.medb-full.film-widget .work {
+  z-index: 5 !important;
+}
 body.scan-live.medb-full #mbFrame {
   position: relative !important; inset: auto !important; flex: 1 1 auto !important;
   width: 100% !important; height: 100% !important; min-height: 0 !important; max-height: none !important;
@@ -5790,8 +5799,11 @@ const ScanLive = {
     const work = document.querySelector(".work");
     if (work && document.body.classList.contains("medb-full")) {
       const beside = document.body.classList.contains("film-widget") && window.innerWidth > 980;
-      const column = document.body.classList.contains("scan-live") && window.innerWidth > 980;
-      work.style.setProperty("left", column ? "220px" : "0", "important");
+      const col = document.getElementById("wikiDef");
+      const shown = col && getComputedStyle(col).display !== "none" && col.getBoundingClientRect().width > 20;
+      const edge = shown ? Math.ceil(col.getBoundingClientRect().right) + 6 : 0;
+      work.style.setProperty("left", edge + "px", "important");
+      work.style.setProperty("width", "auto", "important");
       work.style.setProperty("right", beside ? "min(540px, 44vw)" : "0", "important");
       if (beside) work.style.setProperty("width", "auto", "important");
       else work.style.removeProperty("width");
