@@ -2403,7 +2403,7 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 }
 #modStrip, #wikiDef { display: none; }
 body.scan-live #modStrip {
-  display: flex; position: fixed; left: 0; right: 0; bottom: 28px; height: 92px; z-index: 380;
+  display: flex; position: fixed; left: 0; right: 0; bottom: 36px; height: 108px; z-index: 360;
   gap: 6px; padding: 4px 6px; background: #101614; border-top: 1px solid #243028;
 }
 body.scan-live #modStrip section {
@@ -2422,7 +2422,7 @@ body.scan-live #modStrip img {
   width: 78px; height: 64px; object-fit: cover; border-radius: 6px; background: #000; display: block;
 }
 body.scan-live #wikiDef {
-  display: block !important; position: fixed; left: 0; right: auto; width: 220px; top: 96px; bottom: 120px; z-index: 1200 !important;
+  display: block !important; position: fixed; left: 0; right: auto; width: 220px; top: 96px; bottom: 160px; z-index: 1200 !important;
   overflow-x: hidden; overflow-y: auto; background: #0e1c28; color: #e8f2f7;
   border-right: 1px solid #1e3a4a; padding: 8px;
 }
@@ -2444,7 +2444,13 @@ body.scan-live.hj-full.wiki-top .work,
 body.scan-live.medb-full.wiki-top .work,
 body.scan-live.hj-full.film-widget .work,
 body.scan-live.medb-full.film-widget .work {
-  left: 220px !important; right: 280px !important; width: auto !important; top: 96px !important; bottom: 120px !important; z-index: 1 !important;
+  left: 220px !important; right: 280px !important; width: auto !important; top: 96px !important; bottom: 160px !important; z-index: 1 !important;
+  overflow: hidden !important;
+}
+body.scan-live.hj-full #hjFrame,
+body.scan-live.medb-full #mbFrame {
+  position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important;
+  min-height: 0 !important; max-height: 100% !important;
 }
 body.scan-live.hj-full #capRail,
 body.scan-live.medb-full #capRail {
@@ -2453,7 +2459,7 @@ body.scan-live.medb-full #capRail {
 }
 #phraseDef { display: none; }
 body.scan-live #phraseDef {
-  display: block !important; position: fixed; right: 0; width: 280px; top: 96px; bottom: 120px; z-index: 1200 !important;
+  display: block !important; position: fixed; right: 0; width: 280px; top: 96px; bottom: 160px; z-index: 1200 !important;
   overflow-x: hidden; overflow-y: auto; background: #101820; color: #e8f2f7;
   border-left: 1px solid #1e3a4a; padding: 10px;
 }
