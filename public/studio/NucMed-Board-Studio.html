@@ -2356,6 +2356,18 @@ body.hj-full.film-widget #filmRight {
   padding: 8px;
   box-shadow: 0 16px 40px rgba(0,0,0,.45);
 }
+@media (max-width: 700px) {
+  body.medb-full.film-widget #filmRight,
+  body.hj-full.film-widget #filmRight {
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 156px !important;
+    width: 100% !important;
+    height: 34vh !important;
+    border-radius: 16px 16px 0 0;
+  }
+}
 #mbWidgets { display: none; }
 body.medb-full #mbWidgets {
   display: flex;
@@ -5529,6 +5541,14 @@ const ScanLive = {
       this.phrase("CT perfusion");
       return;
     }
+    if (/endometri|splenic|spleen|abdomen|pelvis|uterus|\bcta\b|\bmra\b/.test(low)) {
+      this.topicKey = "abdomen";
+      this.note("Abdominal and pelvic imaging", "This lecture is pelvic and splenic MRI, plus CT and MR angiography of the abdomen. The pictures are pelvic MRI, splenic MRI, and abdominal CTA, not a chest film or a brain MRI.");
+      this.best("mri", "pelvic MRI endometriosis", 0);
+      this.best("ct", "CT angiography abdomen", 0);
+      this.phrase("abdominal MRI CT pelvis");
+      return;
+    }
     if (/gradient echo|spin echo|rf pulse|flip angle|pulse sequence|diffusion|perfusion mri/.test(low)) {
       this.topicKey = "mri";
       this.note("MRI techniques, mixed", "These techniques are read together. A gradient echo uses one RF pulse and gradient reversal. A spin echo adds a 180 degree refocusing pulse. Diffusion and perfusion are added when the lecture moves from structure to motion or tissue injury.");
@@ -5614,6 +5634,12 @@ const ScanLive = {
       if (kind === "mri") return ["cardiac MRI", "congenital heart MRI"];
       if (kind === "pet") return ["cardiac PET", "myocardial perfusion PET"];
     }
+    if (/endometri|splenic|spleen|abdomen|pelvis|uterus|\bcta\b|\bmra\b/.test(slide) || this.topicKey === "abdomen") {
+      if (kind === "mri") return ["pelvic MRI endometriosis", "splenic MRI", "abdominal MRI"];
+      if (kind === "ct") return ["CT angiography abdomen", "abdominal CT angiography", "MR angiography abdomen"];
+      if (kind === "xray") return ["abdominal radiograph"];
+      if (kind === "pet") return ["FDG PET abdomen"];
+    }
     if (/gradient echo|rf pulse|flip angle|pulse sequence/.test(slide)) {
       if (kind === "mri") return ["gradient echo MRI", "spin echo MRI", "diffusion MRI brain", "perfusion MRI"];
       if (kind === "ct") return ["head CT scan", "axial brain CT", "abdominal CT axial"];
@@ -5621,16 +5647,17 @@ const ScanLive = {
       return ["chest x-ray radiograph", "bone radiograph"];
     }
     const topic = String(this.topicKey || term || "scan").replace(/\s+/g, " ").trim();
-    if (kind === "xray") return [topic + " x-ray radiograph", "chest x-ray radiograph"];
-    if (kind === "ct") return [topic + " CT", topic + " axial CT", "chest CT axial"];
-    if (kind === "mri") return [topic + " MRI", topic + " MRI axial", "brain MRI axial"];
-    return [topic + " PET", "FDG PET CT", "whole body PET"];
+    if (kind === "xray") return [topic + " radiograph"];
+    if (kind === "ct") return [topic + " CT"];
+    if (kind === "mri") return [topic + " MRI"];
+    return [topic + " PET"];
   },
   modOk(kind, blob) {
     const t = String(blob || "").toLowerCase();
     const topic = String(this.topicKey || "").toLowerCase();
     if (this.topicKey === "heart" && !/heart|cardiac|coronary|myocard|aorta|ventric|atrium|septal|congenital/.test(t)) return false;
-    if (kind === "ct") return /\bct\b|computed tomograph/.test(t) && /chest|lung|heart|cardiac|coronary|abdomen|liver|brain|head|aorta|pelvis|kidney|mediastin|pulmonary|edema|stroke|infarct/.test(t);
+    if (this.topicKey === "abdomen" && !/abdomen|pelvis|spleen|splenic|liver|kidney|uterus|endometri|bowel|aorta|mesenter|pancrea|angiograph/.test(t)) return false;
+    if (kind === "ct") return /\bct\b|computed tomograph|angiograph/.test(t);
     if (kind === "mri") return /\bmri\b|magnetic resonance|flair|\bt1\b|\bt2\b/.test(t);
     if (kind === "pet") return /\bpet\b|fdg|positron|scintigraph/.test(t);
     return /x-?ray|xray|radiograph/.test(t);
@@ -5689,6 +5716,7 @@ const ScanLive = {
     const t = (String(cap || "") + " " + String(src || "")).toLowerCase();
     if (/lizard|galliwasp|fourier|spectrum|\.pdf|book|novel|insect|plant|maize/.test(t)) return false;
     if (this.topicKey === "heart" && !/heart|cardiac|coronary|myocard|aorta|ventric|atrium|septal|congenital/.test(t)) return false;
+    if (this.topicKey === "abdomen" && !/abdomen|pelvis|spleen|splenic|liver|kidney|uterus|endometri|bowel|aorta|mesenter|pancrea|angiograph/.test(t)) return false;
     return /x-?ray|radiograph|\bct\b|computed tomograph|\bmri\b|magnetic resonance|pet[\/\- ]?ct|fdg|positron|scintigraph|tomograph|axial|coronal|sagittal|flair|gradient echo|pulse sequence|nuclear medicine/.test(t);
   },
   audit() {
@@ -6061,7 +6089,7 @@ const LectureSkills = {
     }
     if (typeof SideFilm !== "undefined") SideFilm.title = q;
     if (typeof ScanLive !== "undefined") {
-      ScanLive.topicKey = /heart|cardiac|coronary|congenital/.test(q) ? "heart" : ScanLive.topicKey;
+      ScanLive.topicKey = /heart|cardiac|coronary|congenital/.test(q) ? "heart" : /abdomen|pelvis|endometri|spleen/.test(q) ? "abdomen" : ScanLive.topicKey;
       if (ScanLive.phrase) ScanLive.phrase(q);
       if (ScanLive.fill) ScanLive.fill(q, 0);
     }
@@ -6076,6 +6104,7 @@ const LectureSkills = {
     if (/congenital|achd|tetralog|septal defect|coarct/.test(t)) return "congenital heart CT MRI";
     if (/cardiac|heart|coronary|myocard/.test(t)) return "cardiac CT angiography";
     if (/breast|mammo/.test(t)) return "breast mammography MRI";
+    if (/endometri|splenic|spleen|abdomen|pelvis|uterus|\bcta\b|\bmra\b/.test(t)) return "abdominal MRI CT pelvis";
     if (/brain|stroke|cerebr/.test(t)) return "brain MRI stroke";
     if (/lung|pulmonary|chest/.test(t)) return "chest CT lung";
     return "";
