@@ -2209,8 +2209,7 @@ body.wiki-top:not(.hj-full):not(.medb-full) .app { margin-top:164px; height:calc
 #wikiTop img { width:96px; height:44px; object-fit:cover; background:#07141f; }
 #wikiTop span { display:none; }
 #wikiTop b[data-q] { display:none; }
-body.hj-full.wiki-top .work,
-body.medb-full.wiki-top .work { top:92px !important; bottom:64px !important; }
+body.hj-full.wiki-top .work { top:48px !important; bottom:0 !important; }
 body.hj-full #capRail,
 body.medb-full #capRail { height:84px !important; z-index:400; pointer-events:auto; }
 body.hj-full .work,
@@ -2444,20 +2443,29 @@ body.scan-live.board-left .sidebar {
 body.scan-live #wikiDef article { margin: 0 0 12px; }
 body.scan-live #wikiDef strong { display: block; color: #8fd0ff; font-size: 13px; margin-bottom: 4px; }
 body.scan-live #wikiDef p { margin: 0; font-size: 12px; line-height: 1.35; color: #d5e4ee; }
-body.scan-live.hj-full .work,
 body.scan-live.medb-full .work,
-body.scan-live.hj-full.wiki-top .work,
 body.scan-live.medb-full.wiki-top .work,
-body.scan-live.hj-full.film-widget .work,
 body.scan-live.medb-full.film-widget .work {
-  left: 0 !important; right: 0 !important; width: auto !important; top: 96px !important; bottom: 130px !important; z-index: 1 !important;
+  left: 0 !important; right: 0 !important; width: auto !important; top: 0 !important; bottom: 168px !important; z-index: 1 !important;
   overflow: hidden !important;
 }
-body.scan-live.hj-full #hjFrame,
+body.scan-live.hj-full .work,
+body.scan-live.hj-full.wiki-top .work,
+body.scan-live.hj-full.film-widget .work {
+  top: 48px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100% !important;
+}
 body.scan-live.medb-full #mbFrame {
   position: relative !important; inset: auto !important; flex: 1 1 auto !important;
   width: 100% !important; height: 100% !important; min-height: 0 !important; max-height: none !important;
 }
+body.scan-live.hj-full #hjFrame {
+  flex: 1 1 auto !important; width: 100% !important; height: 100% !important; min-height: 100% !important;
+  position: static !important; inset: auto !important;
+}
+body.scan-live.hj-full #wikiTop,
+body.scan-live.hj-full #phraseDef,
+body.scan-live.hj-full #modStrip,
+body.scan-live.hj-full #wikiDef { display: none !important; }
 body.scan-live.hj-full #capRail,
 body.scan-live.medb-full #capRail {
   display: none !important;
@@ -5657,7 +5665,7 @@ const ScanLive = {
   },
   audit() {
     const work = document.querySelector(".work");
-    if (work && document.body.classList.contains("scan-live")) {
+    if (work && document.body.classList.contains("medb-full")) {
       work.style.setProperty("left", "0", "important");
       work.style.setProperty("right", "0", "important");
       work.style.setProperty("bottom", document.body.classList.contains("medb-full") ? "168px" : "130px", "important");
