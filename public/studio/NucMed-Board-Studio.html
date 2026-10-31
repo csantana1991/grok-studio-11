@@ -2209,7 +2209,7 @@ body.wiki-top:not(.hj-full):not(.medb-full) .app { margin-top:164px; height:calc
 #wikiTop img { width:96px; height:44px; object-fit:cover; background:#07141f; }
 #wikiTop span { display:none; }
 #wikiTop b[data-q] { display:none; }
-body.hj-full.wiki-top .work { top:98px !important; bottom:72px !important; }
+body.hj-full.wiki-top .work { top:100px !important; bottom:72px !important; }
 body.hj-full #capRail,
 body.medb-full #capRail { height:84px !important; z-index:400; pointer-events:auto; }
 body.hj-full .work,
@@ -2307,7 +2307,7 @@ body.hj-full #filmRight { display: none !important; }
 body.hj-full .work,
 body.hj-full.film-widget .work,
 body.hj-full.wiki-top .work { left: 0 !important; right: 0 !important; bottom: 64px !important; }
-body.hj-full.wiki-top .work,
+body.hj-full.wiki-top .work { top: 100px !important; bottom: 64px !important; }
 body.medb-full.wiki-top .work { top: 92px !important; bottom: 64px !important; }
 body.hj-full .stage,
 body.hj-full #hjFrame { width: 100% !important; max-width: none !important; }
@@ -2486,7 +2486,7 @@ body.scan-live.medb-full.film-widget .work {
 body.scan-live.hj-full .work,
 body.scan-live.hj-full.wiki-top .work,
 body.scan-live.hj-full.film-widget .work {
-  top: 98px !important; left: 0 !important; right: 0 !important; bottom: 78px !important; width: 100% !important;
+  top: 100px !important; left: 0 !important; right: 0 !important; bottom: 78px !important; width: 100% !important;
 }
 body.scan-live.medb-full #wikiDef {
   width: 200px !important; max-width: 200px !important; z-index: 2 !important;
@@ -2518,9 +2518,11 @@ body.scan-live.hj-full #phraseDef,
 body.scan-live.hj-full #wikiDef { display: none !important; }
 body.hj-full #wikiTop.on,
 body.scan-live.hj-full #wikiTop.on {
-  display: flex !important; position: fixed; top: 48px; left: 0; right: 0; height: 46px !important; max-height: 46px !important; bottom: auto;
-  z-index: 700; overflow: hidden !important; flex-wrap: nowrap !important; align-items: center;
-  background: #101820; padding: 3px 8px; gap: 6px;
+  display: flex !important; position: fixed; top: 48px; left: 0; right: 0; width: 100vw !important; max-width: none !important;
+  height: 52px !important; max-height: 52px !important; bottom: auto; box-sizing: border-box !important;
+  z-index: 700; overflow-x: auto !important; overflow-y: hidden !important; flex-wrap: nowrap !important; align-items: flex-end;
+  background: #101820; padding: 4px 0 0; gap: 0;
+  border-bottom: 3px solid #f4f1ea;
 }
 body.hj-full #wikiTop button,
 body.scan-live.hj-full #wikiTop button {
@@ -2534,7 +2536,7 @@ body.hj-full #modStrip {
   display: flex !important; position: fixed; left: 0; right: 0; bottom: 0; height: 72px; z-index: 400;
   background: #0e1c28;
 }
-body.hj-full .work { bottom: 78px !important; top: 98px !important; }
+body.hj-full .work { bottom: 78px !important; top: 100px !important; }
 body.scan-live.hj-full #capRail,
 body.scan-live.medb-full #capRail {
   display: none !important;
