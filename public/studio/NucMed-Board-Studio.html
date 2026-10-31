@@ -5489,7 +5489,6 @@ const ScanLive = {
       b.appendChild(img);
       b.onclick = () => window.open(hit.page, "_blank", "noopener");
       host.appendChild(b);
-      this.flowLeft(hit.src);
     });
     while (host.children.length > 6) host.removeChild(host.firstChild);
   },
@@ -5515,7 +5514,6 @@ const ScanLive = {
     b.appendChild(img);
     host.appendChild(b);
     while (host.children.length > 4) host.removeChild(host.firstChild);
-    this.flowLeft(src);
   },
   async commons(kind, q, add, round) {
     const want = kind === "ct" ? /\bct\b|computed tomograph/i : kind === "mri" ? /\bmri\b|magnetic resonance/i : kind === "pet" ? /\bpet\b|fdg|positron/i : /x-?ray|radiograph/i;
@@ -6054,7 +6052,6 @@ const CapRail = {
     this.line = text;
     this.slideText = text;
     this.slideKey = "";
-    if (typeof ScanLive !== "undefined") ScanLive.phrase(text);
   },
   readLecture() {
     const frames = ["mbFrame", "hjFrame"].map((id) => document.getElementById(id)).filter(Boolean);
