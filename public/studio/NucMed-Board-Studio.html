@@ -2147,6 +2147,16 @@ body.widget-embed.view-atlas .panel-bar,
 body.widget-embed.view-atlas .widget-play { display: none !important; }
 body.widget-embed.view-atlas .ra-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 body.widget-embed.view-atlas .ra-card img { width: 100%; height: 140px; object-fit: contain; background: #000; display: block; }
+body.medb-atlas.view-atlas #raList {
+  max-height: 280px;
+  min-height: 132px;
+  overflow: auto;
+  margin: 8px 0 6px;
+  border-radius: 12px;
+  background: #f4faf8;
+}
+body.medb-atlas.view-atlas .ra-grid { flex: 0 1 auto; min-height: 0; }
+
 body.widget-embed .app,
 body.widget-embed .main,
 body.widget-embed .work,
@@ -14694,6 +14704,11 @@ function renderRadAtlas(){
   if (q && q.length >= 2) raPubmedSearch(q);
   if (q && q.length >= 2) raRun();
   bindWidgetPlay({ finding: "RadAtlas open imaging search. Enter a query to search PMC and TCIA.", stationName: "ATLAS", categoryId: "nuclear" }, "radatlas");
+  if (document.body.classList.contains("medb-atlas")) {
+    const list = document.getElementById("raList");
+    const form = document.getElementById("raForm");
+    if (list && form && form.parentNode) form.parentNode.insertBefore(list, form);
+  }
 }
 
 async function raRun(){
@@ -15677,6 +15692,7 @@ try {
   try {
     const q = new URLSearchParams(location.search);
     if (q.get("embed") === "1") document.body.classList.add("widget-embed");
+    if (q.get("host") === "medb") document.body.classList.add("medb-atlas");
     if (q.get("mod")) openModule(q.get("mod"));
     else if (q.get("view")) {
       state.view = q.get("view") === "nucleus" ? "academy" : q.get("view");
@@ -15867,7 +15883,8 @@ const SideFilm = {
     document.querySelectorAll("#mbWidgets button").forEach((b) => b.classList.toggle("on", b.dataset.view === (view || "radatlas")));
     right.querySelectorAll(".film-tabs button").forEach((b) => b.classList.toggle("on", b.dataset.view === (view || "radatlas")));
     const frame = right.querySelector("iframe");
-    const src = "/studio/NucMed-Board-Studio.html?view=" + encodeURIComponent(use) + "&embed=1&q=" + encodeURIComponent((window.lectureContent ? window.lectureContent(this.title) : this.title) || "");
+    const host = document.body.classList.contains("medb-full") ? "&host=medb" : "";
+    const src = "/studio/NucMed-Board-Studio.html?view=" + encodeURIComponent(use) + "&embed=1" + host + "&q=" + encodeURIComponent((window.lectureContent ? window.lectureContent(this.title) : this.title) || "");
     if (frame && frame.getAttribute("src") !== src) frame.src = src;
   }
 };
