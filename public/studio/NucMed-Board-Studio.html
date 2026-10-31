@@ -14329,6 +14329,7 @@ function raExtras(){
 function raTokens(q){
   const t = String(q||"").toLowerCase();
   const extra = [];
+  if (/ecg|ekg|electrocardiog|rhythm strip/.test(t)) extra.push("ecg","ekg","electrocardiogram","cardiac","rhythm","heart");
   if (/glioblast|gbm|multiforme|astrocyt/.test(t)) extra.push("glioblastoma","gbm","brain","vertex","skull","meningioma","cerebral");
   if (/embol|\bpe\b|pulmonary/.test(t)) extra.push("pulmonary","lung","pe","chest","vq");
   if (/psma|prostat/.test(t)) extra.push("psma","prostate","pelvis","pet");
@@ -15414,9 +15415,23 @@ try {
 })();
 
 (function bootFromQuery(){
+  function lectureContent(raw){
+    let t = String(raw || "").split("|")[0];
+    t = t.replace(/clinical medicine|ninja nerd|ctisus|rayos contra cancer|harvard|johns hopkins|emory|lecture|introduction to/ig, " ");
+    t = t.replace(/\s+/g, " ").trim();
+    const low = t.toLowerCase();
+    if (/ecg|ekg|electrocardiog/.test(low)) return "ECG rhythm strip electrocardiogram";
+    if (/cardiac ct|coronary/.test(low)) return "cardiac CT coronary";
+    if (/hepatic|liver/.test(low)) return "hepatic CT liver";
+    if (/pancrea/.test(low)) return "pancreas CT";
+    if (/perfusion/.test(low)) return "CT perfusion";
+    return t || "radiology";
+  }
+  window.lectureContent = lectureContent;
   function lectureFocus(raw){
     const t = String(raw || "").toLowerCase();
     if (/heart failure|congestive|\bchf\b|cardiomyopath|cardiomegaly/.test(t)) return "cardiomegaly";
+    if (/ecg|ekg|electrocardiog/.test(t)) return "ECG";
     if (/pulmonary edema|\bedema\b/.test(t)) return "edema";
     if (/effusion/.test(t)) return "effusion";
     if (/pneumonia/.test(t)) return "pneumonia";
@@ -15424,15 +15439,16 @@ try {
     if (/embolism/.test(t)) return "embolism";
     if (/nodule/.test(t)) return "nodule";
     if (/atelectasis/.test(t)) return "atelectasis";
-    return String(raw || "").split("|")[0].replace(/clinical medicine/ig, "").replace(/\s+/g, " ").trim();
+    return lectureContent(raw);
   }
   function applyStudioQuery(raw){
-    const term = String(raw || "").replace(/\s+/g, " ").trim().slice(0, 140);
+    const term = lectureContent(raw);
     if (term.length < 2) return;
     if (state.view === "radatlas" && typeof raRun === "function") {
       const input = document.getElementById("raQ");
       if (input) input.value = term;
       RAD_ATLAS.query = typeof raComposeQuery === "function" ? raComposeQuery() : term;
+      if (typeof raPaintMatches === "function") raPaintMatches();
       if (RAD_ATLAS.query.length >= 2) raRun();
     } else if (state.view === "radreview") {
       state.rrQuery = term;
@@ -15661,7 +15677,7 @@ const SideFilm = {
     document.querySelectorAll("#mbWidgets button").forEach((b) => b.classList.toggle("on", b.dataset.view === (view || "radatlas")));
     right.querySelectorAll(".film-tabs button").forEach((b) => b.classList.toggle("on", b.dataset.view === (view || "radatlas")));
     const frame = right.querySelector("iframe");
-    const src = "/studio/NucMed-Board-Studio.html?view=" + encodeURIComponent(use) + "&embed=1&q=" + encodeURIComponent(this.title || "");
+    const src = "/studio/NucMed-Board-Studio.html?view=" + encodeURIComponent(use) + "&embed=1&q=" + encodeURIComponent((window.lectureContent ? window.lectureContent(this.title) : this.title) || "");
     if (frame && frame.getAttribute("src") !== src) frame.src = src;
   }
 };
