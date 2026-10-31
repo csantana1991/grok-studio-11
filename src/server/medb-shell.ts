@@ -128,26 +128,9 @@ const BRIDGE = `(function(){
     return "https://teaching-studios.vercel.app/studio/NucMed-Board-Studio.html?view=" + encodeURIComponent(view) + "&embed=1&q=" + encodeURIComponent(title || "");
   }
   function mountReel(){
-    var player = document.querySelector(".media-player");
-    if (!player) return null;
-    var reel = player.querySelector(".live-reel");
-    if (reel) return reel;
-    if (!document.getElementById("reel-style")) {
-      var st = document.createElement("style");
-      st.id = "reel-style";
-      st.textContent = "@keyframes reelLTR{from{transform:translateX(-45%)}to{transform:translateX(8%)}}";
-      document.head.appendChild(st);
-    }
-    reel = document.createElement("div");
-    reel.className = "live-reel";
-    reel.style.cssText = "position:absolute;left:32%;right:10px;top:14%;height:96px;overflow:hidden;z-index:6;pointer-events:none";
-    var track = document.createElement("div");
-    track.className = "live-reel-track";
-    track.style.cssText = "display:flex;gap:8px;height:96px;width:max-content;animation:reelLTR 24s linear infinite";
-    reel.appendChild(track);
-    if (window.getComputedStyle(player).position === "static") player.style.position = "relative";
-    player.appendChild(reel);
-    return reel;
+    var old = document.querySelectorAll(".live-reel");
+    for (var i = 0; i < old.length; i++) old[i].remove();
+    return null;
   }
   window.addEventListener("message", function(e){
     var msg = e.data;
@@ -208,6 +191,7 @@ const BRIDGE = `(function(){
     try { window.parent.postMessage({ type: "hj-widget", view: view, title: title }, "*"); } catch (e) {}
   }
   function tick(){
+    mountReel();
     armPlayer();
     mountDock();
     document.querySelectorAll("video, audio, track, source").forEach(retarget);
