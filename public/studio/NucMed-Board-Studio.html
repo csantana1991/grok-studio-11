@@ -15323,6 +15323,7 @@ const MetaSide = {
     const t = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
     if (t.length < 3) return "";
     if (/ancient greek|skop|laparoscopy \(from/.test(t)) return "";
+    t = t.replace(/\b(ai|available|queue|started|source|next)\b/g, " ").replace(/\s+/g, " ").trim();
     if (/^(next|question|score|play|home|atlas|widget|restore|minimize|maximize|board|studio|rad|review|yes|no|prev|back)( question| case| row)?$/.test(t)) return "";
     const named = ["pneumonia","atelectasis","cardiomegaly","consolidation","edema","effusion","emphysema","fibrosis","hernia","infiltration","mass","nodule","pneumothorax","pleural"];
     const hit = named.find(n => t.indexOf(n) >= 0);

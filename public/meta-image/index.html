@@ -667,29 +667,60 @@ document.getElementById("dlg").addEventListener("click", (e) => { if (e.target.i
 
 if (/embed=1/.test(location.search)) document.body.classList.add("embed");
 function applyMetaQuery(term){
-  const raw = String(term || "").trim();
+  const raw = String(term || "").replace(/\b(ai|available|queue|started|source)\b/gi, " ").replace(/\s+/g, " ").trim();
   if (!raw || !dv) { window.__pendingMetaQ = raw; return; }
   const low = raw.toLowerCase();
   let next = "nih";
-  if (/\bmri\b|flair|\bt1\b|\bt2\b/.test(low)) next = "mri";
+  if (/cerebr|angiograph|brain|stroke|neuro|intracran|aneurysm/.test(low)) next = "mri";
+  else if (/\bmri\b|flair|\bt1\b|\bt2\b/.test(low)) next = "mri";
   else if (/\bpet\b|fdg|psma|spect/.test(low)) next = "pet";
-  else if (/\bct\b|hrct|tomograph/.test(low)) next = "ct";
+  else if (/\bct\b|hrct|tomograph|abdomen|chest|lung/.test(low)) next = "ct";
   const named = NAMES.find(n => low.includes(n.toLowerCase()) || low.includes(pretty(n).toLowerCase()));
   view = next;
   finding = named || "all";
-  q = named ? pretty(named) : "";
+  q = view === "nih" ? (named ? pretty(named) : raw) : raw;
   const box = document.getElementById("q");
-  if (box) box.value = named ? pretty(named) : raw;
+  if (box) box.value = raw;
   cursor = 0;
   page = 1;
   results = null;
-  if (view === "nih") rebuild();
+  const head = document.querySelector("#nih h2");
+  if (view === "nih") {
+    if (head) head.textContent = "NIH chest radiographs";
+    rebuild();
+  } else if (head) {
+    head.textContent = view === "mri" ? "MRI films" : view === "pet" ? "PET films" : "CT films";
+  }
   if (typeof syncChips === "function") syncChips();
   const sub = document.getElementById("sub");
-  if (sub) sub.textContent = "Matched to the lecture: " + (named ? pretty(named) : raw);
+  if (sub) sub.textContent = "Searching the lecture topic: " + raw;
+  document.getElementById("nih").hidden = false;
   drawAll();
-  const hero = document.getElementById("hero");
-  if (hero) hero.scrollIntoView({ block: "center" });
+  document.getElementById("nih").hidden = false;
+  if (view !== "nih") {
+    const local = distinct(view);
+    const words = low.split(/\s+/).filter(w => w.length > 3);
+    const film = local.find(f => words.some(w => ((f.shows || "") + " " + f.anatomy).toLowerCase().includes(w))) || local[0];
+    const img = document.getElementById("heroImg");
+    const now = document.getElementById("scrubNow");
+    if (film && img) {
+      img.src = film.src;
+      img.alt = film.shows || filmCaption(film);
+      if (now) now.textContent = img.alt + ". Closest film in this panel for " + raw + ".";
+    }
+    fetch("/api/pmc/match?source=openi-page&modality=" + view + "&m=1&n=8&it=" + encodeURIComponent(raw))
+      .then(r => r.json())
+      .then(data => {
+        const hit = (data.list || []).find(item => item && (item.img || item.url || item.thumb));
+        if (!hit || !img) return;
+        img.src = hit.img || hit.url || hit.thumb;
+        const cap = hit.title || hit.caption || raw;
+        img.alt = cap;
+        if (now) now.textContent = cap;
+        if (sub) sub.textContent = "Matched to the lecture: " + raw;
+      })
+      .catch(() => {});
+  }
 }
 window.addEventListener("message", (e) => {
   if (e.origin !== location.origin) return;
