@@ -260,7 +260,7 @@ const BRIDGE = `(function(){
           var urls = [];
           for (var k in pages) {
             var p = pages[k];
-            if (!p.thumbnail || !onTopic(q, p.title)) continue;
+            if (!p.thumbnail || !onTopic(q, (p.title || "") + " " + p.thumbnail.source)) continue;
             urls.push(p.thumbnail.source);
           }
           addFilms(row, urls);
