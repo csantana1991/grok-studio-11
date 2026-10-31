@@ -5419,6 +5419,7 @@ const ScanLive = {
     document.body.classList.add("scan-live");
     const box = document.getElementById("hjSaid");
     if (box && document.activeElement !== box) box.value = line;
+    this.slideNow = line;
     const tag = document.querySelector("#capRail .cap-tag");
     if (tag) tag.textContent = ("1 Slide · " + this.slideTerm(line)).slice(0, 56);
     this.phrase(line);
@@ -5441,7 +5442,8 @@ const ScanLive = {
     const body = this.bodyOf(raw);
     const term = ((body ? body + " " : "") + (words.slice(0, 2).join(" ") || "MRI")).trim();
     document.body.classList.add("scan-live");
-    if (!this._pump) this._pump = setInterval(() => { if (this.last) this.fill(this.last, (this.round = (this.round || 0) + 1)); }, 8000);
+    if (!this._pump) this._pump = setInterval(() => { if (this.last) this.fill(this.last, (this.round = (this.round || 0) + 1)); this.audit(); }, 8000);
+    if (!this._audit) this._audit = setInterval(() => this.audit(), 3000);
     if (term === this.last || this.busy) return;
     this.last = term;
     this.round = 0;
@@ -5475,6 +5477,13 @@ const ScanLive = {
     await Promise.all(["xray", "ct", "mri", "pet"].map((kind) => this.best(kind, term, step)));
   },
   queries(kind, term) {
+    const slide = String(this.slideNow || term || "").toLowerCase();
+    if (/gradient echo|rf pulse|flip angle|pulse sequence/.test(slide)) {
+      if (kind === "mri") return ["gradient echo MRI brain", "axial brain MRI", "spine MRI", "abdominal MRI"];
+      if (kind === "ct") return ["head CT scan", "axial brain CT", "abdominal CT axial"];
+      if (kind === "pet") return ["FDG PET brain", "PET CT scan axial", "whole body FDG PET"];
+      return ["chest x-ray radiograph", "bone radiograph"];
+    }
     const body = this.bodyHint || "";
     if (kind === "xray") return [body + " x-ray radiograph", "chest x-ray radiograph", "bone radiograph", term + " radiograph"];
     if (kind === "ct") return [body + " CT axial", "chest CT axial", "abdominal CT axial", "head CT scan", "CT angiogram"];
@@ -5527,13 +5536,27 @@ const ScanLive = {
     pics.appendChild(img);
     while (pics.children.length > 8) pics.removeChild(pics.firstChild);
   },
-  liveThumb(src) {
+  belongs(cap, src) {
+    const t = (String(cap || "") + " " + String(src || "")).toLowerCase();
+    if (/standing|group of|conference|ceremony|portrait|photograph|staff|students|crowd|audience|podium|graduation|\bmeeting\b|posing|class photo|\bpeople\b|\bpersons\b|men standing|women standing/.test(t)) return false;
+    return /x-?ray|radiograph|\bct\b|computed tomograph|\bmri\b|magnetic resonance|pet[\/\- ]?ct|fdg|positron|scintigraph|tomograph|axial|coronal|sagittal|flair|gradient echo|pulse sequence|nuclear medicine/.test(t);
+  },
+  audit() {
+    document.querySelectorAll("#modStrip img, #capRow img, #wikiTop img, #leftPics img").forEach((img) => {
+      const label = img.alt || (img.parentElement ? img.parentElement.textContent : "");
+      if (this.belongs(label, img.src)) return;
+      const node = img.closest("button") || img;
+      node.remove();
+    });
+  },
+  liveThumb(src, cap) {
+    if (!this.belongs(cap, src)) return;
     const host = document.querySelector('#modStrip [data-mod="live"] .mod-row');
     if (!host || !src || host.querySelector('img[src="' + src.replace(/"/g, "") + '"]')) return;
     const b = document.createElement("button");
     b.type = "button";
     const img = document.createElement("img");
-    img.alt = "Live";
+    img.alt = String(cap || "scan").slice(0, 80);
     img.referrerPolicy = "no-referrer";
     img.src = src;
     b.appendChild(img);
@@ -5542,14 +5565,14 @@ const ScanLive = {
   },
   async commons(kind, q, add, round) {
     const want = kind === "ct" ? /\bct\b|computed tomograph/i : kind === "mri" ? /\bmri\b|magnetic resonance/i : kind === "pet" ? /\bpet\b|fdg|positron/i : /x-?ray|radiograph/i;
-    const skip = /journal|cover|warning|plant|maize|logo|icon|symbol|diagram|illustration|poster/i;
+    const skip = /journal|cover|warning|plant|maize|logo|icon|symbol|diagram|illustration|poster|people|person|standing|conference|ceremony|portrait|photograph|staff|students|crowd|audience|podium|graduation|meeting|posing|class photo|group of/i;
     const offset = (Number(round) || 0) * 3;
     try {
       const data = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=8&gsroffset=" + offset + "&gsrsearch=" + encodeURIComponent(q) + "&prop=imageinfo&iiprop=url|mime&iiurlwidth=400&format=json&origin=*").then((r) => r.json());
       Object.values((data.query && data.query.pages) || {}).forEach((p) => {
         const info = (p.imageinfo || [])[0];
         const title = String(p.title || "");
-        if (!info || !(info.thumburl || info.url) || !want.test(title) || skip.test(title)) return;
+        if (!info || !(info.thumburl || info.url) || !want.test(title) || skip.test(title) || !this.belongs(title, info.thumburl || info.url)) return;
         add(info.thumburl || info.url, title.replace(/^File:/, ""), "https://commons.wikimedia.org/wiki/" + encodeURIComponent(title.replace(/ /g, "_")));
       });
     } catch (e) {}
@@ -5913,7 +5936,7 @@ const CapRail = {
     }
     rail.classList.add("on");
     this.march();
-    if (typeof ScanLive !== "undefined") ScanLive.liveThumb(src);
+    if (typeof ScanLive !== "undefined") ScanLive.liveThumb(src, cap);
     if (typeof SideFilm !== "undefined") SideFilm.add(src, cap);
   },
   pop(src, cap) {
