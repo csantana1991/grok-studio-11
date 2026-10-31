@@ -15321,6 +15321,7 @@ document.querySelectorAll("#mbWidgets button").forEach((b) => {
     if (same) {
       document.body.classList.remove("film-widget");
       b.classList.remove("on");
+      if (typeof ScanLive !== "undefined") ScanLive.audit();
       return;
     }
     const said = document.getElementById("hjSaid");
@@ -15641,6 +15642,7 @@ const SideFilm = {
     const right = document.getElementById("filmRight");
     if (!right) return;
     document.body.classList.add("film-widget");
+    if (typeof ScanLive !== "undefined") ScanLive.audit();
     if (title) this.title = title;
     if (!right.querySelector("iframe")) {
       right.innerHTML = '<div class="film-tabs"></div><iframe title="Widget" allow="autoplay"></iframe>';
