@@ -5434,6 +5434,37 @@ const ScanLive = {
     const tag = document.querySelector("#capRail .cap-tag");
     if (tag) tag.textContent = ("1 Slide · " + this.slideTerm(line)).slice(0, 56);
     this.phrase(line);
+    this.insight(line);
+  },
+  note(title, text) {
+    const host = document.getElementById("phraseDef");
+    if (!host || this.seen["note:" + title]) return;
+    this.seen["note:" + title] = 1;
+    document.body.classList.add("scan-live");
+    const card = document.createElement("article");
+    const h = document.createElement("strong");
+    h.textContent = title;
+    const p = document.createElement("p");
+    p.textContent = text;
+    card.appendChild(h);
+    card.appendChild(p);
+    host.insertBefore(card, host.firstChild);
+    while (host.children.length > 6) host.removeChild(host.lastChild);
+    host.scrollTop = 0;
+  },
+  insight(line) {
+    const low = String(line || "").toLowerCase();
+    if (/heart failure|congestive|\bchf\b|cardiac/.test(low)) {
+      this.slideNow = line;
+      this.note("Cardiac CT angiography", "Cardiac CT angiography times an iodinated contrast bolus to the coronary arteries, usually with ECG gating. It shows the heart, the coronary lumen, and whether the chambers are enlarged.");
+      this.note("Heart failure CT", "A heart-failure chest CT shows an enlarged cardiac silhouette, pulmonary venous congestion, septal lines, and sometimes alveolar edema or pleural fluid. That is the CT example for this lecture.");
+      this.best("ct", "heart failure", 0);
+      this.phrase("cardiac CT angiography");
+    }
+    if (/gradient echo|spin echo|rf pulse|flip angle|pulse sequence|diffusion|perfusion mri/.test(low)) {
+      this.note("MRI techniques, mixed", "These techniques are read together. A gradient echo uses one RF pulse and gradient reversal. A spin echo adds a 180 degree refocusing pulse. Diffusion and perfusion are added when the lecture moves from structure to motion or tissue injury.");
+      this.best("mri", "gradient echo", 0);
+    }
   },
   watch() {
     const frames = ["mbFrame", "hjFrame"].map((id) => document.getElementById(id)).filter(Boolean);
@@ -5444,7 +5475,7 @@ const ScanLive = {
     if (!doc) return;
     const root = doc.querySelector(".media-player, .player-column") || doc.body;
     const lines = String(root.innerText || "").split(/\n+/).map((s) => s.replace(/\s+/g, " ").trim());
-    const hit = lines.find((s) => s.length > 18 && s.length < 220 && /gradient echo|rf pulse|flip angle|pulse sequence|magnetization|precession/i.test(s));
+    const hit = lines.find((s) => s.length > 12 && s.length < 220 && /gradient echo|rf pulse|flip angle|pulse sequence|magnetization|precession|heart failure|congestive|cardiac ct|chf/i.test(s));
     if (hit) this.hear(hit);
   },
   tick(text) {
@@ -5490,13 +5521,13 @@ const ScanLive = {
   queries(kind, term) {
     const slide = String(this.slideNow || term || "").toLowerCase();
     if (/heart|cardiac|chf|failure|pulmonary/.test(slide)) {
-      if (kind === "ct") return ["axial chest CT", "cardiac CT angiography", "CT pulmonary angiogram", "axial abdomen CT"];
+      if (kind === "ct") return ["heart failure CT pulmonary edema", "cardiac CT angiography", "axial chest CT", "CT pulmonary angiogram"];
       if (kind === "xray") return ["chest x-ray cardiomegaly", "chest radiograph heart"];
-      if (kind === "mri") return ["cardiac MRI", "chest MRI"];
+      if (kind === "mri") return ["cardiac MRI cine", "gradient echo cardiac MRI", "spin echo MRI", "late gadolinium enhancement MRI"];
       if (kind === "pet") return ["FDG PET chest", "cardiac PET"];
     }
     if (/gradient echo|rf pulse|flip angle|pulse sequence/.test(slide)) {
-      if (kind === "mri") return ["gradient echo MRI brain", "axial brain MRI", "spine MRI", "abdominal MRI"];
+      if (kind === "mri") return ["gradient echo MRI", "spin echo MRI", "diffusion MRI brain", "perfusion MRI"];
       if (kind === "ct") return ["head CT scan", "axial brain CT", "abdominal CT axial"];
       if (kind === "pet") return ["FDG PET brain", "PET CT scan axial", "whole body FDG PET"];
       return ["chest x-ray radiograph", "bone radiograph"];
@@ -5509,7 +5540,7 @@ const ScanLive = {
   },
   modOk(kind, blob) {
     const t = String(blob || "").toLowerCase();
-    if (kind === "ct") return /\bct\b|computed tomograph/.test(t) && /chest|lung|heart|cardiac|abdomen|liver|brain|head|aorta|pelvis|kidney|mediastin/.test(t);
+    if (kind === "ct") return /\bct\b|computed tomograph/.test(t) && /chest|lung|heart|cardiac|coronary|abdomen|liver|brain|head|aorta|pelvis|kidney|mediastin|pulmonary|edema/.test(t);
     if (kind === "mri") return /\bmri\b|magnetic resonance|flair|\bt1\b|\bt2\b/.test(t);
     if (kind === "pet") return /\bpet\b|fdg|positron|scintigraph/.test(t);
     return /x-?ray|xray|radiograph/.test(t);
