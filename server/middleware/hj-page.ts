@@ -212,6 +212,17 @@ const BRIDGE = `(function(){
     if (/abdomen|liver|pancrea|bowel/.test(t)) return "abdominal CT";
     return title + " radiology";
   }
+  function onTopic(q, title){
+    var T = String(title || "").toLowerCase();
+    if (offTopic(q, title)) return false;
+    if (/lizard|galliwasp|fourier|spectrum|novel|portrait|drawing|diagram|schematic|people|hospital/.test(T)) return false;
+    var L = String(q || "").toLowerCase();
+    if (/cardiac|heart|coronary|congenital/.test(L)) return /heart|cardiac|coronary|myocard|aorta|ventric|septal|congenital/.test(T);
+    if (/breast|mammo/.test(L)) return /breast|mammo/.test(T);
+    if (/brain|stroke/.test(L)) return /brain|cerebr|stroke|head/.test(T);
+    if (/chest|lung/.test(L)) return /chest|lung|pulmon|thorax/.test(T);
+    return /ct|mri|x-ray|radiograph|pet|scan|angiograph/.test(T);
+  }
   function offTopic(lecture, title){
     var L = String(lecture || "").toLowerCase();
     var T = String(title || "").toLowerCase();
@@ -224,7 +235,7 @@ const BRIDGE = `(function(){
     var t = q.toLowerCase();
     if (/breast|mammo/.test(t)) return [];
     if (/brain|cerebr|stroke/.test(t)) return packs.brain;
-    if (/cardiac|heart|coronary/.test(t)) return packs.cardiac;
+    if (/cardiac|heart|coronary/.test(t)) return [];
     if (/chest|lung|thorax|ct/.test(t)) return packs.chest;
     return [];
   }
@@ -245,7 +256,7 @@ const BRIDGE = `(function(){
           var urls = [];
           for (var k in pages) {
             var p = pages[k];
-            if (!p.thumbnail || offTopic(q, p.title)) continue;
+            if (!p.thumbnail || !onTopic(q, p.title)) continue;
             urls.push(p.thumbnail.source);
           }
           addFilms(row, urls);

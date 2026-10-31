@@ -5509,12 +5509,15 @@ const ScanLive = {
   insight(line) {
     const low = String(line || "").toLowerCase();
     this.slideNow = line;
-    if (/heart failure|congestive|\bchf\b|cardiac/.test(low)) {
+    if (/congenital|achd|tetralog|septal defect|coarctation/.test(low) || /heart|cardiac|coronary|myocard/.test(low)) {
       this.topicKey = "heart";
-      this.note("Cardiac CT angiography", "Cardiac CT angiography times an iodinated contrast bolus to the coronary arteries, usually with ECG gating. It shows the heart, the coronary lumen, and whether the chambers are enlarged.");
-      this.note("Heart failure CT", "A heart-failure chest CT shows an enlarged cardiac silhouette, pulmonary venous congestion, septal lines, and sometimes alveolar edema or pleural fluid. That is the CT example for this lecture.");
-      this.best("ct", "heart failure", 0);
-      this.phrase("cardiac CT angiography");
+      const congenital = /congenital|achd|tetralog|septal defect|coarctation/.test(low);
+      this.note(congenital ? "Congenital heart imaging" : "Cardiac CT angiography", congenital
+        ? "Adult congenital heart disease is shown with cardiac CT and cardiac MRI: the chambers, the septa, the great arteries, and any shunt or obstruction."
+        : "Cardiac CT angiography times contrast to the coronary arteries, with ECG gating, and shows the heart and the coronary lumen.");
+      this.best("ct", congenital ? "congenital heart" : "cardiac CT", 0);
+      this.best("mri", "cardiac MRI", 0);
+      this.phrase(congenital ? "congenital heart CT MRI" : "cardiac CT angiography");
       return;
     }
     if (/stroke|ischemi|infarct|hemorrhag|middle cerebral|\bmca\b/.test(low)) {
@@ -5605,11 +5608,11 @@ const ScanLive = {
       if (kind === "pet") return ["FDG PET brain", "brain PET scan"];
       return ["head CT scan"];
     }
-    if (/heart|cardiac|chf|failure|pulmonary/.test(slide)) {
-      if (kind === "ct") return ["heart failure CT pulmonary edema", "cardiac CT angiography", "axial chest CT", "CT pulmonary angiogram"];
-      if (kind === "xray") return ["chest x-ray cardiomegaly", "chest radiograph heart"];
-      if (kind === "mri") return ["cardiac MRI cine", "gradient echo cardiac MRI", "spin echo MRI", "late gadolinium enhancement MRI"];
-      if (kind === "pet") return ["FDG PET chest", "cardiac PET"];
+    if (/heart|cardiac|coronary|myocard|congenital|achd/.test(slide) || this.topicKey === "heart") {
+      if (kind === "ct") return ["cardiac CT angiography", "coronary CT angiography", "congenital heart CT"];
+      if (kind === "xray") return ["chest radiograph cardiomegaly", "congenital heart chest radiograph"];
+      if (kind === "mri") return ["cardiac MRI", "congenital heart MRI"];
+      if (kind === "pet") return ["cardiac PET", "myocardial perfusion PET"];
     }
     if (/gradient echo|rf pulse|flip angle|pulse sequence/.test(slide)) {
       if (kind === "mri") return ["gradient echo MRI", "spin echo MRI", "diffusion MRI brain", "perfusion MRI"];
@@ -5626,7 +5629,7 @@ const ScanLive = {
   modOk(kind, blob) {
     const t = String(blob || "").toLowerCase();
     const topic = String(this.topicKey || "").toLowerCase();
-    if (topic && topic.length > 3 && t.indexOf(topic.split(" ")[0]) >= 0 && /ct|mri|x-?ray|pet|scan|radiograph|tomograph/.test(t)) return true;
+    if (this.topicKey === "heart" && !/heart|cardiac|coronary|myocard|aorta|ventric|atrium|septal|congenital/.test(t)) return false;
     if (kind === "ct") return /\bct\b|computed tomograph/.test(t) && /chest|lung|heart|cardiac|coronary|abdomen|liver|brain|head|aorta|pelvis|kidney|mediastin|pulmonary|edema|stroke|infarct/.test(t);
     if (kind === "mri") return /\bmri\b|magnetic resonance|flair|\bt1\b|\bt2\b/.test(t);
     if (kind === "pet") return /\bpet\b|fdg|positron|scintigraph/.test(t);
@@ -5684,7 +5687,8 @@ const ScanLive = {
   },
   belongs(cap, src) {
     const t = (String(cap || "") + " " + String(src || "")).toLowerCase();
-    if (/standing|group of|conference|ceremony|portrait|photograph|staff|students|crowd|audience|podium|graduation|\bmeeting\b|posing|class photo|\bpeople\b|\bpersons\b|men standing|women standing|insect|butterfly|beetle/.test(t)) return false;
+    if (/lizard|galliwasp|fourier|spectrum|\.pdf|book|novel|insect|plant|maize/.test(t)) return false;
+    if (this.topicKey === "heart" && !/heart|cardiac|coronary|myocard|aorta|ventric|atrium|septal|congenital/.test(t)) return false;
     return /x-?ray|radiograph|\bct\b|computed tomograph|\bmri\b|magnetic resonance|pet[\/\- ]?ct|fdg|positron|scintigraph|tomograph|axial|coronal|sagittal|flair|gradient echo|pulse sequence|nuclear medicine/.test(t);
   },
   audit() {
@@ -6043,23 +6047,38 @@ const LectureSkills = {
     }
   },
   show(words) {
-    const q = String(words || "").replace(/\s+/g, " ").trim().slice(0, 120);
-    if (q.length < 4) return;
+    const incoming = this.subjectOf(words);
+    if (incoming) this.anchor = String(words || "").replace(/\s+/g, " ").trim().slice(0, 120);
+    const q = this.subjectOf(this.anchor);
+    if (!q || q === this.sent) return;
+    this.sent = q;
     const said = document.getElementById("hjSaid");
-    if (said && document.activeElement !== said) said.value = q;
+    if (said && this.anchor && document.activeElement !== said) said.value = this.anchor;
     if (typeof CapRail !== "undefined") {
-      CapRail.topic = q;
+      CapRail.topic = this.anchor || q;
       CapRail.line = q;
       if (typeof CapRail.reelFor === "function") CapRail.reelFor(q);
     }
     if (typeof SideFilm !== "undefined") SideFilm.title = q;
-    if (typeof ScanLive !== "undefined" && ScanLive.phrase) ScanLive.phrase(q);
+    if (typeof ScanLive !== "undefined") {
+      ScanLive.topicKey = /heart|cardiac|coronary|congenital/.test(q) ? "heart" : ScanLive.topicKey;
+      if (ScanLive.phrase) ScanLive.phrase(q);
+      if (ScanLive.fill) ScanLive.fill(q, 0);
+    }
     document.querySelectorAll("iframe").forEach((frame) => {
-      const src = frame.getAttribute("src") || "";
-      if (frame.id !== "hjFrame" && frame.id !== "mbFrame" && !/embed=1/.test(src)) return;
+      if (frame.id !== "hjFrame" && frame.id !== "mbFrame" && !/embed=1/.test(frame.getAttribute("src") || "")) return;
       try { frame.contentWindow.postMessage({ type: "studio-query", q }, location.origin); } catch (e) {}
       try { frame.contentWindow.postMessage({ source: "lecture-words", q }, location.origin); } catch (e) {}
     });
+  },
+  subjectOf(text) {
+    const t = String(text || "").toLowerCase();
+    if (/congenital|achd|tetralog|septal defect|coarct/.test(t)) return "congenital heart CT MRI";
+    if (/cardiac|heart|coronary|myocard/.test(t)) return "cardiac CT angiography";
+    if (/breast|mammo/.test(t)) return "breast mammography MRI";
+    if (/brain|stroke|cerebr/.test(t)) return "brain MRI stroke";
+    if (/lung|pulmonary|chest/.test(t)) return "chest CT lung";
+    return "";
   }
 };
 setInterval(() => LectureSkills.watch(), 1000);
@@ -6376,29 +6395,30 @@ const CapRail = {
   async reelFor(text) {
     const q = String(text || "").replace(/\s+/g, " ").trim().slice(0, 80);
     if (q.length < 4) return;
+    const host = document.getElementById("qaPics");
+    if (!host) return;
     if (q !== this._reelQ) {
       this._reelQ = q;
       this._reelOff = 0;
       host.innerHTML = "";
     }
-    const host = document.getElementById("qaPics");
-    if (!host) return;
     const off = this._reelOff || 0;
     this._reelOff = off + 8;
     let urls = [];
     try {
-      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q + " radiology") + "&gsrlimit=8&gsroffset=" + off + "&prop=pageimages&pithumbsize=320&format=json&origin=*").then((r) => r.json());
+    const focused = (typeof LectureSkills !== "undefined" && LectureSkills.subjectOf && LectureSkills.subjectOf(LectureSkills.anchor)) || q;
+    const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(focused) + "&gsrlimit=8&gsroffset=" + off + "&prop=pageimages&pithumbsize=320&format=json&origin=*").then((r) => r.json());
       const pages = Object.values((data.query && data.query.pages) || {});
-      const bad = /donut|doughnut|food|burger|cathedral|station|flag|coat of arms|map of|painting|portrait|church|calendar|eye|fundus|diagram|logo|icon/i;
-      const offTopic = (title) => {
-        const L = q.toLowerCase();
+      const bad = /donut|doughnut|food|burger|cathedral|station|flag|coat of arms|map of|painting|portrait|church|calendar|eye|fundus|diagram|logo|icon|lizard|galliwasp|fourier|spectrum/i;
+      const depicts = (title) => {
         const T = String(title || "").toLowerCase();
-        if (/breast|mammo/.test(L) && /cardiac|myocard|coronary|heart failure|brain/.test(T)) return true;
-        if (/cardiac|heart|coronary|myocard/.test(L) && /breast|mammo|gynecomastia/.test(T)) return true;
-        if (/brain|cerebr|stroke/.test(L) && /breast|mammo|cardiac|coronary/.test(T)) return true;
-        return false;
+        const L = focused.toLowerCase();
+        if (/cardiac|heart|coronary|congenital/.test(L)) return /heart|cardiac|coronary|myocard|aorta|ventric|septal|congenital/.test(T);
+        if (/breast|mammo/.test(L)) return /breast|mammo/.test(T);
+        if (/brain|stroke/.test(L)) return /brain|cerebr|stroke/.test(T);
+        return true;
       };
-      urls = pages.filter((p) => p && p.thumbnail && p.title && !bad.test(p.title) && !offTopic(p.title)).map((p) => p.thumbnail.source);
+      urls = pages.filter((p) => p && p.thumbnail && p.title && !bad.test(p.title) && depicts(p.title)).map((p) => p.thumbnail.source);
     } catch (e) { return; }
     if (!urls.length && off > 0) { this._reelOff = 0; return; }
     urls.forEach((src) => {
@@ -15560,6 +15580,7 @@ window.addEventListener("message", (e) => {
     const pics = document.getElementById("qaPics");
     if (pics) pics.innerHTML = "";
     if (typeof ScanLive !== "undefined") ScanLive.seenPhrase = {};
+    if (typeof LectureSkills !== "undefined") { LectureSkills.anchor = ""; LectureSkills.sent = ""; LectureSkills.lastWords = ""; }
     CapRail.seenTop = {};
     CapRail.screenWords = [];
     CapRail._boardId = "";
@@ -15581,8 +15602,9 @@ window.addEventListener("message", (e) => {
     if (data.player && !/skop|etymolog|to see'|is an operation performed/i.test(data.text)) {
       const said = document.getElementById("hjSaid");
       const line = String(data.text).replace(/\s+/g, " ").trim();
-      if (said && document.activeElement !== said && line.length > 8) said.value = line;
-      if (line.length > 8 && typeof CapRail.reelFor === "function") CapRail.reelFor(line);
+      const locked = typeof LectureSkills !== "undefined" && LectureSkills.subjectOf(LectureSkills.anchor);
+      if (said && document.activeElement !== said && line.length > 8 && !locked) said.value = line;
+      if (line.length > 8 && typeof CapRail.reelFor === "function") CapRail.reelFor(locked || line);
       if (line.length > 6 && typeof MetaSide !== "undefined") MetaSide.search(line);
     }
     if (!data.follow) {
@@ -15595,8 +15617,9 @@ window.addEventListener("message", (e) => {
         CapRail.readScreen();
       } else {
         CapRail.topic = text.slice(0, 120);
+        if (typeof LectureSkills !== "undefined" && LectureSkills.subjectOf(text)) LectureSkills.show(text);
         const said = document.getElementById("hjSaid");
-        if (said && document.activeElement !== said && text.length > 8 && text.length < 90 && !/brigham|harvard|hopkins|emory|residency|program|mark as watched|previous|next lecture/i.test(text)) said.value = text;
+        if (said && document.activeElement !== said && text.length > 8 && text.length < 90 && !/brigham|harvard|hopkins|emory|residency|program|mark as watched|previous|next lecture/i.test(text) && !(typeof LectureSkills !== "undefined" && LectureSkills.anchor)) said.value = text;
         if (text.length > 8 && text.length < 90 && typeof MetaSide !== "undefined") MetaSide.search(text);
         if (text.length > 12 && typeof ScanLive !== "undefined" && ScanLive.phrase) ScanLive.phrase(text);
         if (!/brigham|harvard|hopkins|emory|residency|program/i.test(text)) {
