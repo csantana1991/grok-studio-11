@@ -5681,6 +5681,106 @@ const ScanLive = {
     this._glide = requestAnimationFrame(step);
   }
 };
+const SlideGrab = {
+  last: "",
+  busy: false,
+  shot(fallback) {
+    if (this.busy) return;
+    if (this.at && Date.now() - this.at < 4000) return;
+    this.at = Date.now();
+    this.busy = true;
+    this.capture().then(async (canvas) => {
+      if (!canvas) {
+        if (fallback) ScanLive.phrase(fallback);
+        return;
+      }
+      const hash = this.sample(canvas);
+      if (!hash || hash === this.last) return;
+      this.last = hash;
+      const text = await this.read(canvas);
+      const phrase = this.phraseOf(text) || fallback || "";
+      if (phrase) ScanLive.phrase(phrase);
+    }).catch(() => {}).finally(() => { this.busy = false; });
+  },
+  sample(canvas) {
+    try {
+      const ctx = canvas.getContext("2d");
+      const data = ctx.getImageData(0, 0, canvas.width, 8).data;
+      let n = 0;
+      for (let i = 0; i < data.length; i += 16) n = (n + data[i]) % 100000;
+      return String(n);
+    } catch (e) { return ""; }
+  },
+  async capture() {
+    const frames = ["mbFrame", "hjFrame"].map((id) => document.getElementById(id)).filter(Boolean);
+    const frame = frames.find((f) => f.getBoundingClientRect().height > 80) || frames[0];
+    let doc = null;
+    try { doc = frame && frame.contentDocument; } catch (e) {}
+    if (doc) {
+      const video = doc.querySelector("video");
+      if (video && video.readyState >= 2 && video.videoWidth) {
+        const shot = this.draw(video, video.videoWidth, video.videoHeight);
+        if (shot) return shot;
+      }
+      const imgs = Array.from(doc.querySelectorAll("img")).filter((img) => img.naturalWidth > 240 && img.naturalHeight > 120);
+      imgs.sort((a, b) => b.naturalWidth * b.naturalHeight - a.naturalWidth * a.naturalHeight);
+      if (imgs[0]) {
+        const shot = this.draw(imgs[0], imgs[0].naturalWidth, imgs[0].naturalHeight);
+        if (shot) return shot;
+      }
+    }
+    const id = (typeof CapRail !== "undefined" && CapRail.videoId) || "";
+    if (!id) return null;
+    const t = Number((CapRail && CapRail.clock) || 0);
+    const sheet = Math.floor(t / 50);
+    const urls = [
+      "https://i.ytimg.com/sb/" + id + "/storyboard3_L1/M" + sheet + ".jpg",
+      "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg"
+    ];
+    for (let i = 0; i < urls.length; i++) {
+      const img = await this.load(urls[i]);
+      if (!img) continue;
+      const shot = this.draw(img, img.naturalWidth, img.naturalHeight);
+      if (shot) return shot;
+    }
+    return null;
+  },
+  load(url) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img.naturalWidth > 40 ? img : null);
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  },
+  draw(source, w, h) {
+    try {
+      const canvas = document.createElement("canvas");
+      const scale = Math.min(1, 720 / Math.max(w, 1));
+      canvas.width = Math.max(1, Math.round(w * scale));
+      canvas.height = Math.max(1, Math.round(h * scale));
+      canvas.getContext("2d").drawImage(source, 0, 0, canvas.width, canvas.height);
+      canvas.getContext("2d").getImageData(0, 0, 1, 1);
+      return canvas;
+    } catch (e) { return null; }
+  },
+  async read(canvas) {
+    try {
+      const Tesseract = await CapRail.loadTess();
+      if (!Tesseract) return "";
+      if (!CapRail._worker) CapRail._worker = await Tesseract.createWorker("eng");
+      const out = await CapRail._worker.recognize(canvas);
+      return String((out && out.data && out.data.text) || "");
+    } catch (e) { return ""; }
+  },
+  phraseOf(text) {
+    const lines = String(text || "").split(/\n+/).map((s) => s.replace(/\s+/g, " ").trim()).filter((s) => s.length > 14);
+    const good = lines.filter((s) => /pulse|flip|magnet|frequen|spin|axis|signal|proton|liver|mri|angle|gradient|echo|tesla|nuclear|pet\b|scan|dose|tracer|radiat|isotope|fdg|ct\b|x-ray/i.test(s));
+    good.sort((a, b) => b.length - a.length);
+    return good[0] || "";
+  }
+};
 const CapRail = {
   last: "",
   seq: 0,
@@ -6024,6 +6124,7 @@ const CapRail = {
     if (this.line) this.wikiNet(this.line);
     if (this.slideText) this.slideNet(this.slideText);
     if (typeof ScanLive !== "undefined") ScanLive.tick(this.line || this.slideText || "");
+    if (typeof SlideGrab !== "undefined") SlideGrab.shot("");
   },
   advanceCue() {
     if (this.videoId && !(this.cues && this.cues.length) && !this._cueLoad) {
@@ -15119,7 +15220,7 @@ window.addEventListener("message", (e) => {
       const spoken = text.length > 42 && !/\|/.test(text);
       if (spoken) {
         CapRail.line = text;
-        if (typeof ScanLive !== "undefined") ScanLive.phrase(text);
+        if (typeof SlideGrab !== "undefined") SlideGrab.shot(text);
         CapRail.readScreen();
       } else {
         CapRail.topic = text.slice(0, 120);
@@ -15135,7 +15236,6 @@ window.addEventListener("message", (e) => {
       if (CapRail.cues && CapRail.cues.length) return;
       if (data.videoId) CapRail.useVideo(data.videoId, "");
       CapRail.line = bit;
-      if (typeof ScanLive !== "undefined") ScanLive.phrase(bit);
       CapRail.readScreen();
     }
   } else if (data.cc && typeof data.t === "number") CapRail.cueAt(data.t);
