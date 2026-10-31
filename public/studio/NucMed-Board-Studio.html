@@ -5422,7 +5422,6 @@ const ScanLive = {
     this.bodyHint = body;
     this.busy = true;
     this.fill(term, 0).finally(() => { this.busy = false; this.glide(); });
-    words.slice(0, 3).forEach((w) => this.define(w));
   },
   bodyOf(text) {
     const t = String(text || "").toLowerCase();
@@ -5543,6 +5542,9 @@ const ScanLive = {
       }
     } catch (e) { return; }
     if (!extract || /may refer to/i.test(extract)) return;
+    if (!this.fits(term, title, term)) return;
+    this.seenPage = this.seenPage || {};
+    this.seenPage[String(title).toLowerCase()] = 1;
     this.seen[term] = 1;
     const card = document.createElement("article");
     const h = document.createElement("strong");
@@ -5571,33 +5573,50 @@ const ScanLive = {
     this.seenPhrase[key] = 1;
     document.body.classList.add("scan-live");
     const term = this.slideTerm(line);
-    let title = term;
-    let extract = "";
-    try {
-      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(term + " MRI") + "&gsrlimit=1&prop=extracts&exintro=1&explaintext=1&format=json&origin=*").then((r) => r.json());
-      const page = Object.values((data.query && data.query.pages) || {})[0];
-      if (page) {
-        title = page.title || term;
-        extract = String(page.extract || "").replace(/\s+/g, " ").trim();
-      }
-    } catch (e) { return; }
-    if (!extract || /may refer to/i.test(extract)) return;
+    const found = await this.lookup(term);
+    if (!found || !this.fits(term, found.title, line)) return;
+    this.seenPage = this.seenPage || {};
+    this.seenPage[found.title.toLowerCase()] = 1;
     const host = document.getElementById("phraseDef");
     if (!host) return;
     const card = document.createElement("article");
     const h = document.createElement("strong");
     h.textContent = line.slice(0, 180);
     const em = document.createElement("em");
-    em.textContent = title;
+    em.textContent = found.title;
     const p = document.createElement("p");
-    p.textContent = extract.slice(0, 380);
+    p.textContent = found.extract.slice(0, 380);
     card.appendChild(h);
     card.appendChild(em);
     card.appendChild(p);
     host.insertBefore(card, host.firstChild);
     while (host.children.length > 6) host.removeChild(host.lastChild);
     host.scrollTop = 0;
-    this.phrasePics(title || term);
+    this.phrasePics(term);
+  },
+  async lookup(term) {
+    const q = String(term || "").trim();
+    if (q.length < 3) return null;
+    try {
+      const exact = await fetch("https://en.wikipedia.org/w/api.php?action=query&redirects=1&titles=" + encodeURIComponent(q) + "&prop=extracts&exintro=1&explaintext=1&format=json&origin=*").then((r) => r.json());
+      let page = Object.values((exact.query && exact.query.pages) || {})[0];
+      if (!page || page.missing || !page.extract) {
+        const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent('"' + q + '"') + "&gsrlimit=4&prop=extracts&exintro=1&explaintext=1&format=json&origin=*").then((r) => r.json());
+        const pages = Object.values((data.query && data.query.pages) || {});
+        const words = q.toLowerCase().split(/\s+/).filter((w) => w.length > 3 && !/imaging|medical|resonance|magnetic|scan/.test(w));
+        page = pages.find((p) => words.length && words.some((w) => String(p.title || "").toLowerCase().indexOf(w) >= 0)) || null;
+      }
+      if (!page || !page.extract) return null;
+      return { title: page.title, extract: String(page.extract).replace(/\s+/g, " ").trim() };
+    } catch (e) { return null; }
+  },
+  fits(term, title, line) {
+    const t = String(title || "").toLowerCase();
+    const blob = (String(term || "") + " " + String(line || "")).toLowerCase();
+    if (/fatty liver|hepatic steatosis|cirrhosis/.test(t) && !/fatty|steatosis|cirrhosis/.test(blob)) return false;
+    if (/^magnetic resonance imaging( of the brain)?$/.test(t)) return false;
+    if (this.seenPage && this.seenPage[t]) return false;
+    return true;
   },
   async phrasePics(term) {
     const pics = document.getElementById("leftPics");
@@ -5609,7 +5628,7 @@ const ScanLive = {
     block.appendChild(label);
     const skip = /logo|icon|flag|portrait|coat of arms|map of/i;
     try {
-      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(term + " MRI") + "&gsrlimit=4&prop=pageimages&pithumbsize=480&format=json&origin=*").then((r) => r.json());
+      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent('"' + term + '"') + "&gsrlimit=4&prop=pageimages&pithumbsize=480&format=json&origin=*").then((r) => r.json());
       Object.values((data.query && data.query.pages) || {}).forEach((p) => {
         const src = p.thumbnail && p.thumbnail.source;
         if (!src || skip.test(p.title || "") || block.querySelectorAll("img").length >= 3) return;
