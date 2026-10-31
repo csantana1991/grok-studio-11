@@ -7,7 +7,8 @@
   css.textContent = [
     '#imgLibBar{position:fixed;left:8px;bottom:8px;z-index:40;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 16px)}',
     '#imgLibOpen{border:1px solid #93c5fd;background:#1e3a8a;color:#fff;font:700 12px/1.2 system-ui,sans-serif;padding:8px 10px;border-radius:8px;cursor:pointer}',
-    '#imgLibCount{background:#0f172a;color:#fff;border:1px solid #334155;border-radius:8px;padding:7px 8px;font:600 11px/1.3 system-ui,sans-serif;max-width:70vw}',
+    '#imgLibCount{display:flex;gap:4px;align-items:center;overflow-x:auto;max-width:70vw;min-height:46px;background:#0f172a;color:#fff;border:1px solid #334155;border-radius:8px;padding:4px;font:600 11px/1.3 system-ui,sans-serif}',
+    '#imgLibCount img{height:40px;width:56px;object-fit:cover;border-radius:4px;flex:0 0 auto;background:#000}',
     '#imgLibSheet{position:fixed;inset:0;z-index:70;background:#0b1220;color:#fff;display:none;flex-direction:column}',
     '#imgLibSheet.on{display:flex}',
     '#imgLibSheet header{display:flex;gap:8px;align-items:center;padding:10px;border-bottom:1px solid #334155}',
@@ -342,9 +343,53 @@
     box.innerHTML = '<p>' + shown.length + (hits.length > shown.length ? '+' : '') + ' shown of ' + hits.length + '. Not the same as a case match.</p>' + shown.map(hitCard).join('')
   }
 
-  document.getElementById('imgLibOpen').onclick = function () {
-    sheet.classList.add('on')
-    paintSheet()
+  function lectureWords() {
+    var said = document.getElementById('hjSaid')
+    var raw = (said && said.value) || ''
+    if (!raw) {
+      var heads = document.querySelectorAll('h1,h2,h3')
+      for (var i = 0; i < heads.length; i++) {
+        var s = (heads[i].textContent || '').replace(/\s+/g, ' ').trim()
+        if (s.length > 3 && s.length < 80) { raw = s; break }
+      }
+    }
+    return raw.toLowerCase()
+  }
+
+  function paintInline(rows) {
+    var el = document.getElementById('imgLibCount')
+    if (!el) return
+    var words = lectureWords()
+    var want = /lung|chest|pulmon/.test(words) ? /lung|chest|pulmon/ : /endometri|spleen|abdomen|pelvis/.test(words) ? /abdomen|pelvis|spleen|liver|kidney/ : /heart|cardiac|coronary/.test(words) ? /heart|cardiac|coronary/ : /brain|stroke/.test(words) ? /brain|head|stroke/ : null
+    var picked = (rows || []).filter(function (r) {
+      var src = String(r.imageUrl || '')
+      if (!src || r.loadStatus && r.loadStatus !== 'verified') return false
+      if (!want) return true
+      var hay = [r.title, r.caption, r.diagnosis, r.bodyRegion].join(' ').toLowerCase()
+      return want.test(hay)
+    })
+    if (!picked.length) picked = (rows || []).filter(function (r) { return r.imageUrl })
+    el.innerHTML = ''
+    picked.slice(0, 18).forEach(function (r) {
+      var img = document.createElement('img')
+      img.alt = r.title || r.caption || 'Verified image'
+      img.src = displaySrc(r.imageUrl)
+      el.appendChild(img)
+    })
+    if (!el.children.length) el.textContent = 'No verified images for this lecture'
+  }
+
+  document.getElementById('imgLibOpen').onclick = function (ev) {
+    if (ev) { ev.preventDefault(); ev.stopPropagation() }
+    var el = document.getElementById('imgLibCount')
+    if (el) el.textContent = 'Loading images…'
+    var file = window.__imgLibRows ? Promise.resolve(window.__imgLibRows) : fetch('/library/display-images.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json() })
+    file.then(function (rows) {
+      window.__imgLibRows = Array.isArray(rows) ? rows : []
+      paintInline(window.__imgLibRows)
+    }).catch(function () {
+      if (el) el.textContent = 'Images did not load'
+    })
   }
   document.getElementById('imgLibClose').onclick = function () {
     sheet.classList.remove('on')
