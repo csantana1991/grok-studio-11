@@ -128,6 +128,12 @@ const BRIDGE = `(function(){
     return "https://teaching-studios.vercel.app/studio/NucMed-Board-Studio.html?view=" + encodeURIComponent(view) + "&embed=1&q=" + encodeURIComponent(title || "");
   }
   function mountReel(){
+    if (!document.getElementById("reel-kill")) {
+      var st = document.createElement("style");
+      st.id = "reel-kill";
+      st.textContent = ".live-reel{display:none!important}";
+      document.head.appendChild(st);
+    }
     var old = document.querySelectorAll(".live-reel");
     for (var i = 0; i < old.length; i++) old[i].remove();
     return null;
