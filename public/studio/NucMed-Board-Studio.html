@@ -5782,7 +5782,8 @@ const ScanLive = {
     const work = document.querySelector(".work");
     if (work && document.body.classList.contains("medb-full")) {
       const beside = document.body.classList.contains("film-widget") && window.innerWidth > 980;
-      work.style.setProperty("left", "0", "important");
+      const column = document.body.classList.contains("scan-live") && window.innerWidth > 980;
+      work.style.setProperty("left", column ? "220px" : "0", "important");
       work.style.setProperty("right", beside ? "min(540px, 44vw)" : "0", "important");
       if (beside) work.style.setProperty("width", "auto", "important");
       else work.style.removeProperty("width");
