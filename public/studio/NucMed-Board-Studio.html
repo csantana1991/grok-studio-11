@@ -5417,10 +5417,15 @@ const CapRail = {
     b.appendChild(img);
     b.appendChild(label);
     b.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); this.pop(src, cap); };
-    row.insertBefore(b, row.firstChild);
-    while (row.children.length > 10) row.removeChild(row.lastChild);
+    row.appendChild(b);
+    while (row.children.length > 18) {
+      const gone = row.firstChild;
+      const w = gone.getBoundingClientRect().width + 8;
+      row.removeChild(gone);
+      rail.scrollLeft = Math.max(0, rail.scrollLeft - w);
+    }
     rail.classList.add("on");
-    rail.scrollLeft = rail.scrollWidth;
+    this.march();
     if (typeof SideFilm !== "undefined") SideFilm.add(src, cap);
   },
   pop(src, cap) {
@@ -5607,6 +5612,7 @@ const CapRail = {
     this.screenWords = this.screenWords || [];
     this._follow = setInterval(() => { this.readScreen(); }, 1000);
     this.readScreen();
+    this.march();
     ["capRail", "wikiTop"].forEach((id) => {
       const el = document.getElementById(id);
       if (!el || el.dataset.drag) return;
@@ -5617,6 +5623,7 @@ const CapRail = {
       el.addEventListener("pointerdown", (e) => {
         if (e.button != null && e.button !== 0) return;
         dragged = false;
+        this._hold = true;
         startX = e.clientX;
         startLeft = el.scrollLeft;
         try { el.setPointerCapture(e.pointerId); } catch (err) {}
@@ -5627,6 +5634,8 @@ const CapRail = {
         if (Math.abs(dx) > 4) dragged = true;
         el.scrollLeft = startLeft - dx;
       });
+      el.addEventListener("pointerup", () => { this._hold = false; });
+      el.addEventListener("pointercancel", () => { this._hold = false; });
       el.addEventListener("click", (e) => {
         if (!dragged) return;
         e.preventDefault();
@@ -5634,6 +5643,24 @@ const CapRail = {
         dragged = false;
       }, true);
     });
+  },
+  march() {
+    if (this._march) return;
+    let last = 0;
+    const step = (t) => {
+      this._march = requestAnimationFrame(step);
+      if (t - last < 30) return;
+      last = t;
+      if (this._hold) return;
+      ["capRail", "wikiTop"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el || !el.classList.contains("on")) return;
+        if (el.scrollWidth <= el.clientWidth + 12) return;
+        el.scrollLeft += 1;
+        if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 1) el.scrollLeft = 0;
+      });
+    };
+    this._march = requestAnimationFrame(step);
   },
   nextScreenPhrase() {
     const anchor = this.anchor();
@@ -5688,7 +5715,7 @@ const CapRail = {
     if (!lines.length) return;
     if (this.clock && Date.now() - (this._clockAt || 0) < 4000) return;
     const now = Date.now();
-    if (this._cueStep && now - this._cueStep < 8000) return;
+    if (this._cueStep && now - this._cueStep < 5000) return;
     this._cueStep = now;
     this._cueI = ((this._cueI == null ? -1 : this._cueI) + 1) % lines.length;
     const text = String((lines[this._cueI] && lines[this._cueI].text) || "").replace(/\s+/g, " ").trim();
@@ -5698,7 +5725,11 @@ const CapRail = {
     this.slideKey = "";
   },
   readLecture() {
-    const frame = document.getElementById("mbFrame") || document.getElementById("hjFrame");
+    const frames = ["mbFrame", "hjFrame"].map((id) => document.getElementById(id)).filter(Boolean);
+    const frame = frames.find((f) => {
+      const box = f.getBoundingClientRect();
+      return box.width > 80 && box.height > 80;
+    }) || frames[0];
     if (!frame) return;
     let doc = null;
     try { doc = frame.contentDocument; } catch (e) { return; }
@@ -5720,20 +5751,30 @@ const CapRail = {
   async wikiNet(text) {
     const words = this.captionWords(text).split(" ").filter((w) => w.length > 3 && this.medicalWord(w));
     if (!words.length) return;
+    if (this._wikiBusy) return;
+    if (this._wikiAt && Date.now() - this._wikiAt < 4000) return;
+    this._wikiAt = Date.now();
     this.seenCap = this.seenCap || {};
     const said = document.getElementById("hjSaid");
     if (said && document.activeElement !== said) said.value = "2 Caption · " + words.join(" · ");
-    for (let i = 0; i < words.length; i++) {
-      if (this.seenCap[words[i]]) continue;
-      const found = await this.captionWord(words[i]);
-      if (found) this.seenCap[words[i]] = 1;
+    const fresh = words.find((w) => !this.seenCap[w]);
+    const word = fresh || words[(this._spin || 0) % words.length];
+    this._spin = (this._spin || 0) + 1;
+    const n = this.seenCap[word] || 0;
+    this._wikiBusy = true;
+    try {
+      const found = await this.captionWord(word, n);
+      if (found) this.seenCap[word] = n + 1;
+    } finally {
+      this._wikiBusy = false;
     }
   },
-  async captionWord(word) {
+  async captionWord(word, offset) {
     const host = document.getElementById("wikiTop");
     if (host) host.classList.add("on");
     document.body.classList.add("wiki-top");
     const q = word === "nuclear" ? "nuclear medicine imaging" : word;
+    const skip = Math.max(0, Number(offset) || 0);
     let pages = [];
     try {
       const data = await fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(q) + "&n=4").then((r) => r.json());
@@ -5745,13 +5786,13 @@ const CapRail = {
     } catch (e) {}
     if (!pages.length) {
       try {
-        const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=4&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*").then((r) => r.json());
+        const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q + " imaging") + "&gsrlimit=6&gsroffset=" + (skip * 2) + "&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*").then((r) => r.json());
         pages = Object.values((data.query && data.query.pages) || {});
       } catch (e) { return; }
     }
     if (!host) return;
     const bad = /brigham young|portrait|manuscript|lahey|coat of arms|flag of|diploma|painting|hospital & medical|university|college|vital remains|intelligence gathering|band\b|album|song|novel|football|psychology|weapon|bomb|reactor|missile|warhead|nuclear power|spent fuel/i;
-    const hit = pages.filter((p) => p && p.title && p.thumbnail && !bad.test(p.title) && (this.onTopic(p.title) || this.captionWords(p.title).indexOf(word) >= 0 || new RegExp(word, "i").test(p.title)))[0];
+    const hit = pages.filter((p) => p && p.title && p.thumbnail && !bad.test(p.title) && (this.onTopic(p.title) || this.captionWords(p.title).indexOf(word) >= 0 || new RegExp(word, "i").test(p.title)))[skip % Math.max(1, pages.length)] || pages.filter((p) => p && p.title && p.thumbnail && !bad.test(p.title))[0];
     if (!hit) return false;
     const href = hit.fullurl || ("https://en.wikipedia.org/wiki/" + encodeURIComponent(hit.title.replace(/ /g, "_")));
     if (host.querySelector('[data-wiki="' + href.replace(/"/g, "") + '"]')) return true;
@@ -5768,20 +5809,26 @@ const CapRail = {
     label.textContent = "Caption · " + word;
     b.appendChild(label);
     b.onclick = () => window.open(href, "_blank", "noopener");
-    host.insertBefore(b, host.firstChild);
-    host.scrollLeft = 0;
-    while (host.children.length > 12) host.removeChild(host.lastChild);
+    host.appendChild(b);
+    while (host.children.length > 18) host.removeChild(host.firstChild);
+    this.march();
     this.pushWidgets(word);
     return true;
   },
   async slideNet(text) {
     const q = this.captionWords(text);
     if (!q || q.length < 4 || /meta image|turn size/i.test(q)) return;
-    if (this.slideKey === q) return;
-    this.slideKey = q;
     const row = document.getElementById("capRow");
     const rail = document.getElementById("capRail");
     if (!row || !rail) return;
+    if (this.slideKey === q) {
+      if (this._slideMore && Date.now() - this._slideMore < 5000) return;
+      this._slideMore = Date.now();
+      const next = (this._slidePages || []).find((p) => p && p.thumbnail && p.thumbnail.source && !row.querySelector('img[src="' + p.thumbnail.source.replace(/"/g, "") + '"]'));
+      if (next) this.add(next.thumbnail.source, "Slide · " + (next.title || q));
+      return;
+    }
+    this.slideKey = q;
     rail.classList.add("on");
     const tag = rail.querySelector(".cap-tag");
     if (tag) tag.textContent = ("1 Slide · " + q).slice(0, 48);
@@ -5803,6 +5850,7 @@ const CapRail = {
       }
       pages = pages.filter((p) => p && p.thumbnail && p.thumbnail.source && p.title && keep.test(p.title) && !drop.test(p.title));
     }
+    this._slidePages = pages;
     if (!pages.length) return;
     const shown = pages.filter((p) => p && p.thumbnail && p.thumbnail.source && !/brigham young|portrait|manuscript|lahey|diploma|painting/i.test(p.title || "")).slice(0, 3);
     if (!shown.length) return;
@@ -5851,14 +5899,22 @@ const CapRail = {
       .catch(run);
   },
   watchPlayers() {
-    const frames = document.querySelectorAll("iframe");
-    for (let i = 0; i < frames.length; i++) {
-      const src = frames[i].getAttribute("src") || "";
-      const m = src.match(/youtube(?:-nocookie)?\.com\/embed\/([A-Za-z0-9_-]{6,15})/) || src.match(/[?&]v=([A-Za-z0-9_-]{6,15})/);
-      if (!m) continue;
-      const title = frames[i].getAttribute("title") || "";
-      this.useVideo(m[1], title);
-      return;
+    const docs = [document];
+    ["mbFrame", "hjFrame"].forEach((id) => {
+      const frame = document.getElementById(id);
+      if (!frame) return;
+      try { if (frame.contentDocument) docs.push(frame.contentDocument); } catch (e) {}
+    });
+    for (let d = 0; d < docs.length; d++) {
+      const frames = docs[d].querySelectorAll("iframe");
+      for (let i = 0; i < frames.length; i++) {
+        const src = frames[i].getAttribute("src") || "";
+        const m = src.match(/youtube(?:-nocookie)?\.com\/embed\/([A-Za-z0-9_-]{6,15})/) || src.match(/[?&]v=([A-Za-z0-9_-]{6,15})/);
+        if (!m) continue;
+        const title = frames[i].getAttribute("title") || "";
+        this.useVideo(m[1], title);
+        return;
+      }
     }
   },
   useVideo(id, title) {
