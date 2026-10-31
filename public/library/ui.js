@@ -430,8 +430,8 @@
         if (window.__imgLibPaused) return
         var list = window.__imgLibPicked || []
         if (list.length <= 18) return
-        var medb = document.body.classList.contains('medb-full') || document.body.classList.contains('hj-full')
-        var wait = medb ? 16000 : 3500
+        var slow = document.body.classList.contains('medb-full') || document.body.classList.contains('hj-full')
+        var wait = document.body.classList.contains('medb-full') ? 22000 : (slow ? 16000 : 3500)
         var now = Date.now()
         if (now - (window.__imgLibFlipped || 0) < wait) return
         window.__imgLibFlipped = now

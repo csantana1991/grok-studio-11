@@ -8680,7 +8680,25 @@ async function liveSearchTerm(term){
       const list = (pm.papers || []).map(function(p){
         return "<li><a href=\"https://pubmed.ncbi.nlm.nih.gov/" + escTxt(p.pmid) + "/\" target=\"_blank\" rel=\"noopener\">PMID " + escTxt(p.pmid) + "</a> · " + escTxt(p.title) + "<br><span>" + escTxt(p.journal) + " · " + escTxt(p.date) + "</span></li>";
       }).join("");
-      grid.innerHTML = "<p style=\"grid-column:1/-1;color:#111\">Live PubMed · " + escTxt(n) + " papers from NCBI. The image-library route is not on this server, so these are citations, not pixels.</p>" + (list ? "<ol style=\"grid-column:1/-1;color:#111;padding-left:18px\">" + list + "</ol>" : "<p style=\"grid-column:1/-1;color:#111\">PubMed returned no titles for this query.</p>");
+      const seenPic = {};
+      const pics = [];
+      document.querySelectorAll("#imgLibCount img, #modStrip img, #qaPics img, #raList img").forEach(function(img){
+        const src = img.currentSrc || img.src || "";
+        if (!src || seenPic[src] || pics.length >= 12) return;
+        seenPic[src] = 1;
+        pics.push({ src: src, alt: img.alt || "" });
+      });
+      const film = pics.length ? "<div id=\"livePopPics\" style=\"display:flex;gap:8px;overflow:hidden;height:148px;margin:0 0 12px\">" + pics.map(function(pic){
+        return "<img alt=\"" + escTxt(pic.alt) + "\" src=\"" + escTxt(pic.src) + "\" referrerpolicy=\"no-referrer\" style=\"height:148px;width:168px;object-fit:contain;background:#111;border-radius:8px;flex:0 0 auto\">";
+      }).join("") + "</div>" : "";
+      grid.innerHTML = film + "<p style=\"grid-column:1/-1;color:#111;margin-top:8px\">Live PubMed · " + escTxt(n) + " papers. Citations are below the images.</p>" + (list ? "<ol style=\"grid-column:1/-1;color:#111;padding-left:18px\">" + list + "</ol>" : "<p style=\"grid-column:1/-1;color:#111\">PubMed returned no titles for this query.</p>");
+      if (!window.__livePicTimer) {
+        window.__livePicTimer = setInterval(function(){
+          const row = document.getElementById("livePopPics");
+          if (!row || row.children.length < 2) return;
+          row.appendChild(row.firstElementChild);
+        }, 8000);
+      }
       if (stat) stat.textContent = "PubMed live · " + n + " papers · finished";
       return;
     } catch (e) {
@@ -16242,7 +16260,7 @@ window.addEventListener("message", (e) => {
       const el = document.getElementById(id);
       if (!el || el.scrollWidth <= el.clientWidth + 12) return;
       if (medb && el.matches(":hover")) return;
-      const speed = medb && id === "qaPics" ? 0.45 : 1.4;
+      const speed = medb && id === "qaPics" ? 0.28 : 1.4;
       el.scrollLeft += speed;
       if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) el.scrollLeft = 0;
     });
