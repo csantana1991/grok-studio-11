@@ -6147,6 +6147,7 @@ const LectureSkills = {
     if (slide && !this.clash(base, slide)) {
       const bits = slide.toLowerCase().match(/coverage|slice|detector|gating|temporal|dose|resolution|perfusion|nodule|endometri|spleen|stroke|fracture|pneumonia|thyroid|mammogra|mdct|\d+/g) || [];
       const extra = [...new Set(bits)].slice(0, 4).join(" ");
+      if (/coverage|slice|mdct|detector/.test(extra)) return "multidetector CT scan coverage";
       if (extra) return (hint + " " + extra).replace(/\s+/g, " ").trim();
     }
     return base || hint;

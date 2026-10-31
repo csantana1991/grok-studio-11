@@ -222,7 +222,7 @@ const BRIDGE = `(function(){
     var Fq = familyOf(L), Ft = familyOf(T);
     if (Fq && Ft && Fq !== Ft) return false;
     var spec = L.match(/coverage|slice|detector|gating|temporal|dose|resolution|endometri|spleen|stroke|nodule|pneumonia|thyroid|breast|fracture/);
-    if (spec && /coronary ct angiography|coronary arteries/.test(T) && T.indexOf(spec[0]) < 0) return false;
+    if (/coverage|slice|detector|mdct/.test(L) && /coronary|pulmonary angiogram/.test(T)) return false;
     if (Fq && Ft && Fq !== Ft) return false;
     if (Fq === "heart" && /stroke|breast|pulmonary angiogram|lung nodule/.test(T)) return false;
     return /ct|mri|scan|heart|cardiac|tomograph|detector|slice|angiograph|radiograph|pet/.test(T);
