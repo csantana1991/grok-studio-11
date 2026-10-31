@@ -230,7 +230,7 @@ const BRIDGE = `(function(){
   }
   function paintLive(){
     var row = filmRow("hjLive", "top");
-    var title = lectureTitle();
+    var title = window.__liveQ || lectureTitle();
     var q = title ? queryFor(title) : "";
     if (q && q !== row.getAttribute("data-q")) {
       row.setAttribute("data-q", q);
@@ -304,6 +304,14 @@ const BRIDGE = `(function(){
     window.scrollTo(0, Math.max(0, window.scrollY + b.top - 68));
     fitted = id;
   }
+  window.addEventListener("message", function(e){
+    if (!e.data || e.data.source !== "lecture-words" || !e.data.q) return;
+    window.__liveQ = String(e.data.q).replace(/\\s+/g, " ").trim().slice(0, 120);
+    var frames = document.querySelectorAll("iframe");
+    for (var i = 0; i < frames.length; i++) {
+      try { frames[i].contentWindow.postMessage({ type: "studio-query", q: window.__liveQ }, "*"); } catch (err) {}
+    }
+  });
   setInterval(paintLive, 40);
   setInterval(tick, 1000);
 })();`;

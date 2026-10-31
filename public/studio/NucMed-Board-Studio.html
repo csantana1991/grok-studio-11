@@ -6006,6 +6006,63 @@ const SlideGrab = {
     return good[0] || "";
   }
 };
+const LectureSkills = {
+  lastHash: "",
+  lastWords: "",
+  busy: false,
+  wordsFrom(text, fallback) {
+    const lines = String(text || "").split(/\n+/).map((s) => s.replace(/\s+/g, " ").trim()).filter((s) => s.length > 6);
+    const junk = /youtube|subscribe|ctisus|harvard|hopkins|emory|watermark|copyright/i;
+    const good = lines.find((s) => !junk.test(s) && /ct|mri|pet|heart|cardiac|breast|lung|liver|brain|dose|arter|coronary|physics|radiat|scan/i.test(s));
+    return (good || lines.find((s) => !junk.test(s)) || fallback || "").replace(/\s+/g, " ").trim().slice(0, 120);
+  },
+  async watch() {
+    if (this.busy) return;
+    if (!document.body.classList.contains("hj-full") && !document.body.classList.contains("medb-full")) return;
+    this.busy = true;
+    try {
+      const said = document.getElementById("hjSaid");
+      const fallback = (said && said.value) || (typeof CapRail !== "undefined" && (CapRail.line || CapRail.topic)) || "";
+      const canvas = await SlideGrab.capture();
+      let words = "";
+      if (canvas) {
+        const hash = SlideGrab.sample(canvas);
+        if (hash && hash === this.lastHash) return;
+        this.lastHash = hash || this.lastHash;
+        words = this.wordsFrom(await SlideGrab.read(canvas), fallback);
+      } else {
+        words = String(fallback || "").replace(/\s+/g, " ").trim().slice(0, 120);
+      }
+      if (!words || words.length < 4 || words === this.lastWords) return;
+      if (/slide first|playable lesson|openpediatrics|choose play all/i.test(words)) return;
+      this.lastWords = words;
+      this.show(words);
+    } catch (e) {
+    } finally {
+      this.busy = false;
+    }
+  },
+  show(words) {
+    const q = String(words || "").replace(/\s+/g, " ").trim().slice(0, 120);
+    if (q.length < 4) return;
+    const said = document.getElementById("hjSaid");
+    if (said && document.activeElement !== said) said.value = q;
+    if (typeof CapRail !== "undefined") {
+      CapRail.topic = q;
+      CapRail.line = q;
+      if (typeof CapRail.reelFor === "function") CapRail.reelFor(q);
+    }
+    if (typeof SideFilm !== "undefined") SideFilm.title = q;
+    if (typeof ScanLive !== "undefined" && ScanLive.phrase) ScanLive.phrase(q);
+    document.querySelectorAll("iframe").forEach((frame) => {
+      const src = frame.getAttribute("src") || "";
+      if (frame.id !== "hjFrame" && frame.id !== "mbFrame" && !/embed=1/.test(src)) return;
+      try { frame.contentWindow.postMessage({ type: "studio-query", q }, location.origin); } catch (e) {}
+      try { frame.contentWindow.postMessage({ source: "lecture-words", q }, location.origin); } catch (e) {}
+    });
+  }
+};
+setInterval(() => LectureSkills.watch(), 1000);
 const CapRail = {
   last: "",
   seq: 0,
