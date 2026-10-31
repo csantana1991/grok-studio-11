@@ -2537,18 +2537,18 @@ body.scan-live.medb-full #phraseDef p {
   margin: 0; white-space: nowrap; color: #f4f1ea; font-size: 13px;
 }
 body.scan-live.hj-full #phraseDef {
-  top: 118px !important;
+  top: 168px !important;
   bottom: auto !important;
-  left: 10px !important;
-  right: 10px !important;
-  width: auto !important;
-  height: 22vh !important;
-  min-height: 120px;
+  left: auto !important;
+  right: 8px !important;
+  width: min(460px, 46vw) !important;
+  height: 210px !important;
+  min-height: 0;
   flex-direction: column !important;
   align-items: stretch !important;
   justify-content: flex-start !important;
   overflow: auto !important;
-  z-index: 455;
+  z-index: 480;
   border-radius: 14px;
   background: #0e1c28;
   border: 1px solid #2ee6c8;
@@ -2561,11 +2561,8 @@ body.scan-live.hj-full #phraseDef article {
   white-space: normal;
 }
 body.scan-live.hj-full #phraseDef p { white-space: normal !important; }
-@media (min-width: 981px) {
-  body.scan-live.hj-full.film-widget #phraseDef {
-    right: min(560px, 46vw) !important;
-    height: 200px !important;
-  }
+body.scan-live.hj-full.film-widget #filmRight {
+  top: 390px !important;
 }
 body.scan-live.hj-full #modStrip { display: none !important; }
 body.scan-live.medb-full #modStrip {
@@ -6158,6 +6155,11 @@ const LectureSkills = {
       if (ScanLive.phrase) ScanLive.phrase(this.slide || q);
       if (ScanLive.fill) ScanLive.fill(q, 0);
     }
+    if (typeof CapRail !== "undefined" && CapRail.live) {
+      CapRail.topic = this.slide || q;
+      CapRail.live(this.slide || q, 0);
+      setTimeout(() => CapRail.live(this.slide || q, 8), 350);
+    }
     document.querySelectorAll("iframe").forEach((frame) => {
       if (frame.id !== "hjFrame" && frame.id !== "mbFrame" && !/embed=1/.test(frame.getAttribute("src") || "")) return;
       try { frame.contentWindow.postMessage({ type: "studio-query", q }, location.origin); } catch (e) {}
@@ -6379,16 +6381,19 @@ const CapRail = {
     const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|after|before|their|there|they|them|then|also|only|most|more|some|such|been|being|which|while|where|will|would|could|should|follows|meets|used|basic|webinar|lecture|monday|short|travels|clinical|medicine|medical|public|youtube|ninja|nerd|warrior|channel|official|meta|image|images|atlas|academy|nucleus|review|ultimate|widget|search|imaging|clear|results|shown|verified|target|dicom|catalog|appearance|introduction|intro|background|abdomen|abdominal|pulse|sequence|sequences|normal|outline|body)$/i;
     const words = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => (w.length > 3 || /^(mri|pet|t1|t2)$/.test(w)) && !stop.test(w));
     let q = words.slice(0, 5).join(" ");
-    if (/tesla|magnet|spin|nuclei|proton|resonance|\bmri\b/.test(String(text || "").toLowerCase()) && !/\bmri\b/.test(q)) q = (q + " MRI").trim();
+    const raw = String(text || "").toLowerCase();
+    if (/ecg|ekg|electrocardiog|heart rate/.test(raw)) return "electrocardiogram ECG heart rate";
+    if (/tesla|magnet|spin|nuclei|proton|resonance|\bmri\b/.test(raw) && !/\bmri\b/.test(q)) q = (q + " MRI").trim();
     return q;
   },
   medicalTitle(title) {
     const t = String(title || "");
     if (/ninja|warrior|kawasaki|aerospace|motorcycle|singer|concert|album|band\b|actor|film|movie|sacred|football|soccer|portrait|bicycle|weapon|wrestl|spacecraft|airline|rocket|festival|chinese medicine|traditional chinese|game ?pad|controller|nintendo|ancient|iran|faravahar|agnew|metacarpal|carpal|automobile|vehicle|\bcars?\b|painting|manuscript|mythology|empire|religion|flag of|history of/i.test(t)) return false;
-    return /heart|cardi|failur|ventric|atri|edema|lung|chest|anatom|arter|vein|myocard|eject|valve|aort|pulmon|medic|diseas|syndrom|patholog|radiolog|\bct\b|\bmri\b|x-ray|infarct|dyspn|congestion|organ|thorax|coronary|perfusion|ischemi|fluid|pleural|hepat|renal|neuro|bone|thyroid|nodule|lesion|tumor|cancer|pet\b|scan|magnet|tesla|proton|spin|resonance|hypertroph|dilat|murmur|preload|kussmaul|pericard|tamponad|effusion/i.test(t);
+    return /heart|cardi|failur|ventric|atri|edema|lung|chest|anatom|arter|vein|myocard|eject|valve|aort|pulmon|medic|diseas|syndrom|patholog|radiolog|\bct\b|\bmri\b|x-ray|infarct|dyspn|congestion|organ|thorax|coronary|perfusion|ischemi|fluid|pleural|hepat|renal|neuro|bone|thyroid|nodule|lesion|tumor|cancer|pet\b|scan|magnet|tesla|proton|spin|resonance|hypertroph|dilat|murmur|preload|kussmaul|pericard|tamponad|effusion|ecg|ekg|electrocardiog|qrs|rhythm/i.test(t);
   },
   anchor() {
     const bag = ((this.topic || "") + " " + (this.line || "") + " " + ((this.screenWords || []).join(" "))).toLowerCase();
+    if (/ecg|ekg|electrocardiog|heart rate/.test(bag)) return "ECG";
     if (/abdominal|abdomen|\bbody\b/.test(bag) && /mri|magnetic/.test(bag)) return "abdominal MRI";
     if (/\bmri\b|magnetic resonance/.test(bag)) return "MRI";
     if (/pericard|tamponad/.test(bag)) return "pericardial disease";
@@ -6399,6 +6404,7 @@ const CapRail = {
     const t = String(title || "");
     if (!this.medicalTitle(t)) return false;
     const a = this.anchor();
+    if (a === "ECG") return /ecg|ekg|electrocardiog|heart rate|\bqrs\b|rhythm|p wave|cardiac|tracing|lead/i.test(t);
     if (a === "abdominal MRI") return /mri|magnetic|abdomen|abdominal|liver|hepatic|kidney|renal|spleen|pancrea|biliary|gall|pulse|gradient|echo|spin|\bt1\b|\bt2\b|protocol|radiolog|bowel|pelvis/i.test(t);
     if (a === "MRI") return /mri|magnetic|pulse|gradient|echo|spin|tesla|resonance|sequence/i.test(t);
     if (a === "pericardial disease") return /pericard|tampon|effusion/i.test(t);
@@ -6445,7 +6451,7 @@ const CapRail = {
         if (!mri) return true;
         return /mri|magnetic|tesla|proton|spin|nucle|resonance|field/i.test(p.title || "");
       }).slice(0, 8);
-      const fresh = rows.filter((p) => p.thumbnail && p.thumbnail.source && !(this.seenTop && this.seenTop[p.thumbnail.source])).slice(0, 2);
+      const fresh = rows.filter((p) => p.thumbnail && p.thumbnail.source && !(this.seenTop && this.seenTop[p.thumbnail.source])).slice(0, 10);
       if (!fresh.length) return;
       host.classList.add("on");
       document.body.classList.add("wiki-top");
@@ -6479,7 +6485,7 @@ const CapRail = {
       });
     };
     try {
-      const wiki = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q + " medicine anatomy") + "&gsroffset=" + off + "&gsrlimit=8&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*";
+      const wiki = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q + " medicine anatomy") + "&gsroffset=" + off + "&gsrlimit=16&prop=pageimages|info&inprop=url&pithumbsize=640&format=json&origin=*";
       const data = await fetch(wiki).then((r) => r.json());
       paintTop(Object.values((data.query && data.query.pages) || {}));
     } catch (e) {}
