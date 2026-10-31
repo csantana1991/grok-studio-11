@@ -5732,8 +5732,11 @@ const ScanLive = {
   audit() {
     const work = document.querySelector(".work");
     if (work && document.body.classList.contains("medb-full")) {
+      const beside = document.body.classList.contains("film-widget") && window.innerWidth > 980;
       work.style.setProperty("left", "0", "important");
-      work.style.setProperty("right", "0", "important");
+      work.style.setProperty("right", beside ? "min(540px, 44vw)" : "0", "important");
+      if (beside) work.style.setProperty("width", "auto", "important");
+      else work.style.removeProperty("width");
       work.style.setProperty("bottom", document.body.classList.contains("medb-full") ? "168px" : "130px", "important");
       work.style.setProperty("overflow", "hidden", "important");
     }
