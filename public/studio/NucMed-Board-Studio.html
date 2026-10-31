@@ -2426,7 +2426,9 @@ body.scan-live #wikiDef {
   overflow-x: hidden; overflow-y: auto; background: #0e1c28; color: #e8f2f7;
   border-right: 1px solid #1e3a4a; padding: 8px;
 }
-body.scan-live #leftPics { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+body.scan-live #leftPics { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+body.scan-live #leftPics .phrase-shot { display: flex; flex-direction: column; gap: 6px; }
+body.scan-live #leftPics b { color: #8fd0ff; font-size: 12px; line-height: 1.3; }
 body.scan-live #leftPics img { width: 100%; height: 92px; object-fit: cover; border-radius: 6px; background: #000; }
 body.scan-live.board-left #wikiDef { display: none !important; }
 body.scan-live.board-left .sidebar {
@@ -5597,6 +5599,47 @@ const ScanLive = {
     host.insertBefore(card, host.firstChild);
     while (host.children.length > 6) host.removeChild(host.lastChild);
     host.scrollTop = 0;
+    this.phrasePics(title || term);
+  },
+  async phrasePics(term) {
+    const pics = document.getElementById("leftPics");
+    if (!pics || !term) return;
+    const block = document.createElement("div");
+    block.className = "phrase-shot";
+    const label = document.createElement("b");
+    label.textContent = term;
+    block.appendChild(label);
+    const skip = /logo|icon|flag|portrait|coat of arms|map of/i;
+    try {
+      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(term + " MRI") + "&gsrlimit=4&prop=pageimages&pithumbsize=480&format=json&origin=*").then((r) => r.json());
+      Object.values((data.query && data.query.pages) || {}).forEach((p) => {
+        const src = p.thumbnail && p.thumbnail.source;
+        if (!src || skip.test(p.title || "") || block.querySelectorAll("img").length >= 3) return;
+        const img = document.createElement("img");
+        img.alt = term;
+        img.referrerPolicy = "no-referrer";
+        img.src = src;
+        block.appendChild(img);
+      });
+    } catch (e) {}
+    if (block.querySelectorAll("img").length < 2) {
+      try {
+        const data = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=4&gsrsearch=" + encodeURIComponent(term + " MRI scan") + "&prop=imageinfo&iiprop=url&iiurlwidth=400&format=json&origin=*").then((r) => r.json());
+        Object.values((data.query && data.query.pages) || {}).forEach((p) => {
+          const info = (p.imageinfo || [])[0];
+          const src = info && (info.thumburl || info.url);
+          if (!src || skip.test(p.title || "") || block.querySelectorAll("img").length >= 3) return;
+          const img = document.createElement("img");
+          img.alt = term;
+          img.referrerPolicy = "no-referrer";
+          img.src = src;
+          block.appendChild(img);
+        });
+      } catch (e) {}
+    }
+    if (!block.querySelector("img")) return;
+    pics.insertBefore(block, pics.firstChild);
+    while (pics.children.length > 4) pics.removeChild(pics.lastChild);
   },
   glide() {
     if (this._glide) return;
