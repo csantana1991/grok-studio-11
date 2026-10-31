@@ -5388,45 +5388,78 @@ const ScanLive = {
     this.last = term;
     this.busy = true;
     document.body.classList.add("scan-live");
-    Promise.all([
-      this.lane("xray", [term + " x-ray radiograph", "chest x-ray radiograph"], /x-?ray|radiograph/i),
-      this.lane("ct", [term + " CT scan axial", "axial CT scan"], /\bct\b|computed tomograph/i),
-      this.lane("mri", [term + " brain MRI", "axial brain MRI"], /brain|spine|knee|liver|cardiac|head mri|pelvis|abdomen|shoulder|lumbar/i),
-      ...words.slice(0, 3).map((w) => this.define(w))
-    ]).finally(() => { this.busy = false; this.glide(); });
+    this.fill(term).finally(() => { this.busy = false; this.glide(); });
+    words.slice(0, 3).forEach((w) => this.define(w));
   },
-  async lane(kind, queries, want) {
+  async fill(term) {
+    let atlas = null;
+    if (typeof raSearch === "function") {
+      try { atlas = await raSearch(term + " CT MRI x-ray radiograph", true); } catch (e) {}
+    }
+    await Promise.all(["xray", "ct", "mri"].map((kind) => this.best(kind, term, atlas)));
+  },
+  modOk(kind, blob) {
+    const t = String(blob || "").toLowerCase();
+    if (kind === "ct") return /\bct\b|computed tomograph/.test(t);
+    if (kind === "mri") return /\bmri\b|magnetic resonance|flair|\bt1\b|\bt2\b/.test(t);
+    return /x-?ray|xray|radiograph|chest/.test(t);
+  },
+  async best(kind, term, atlas) {
+    const q = term + (kind === "xray" ? " chest x-ray radiograph" : kind === "ct" ? " CT" : " MRI");
+    const words = term.split(" ");
+    const hits = [];
+    const add = (src, title, score, page) => {
+      if (!src || hits.some((h) => h.src === src)) return;
+      hits.push({ src, title: String(title || kind).slice(0, 90), score, page: page || src });
+    };
+    if (typeof raMetaPack === "function") {
+      const packed = raMetaPack(q);
+      (packed.figures || []).forEach((f) => {
+        const blob = (f.modality || "") + " " + (f.title || "") + " " + (f.caption || "");
+        if (!this.modOk(kind, blob)) return;
+        let score = 8;
+        words.forEach((w) => { if (blob.toLowerCase().indexOf(w) >= 0) score += 2; });
+        add(f.imageUrl, f.title, score, f.articleUrl);
+      });
+    }
+    const groups = (atlas && atlas.groups) || {};
+    ((groups.articleFigures || []).concat(groups.studyPreviews || [])).forEach((f) => {
+      const src = f.imageUrl || f.previewUrl;
+      const blob = (f.modality || "") + " " + (f.title || "") + " " + (f.caption || "") + " " + (f.collection || "") + " " + (f.badge || "");
+      if (!src || !this.modOk(kind, blob)) return;
+      let score = /meta|nih/i.test(blob) ? 7 : 4;
+      words.forEach((w) => { if (blob.toLowerCase().indexOf(w) >= 0) score += 2; });
+      add(src, f.title || f.caption, score, f.articleUrl || f.fullStudyUrl);
+    });
+    if (hits.length < 2) await this.commons(kind, q, add);
+    hits.sort((a, b) => b.score - a.score);
     const host = document.querySelector('#modStrip [data-mod="' + kind + '"] .mod-row');
     if (!host) return;
-    const skip = /journal|cover|roentgenology|proceedings|volume|issue|textbook|poster|warning|plant|maize|root system|logo|icon|symbol|illustration of the machine/i;
-    for (let i = 0; i < queries.length; i++) {
-      let pages = [];
-      try {
-        const data = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=6&gsrsearch=" + encodeURIComponent(queries[i]) + "&prop=imageinfo&iiprop=url|mime&iiurlwidth=400&format=json&origin=*").then((r) => r.json());
-        pages = Object.values((data.query && data.query.pages) || {});
-      } catch (e) { continue; }
-      const hits = pages.filter((p) => {
+    host.innerHTML = "";
+    hits.slice(0, 3).forEach((hit) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      const img = document.createElement("img");
+      img.alt = hit.title;
+      img.referrerPolicy = "no-referrer";
+      img.src = hit.src;
+      b.appendChild(img);
+      b.onclick = () => window.open(hit.page, "_blank", "noopener");
+      host.appendChild(b);
+    });
+  },
+  async commons(kind, q, add) {
+    const want = kind === "ct" ? /\bct\b|computed tomograph/i : kind === "mri" ? /brain|spine|knee|liver|abdomen/i : /x-?ray|radiograph/i;
+    const skip = /journal|cover|warning|plant|maize|logo|icon|symbol/i;
+    try {
+      const data = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=6&gsrsearch=" + encodeURIComponent(q) + "&prop=imageinfo&iiprop=url|mime&iiurlwidth=400&format=json&origin=*").then((r) => r.json());
+      Object.values((data.query && data.query.pages) || {}).forEach((p) => {
         const info = (p.imageinfo || [])[0];
         const title = String(p.title || "");
-        return info && (info.thumburl || info.url) && /image\//.test(info.mime || "image/jpeg") && want.test(title) && !skip.test(title);
+        if (!info || !(info.thumburl || info.url) || !want.test(title) || skip.test(title)) return;
+        add(info.thumburl || info.url, title.replace(/^File:/, ""), 1, "https://commons.wikimedia.org/wiki/" + encodeURIComponent(title.replace(/ /g, "_")));
       });
-      hits.slice(0, 3).forEach((p) => {
-        const info = (p.imageinfo || [])[0];
-        const src = info.thumburl || info.url;
-        if (host.querySelector('img[src="' + src.replace(/"/g, "") + '"]')) return;
-        const b = document.createElement("button");
-        b.type = "button";
-        const img = document.createElement("img");
-        img.alt = String(p.title || kind).replace(/^File:/, "");
-        img.referrerPolicy = "no-referrer";
-        img.src = src;
-        b.appendChild(img);
-        b.onclick = () => window.open("https://commons.wikimedia.org/wiki/" + encodeURIComponent(String(p.title || "").replace(/ /g, "_")), "_blank", "noopener");
-        host.appendChild(b);
-        while (host.children.length > 6) host.removeChild(host.firstChild);
-      });
-      if (host.children.length >= 2) return;
-    }
+    } catch (e) {}
   },
   async define(term) {
     const host = document.getElementById("wikiDef");
