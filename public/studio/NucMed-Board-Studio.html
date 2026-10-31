@@ -5657,10 +5657,32 @@ const CapRail = {
         .then((r) => r.json())
         .then((body) => {
           if (this.videoId !== this._cueLoad) return;
-          this.cues = (body && body.lines) || [];
+          const lines = (body && body.lines) || [];
+          if (!lines.length) return;
+          this.cues = lines;
           this._cueI = -1;
         })
         .catch(() => {});
+    }
+    if (!(this.cues && this.cues.length) && this.slideText && this._outlineFor !== this.slideText && !this._outlineBusy) {
+      const q = this.captionWords(this.slideText);
+      if (q.length > 4) {
+        this._outlineBusy = true;
+        this._outlineFor = this.slideText;
+        fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=1&prop=extracts&explaintext=1&exintro=1&format=json&origin=*")
+          .then((r) => r.json())
+          .then((data) => {
+            const pages = Object.values((data.query && data.query.pages) || {});
+            const extract = String((pages[0] && pages[0].extract) || "");
+            const bits = extract.split(/(?<=[.?!])\s+/).map((s) => s.replace(/\s+/g, " ").trim()).filter((s) => s.length > 40 && s.length < 220);
+            if (bits.length && !(this.cues && this.cues.length)) {
+              this.cues = bits.map((text, i) => ({ t: i * 8, text }));
+              this._cueI = -1;
+            }
+          })
+          .catch(() => {})
+          .finally(() => { this._outlineBusy = false; });
+      }
     }
     const lines = this.cues || [];
     if (!lines.length) return;
@@ -5683,10 +5705,10 @@ const CapRail = {
     if (!doc) return;
     const cap = doc.querySelector(".player-caption, .caption");
     const said = cap ? String(cap.textContent || "").replace(/\s+/g, " ").trim() : "";
-    if (said.length > 24 && !/queue started|playable lesson|residency|brigham|harvard/i.test(said)) this.line = said;
+    if (!(this.cues && this.cues.length) && said.length > 24 && !/queue started|playable lesson|residency|brigham|harvard/i.test(said)) this.line = said;
     const current = doc.querySelector(".lesson-item.is-current strong") || doc.querySelector(".lesson-item.is-current");
     const slide = current ? String(current.textContent || "").replace(/\[[^\]]+\]/g, " ").replace(/\s+/g, " ").trim() : "";
-    if (slide.length > 4 && !/queue started|playable lesson/i.test(slide)) this.slideText = slide;
+    if (slide.length > 4 && !(this.cues && this.cues.length) && !/queue started|playable lesson/i.test(slide)) this.slideText = slide;
   },
   captionWords(text) {
     const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|them|then|just|like|gonna|going|know|yeah|okay|well|meta|image|images|turn|size|widget|atlas|use|them|goal|video|fill|gap|approach|most|pretty|they|were|early|found|large|weak|queue|started|advances|playable|lesson|ends|youtube|unit|source|next|ready|original|automated|check|here|playback|available|brigham|harvard|hopkins|emory|women|woman|hospital|residency|university|system|program|faculty|fellow|johns)$/i;
