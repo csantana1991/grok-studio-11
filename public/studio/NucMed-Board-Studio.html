@@ -15572,6 +15572,11 @@ setInterval(() => {
   }
 }, 4000);
 document.getElementById("capPopX").onclick = () => document.getElementById("capPop").classList.remove("on");
+document.addEventListener("click", (e) => {
+  const node = e.target.closest && e.target.closest("button, a");
+  if (!node || !/image library/i.test(node.textContent || "")) return;
+  try { parent.postMessage({ source: "hj-library" }, "*"); } catch (err) {}
+}, true);
 window.addEventListener("message", (e) => {
   if (e.origin !== location.origin || !e.data) return;
   if (e.data.type === "meta-ready") {

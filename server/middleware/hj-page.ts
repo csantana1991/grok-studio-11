@@ -162,6 +162,66 @@ const BRIDGE = `(function(){
       if (s.length > 8 && s !== titleSent && !/harvard\\s*:\\s*johns/i.test(s)) { titleSent = s; post(s); break; }
     }
   }
+  function filmRow(id, edge){
+    var row = document.getElementById(id);
+    if (row) return row;
+    row = document.createElement("div");
+    row.id = id;
+    row.style.cssText = "position:fixed;left:0;right:0;height:64px;z-index:80;display:flex;gap:8px;align-items:center;overflow:hidden;background:#101820;padding:4px 8px;" + (edge === "bottom" ? "bottom:28px;" : "top:0;");
+    if (edge === "bottom") row.style.display = "none";
+    document.body.appendChild(row);
+    return row;
+  }
+  function addFilms(row, urls){
+    for (var i = 0; i < urls.length; i++) {
+      if (row.querySelector('img[src="' + urls[i] + '"]')) continue;
+      var img = document.createElement("img");
+      img.src = urls[i];
+      img.alt = "";
+      img.style.cssText = "height:56px;width:84px;object-fit:cover;border-radius:6px;flex:0 0 auto;background:#000";
+      row.appendChild(img);
+    }
+    while (row.children.length > 20) row.removeChild(row.firstChild);
+  }
+  var stock = ["/meta-image/films/mri-ax-09.webp","/meta-image/films/mri-sag-06.webp","/meta-image/films/ct-th-axi-40.webp","/meta-image/films/pet-ax.webp","/meta-image/films/pet-mip.webp","/meta-image/films/xpa-a.webp"];
+  function paintLive(){
+    var row = filmRow("hjLive", "top");
+    addFilms(row, stock);
+    if (!window.__hjLiveFetched) {
+      window.__hjLiveFetched = 1;
+      fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent("congestive heart failure CT MRI") + "&gsrlimit=8&prop=pageimages&pithumbsize=320&format=json&origin=*")
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          var pages = (data.query && data.query.pages) || {};
+          var urls = [];
+          for (var k in pages) if (pages[k].thumbnail) urls.push(pages[k].thumbnail.source);
+          addFilms(row, urls);
+        })
+        .catch(function(){});
+    }
+    row.scrollLeft += 1.1;
+    if (row.scrollLeft + row.clientWidth >= row.scrollWidth - 2) row.scrollLeft = 0;
+    var lib = document.getElementById("hjLib");
+    if (lib && lib.style.display !== "none") {
+      lib.scrollLeft += 1.1;
+      if (lib.scrollLeft + lib.clientWidth >= lib.scrollWidth - 2) lib.scrollLeft = 0;
+    }
+  }
+  document.addEventListener("click", function(e){
+    var node = e.target && e.target.closest ? e.target.closest("button, a") : null;
+    var label = node ? (node.textContent || "") : "";
+    if (!/image library/i.test(label)) return;
+    var row = filmRow("hjLib", "bottom");
+    row.style.display = "flex";
+    addFilms(row, stock);
+  }, true);
+  window.addEventListener("message", function(e){
+    if (!e.data || e.data.source !== "hj-library") return;
+    var row = filmRow("hjLib", "bottom");
+    row.style.display = "flex";
+    addFilms(row, stock);
+  });
+  setInterval(paintLive, 40);
   setInterval(tick, 1000);
 })();`;
 
