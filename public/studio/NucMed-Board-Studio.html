@@ -6299,17 +6299,20 @@ const CapRail = {
   },
   async reelFor(text) {
     const q = String(text || "").replace(/\s+/g, " ").trim().slice(0, 80);
-    if (q.length < 4 || q === this._reelQ) return;
-    this._reelQ = q;
+    if (q.length < 4) return;
+    if (q !== this._reelQ) { this._reelQ = q; this._reelOff = 0; }
+    const host = document.getElementById("qaPics");
+    if (!host) return;
+    const off = this._reelOff || 0;
+    this._reelOff = off + 8;
     let urls = [];
     try {
-      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q + " medical") + "&gsrlimit=8&prop=pageimages&pithumbsize=320&format=json&origin=*").then((r) => r.json());
+      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q + " angiography MRI CT") + "&gsrlimit=8&gsroffset=" + off + "&prop=pageimages&pithumbsize=320&format=json&origin=*").then((r) => r.json());
       const pages = Object.values((data.query && data.query.pages) || {});
-      const bad = /donut|doughnut|food|burger|cathedral|station|flag|coat of arms|map of|painting|portrait|church/i;
-      urls = pages.filter((p) => p && p.thumbnail && p.title && !bad.test(p.title) && /ct|mri|x-?ray|pet|scan|radiol|abdomen|ultrasound|tomograph/i.test(p.title)).map((p) => p.thumbnail.source);
+      const bad = /donut|doughnut|food|burger|cathedral|station|flag|coat of arms|map of|painting|portrait|church|calendar|eye|fundus|diagram|logo|icon/i;
+      urls = pages.filter((p) => p && p.thumbnail && p.title && !bad.test(p.title)).map((p) => p.thumbnail.source);
     } catch (e) { return; }
-    const host = document.getElementById("qaPics");
-    if (!host || !urls.length) return;
+    if (!urls.length && off > 0) { this._reelOff = 0; return; }
     urls.forEach((src) => {
       if (host.querySelector('img[src="' + src.replace(/"/g, "") + '"]')) return;
       const img = document.createElement("img");
@@ -6318,7 +6321,7 @@ const CapRail = {
       img.src = src;
       host.appendChild(img);
     });
-    while (host.children.length > 12) host.removeChild(host.firstChild);
+    while (host.children.length > 24) host.removeChild(host.firstChild);
   },
   march() {
     if (this._march) return;
@@ -15531,7 +15534,7 @@ window.addEventListener("message", (e) => {
 });
 (function keepRailsMoving() {
   const step = () => {
-    ["wikiTop", "capRail"].forEach((id) => {
+    ["wikiTop", "capRail", "qaPics"].forEach((id) => {
       const el = document.getElementById(id);
       if (!el || el.scrollWidth <= el.clientWidth + 12) return;
       el.scrollLeft += 1.4;
@@ -15541,6 +15544,22 @@ window.addEventListener("message", (e) => {
   };
   requestAnimationFrame(step);
 })();
+setInterval(() => {
+  if (!document.body.classList.contains("medb-full")) return;
+  const said = document.getElementById("hjSaid");
+  const q = (said && said.value && !/slide first|playable lesson/i.test(said.value) ? said.value : "") || CapRail.line || CapRail.topic || "neurovascular angiography";
+  CapRail.reelFor(q);
+  const host = document.getElementById("qaPics");
+  if (host && host.children.length < 6 && typeof RA_META_FILMS !== "undefined") {
+    RA_META_FILMS.filter((f) => f.modality === "mri" || f.modality === "ct").slice(0, 8).forEach((f) => {
+      if (host.querySelector('img[src="' + f.src + '"]')) return;
+      const img = document.createElement("img");
+      img.src = f.src;
+      img.alt = f.caption || "";
+      host.appendChild(img);
+    });
+  }
+}, 4000);
 document.getElementById("capPopX").onclick = () => document.getElementById("capPop").classList.remove("on");
 window.addEventListener("message", (e) => {
   if (e.origin !== location.origin || !e.data) return;
