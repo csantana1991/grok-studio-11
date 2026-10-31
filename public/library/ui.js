@@ -5,11 +5,11 @@
 
   var css = document.createElement('style')
   css.textContent = [
-    '#imgLibBar{position:fixed;left:8px;bottom:8px;z-index:40;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 16px)}',
-    '#imgLibOpen{border:1px solid #93c5fd;background:#1e3a8a;color:#fff;font:700 12px/1.2 system-ui,sans-serif;padding:8px 10px;border-radius:8px;cursor:pointer}',
-    '#imgLibCount{display:flex;gap:4px;align-items:center;overflow-x:auto;max-width:70vw;min-height:46px;background:#0f172a;color:#fff;border:1px solid #334155;border-radius:8px;padding:4px;font:600 11px/1.3 system-ui,sans-serif}',
-    '#imgLibCount img{height:40px;width:56px;object-fit:cover;border-radius:4px;flex:0 0 auto;background:#000}',
-    '#imgLibPause{border:1px solid #93c5fd;background:#1e3a8a;color:#fff;font:700 12px/1 system-ui,sans-serif;height:46px;padding:0 10px;border-radius:8px;cursor:pointer}',
+    '#imgLibBar{position:fixed;left:0;right:0;bottom:0;width:100%;max-width:none;z-index:640;display:flex;gap:8px;align-items:center;box-sizing:border-box;background:#fff;padding:8px 12px 10px;border-top:1px solid #e5e7eb}',
+    '#imgLibOpen{border:1px solid #1e3a8a;background:#1e3a8a;color:#fff;font:700 12px/1.2 system-ui,sans-serif;padding:8px 10px;border-radius:8px;cursor:pointer;flex:0 0 auto}',
+    '#imgLibCount{display:flex;gap:4px;align-items:center;overflow-x:auto;flex:1 1 auto;max-width:none;min-height:52px;background:#fff;color:#111;border:0;border-radius:8px;padding:4px;font:600 11px/1.3 system-ui,sans-serif}',
+    '#imgLibCount img{height:44px;width:62px;object-fit:cover;border-radius:4px;flex:0 0 auto;background:#e5e7eb}',
+    '#imgLibPause{border:1px solid #1e3a8a;background:#1e3a8a;color:#fff;font:700 12px/1 system-ui,sans-serif;height:46px;padding:0 10px;border-radius:8px;cursor:pointer;flex:0 0 auto}',
     '#imgLibPrev:disabled,#imgLibNext:disabled{opacity:.35;cursor:default}',
     '#imgLibSheet{position:fixed;inset:0;z-index:70;background:#0b1220;color:#fff;display:none;flex-direction:column}',
     '#imgLibSheet.on{display:flex}',
