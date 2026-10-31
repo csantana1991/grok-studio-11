@@ -15290,6 +15290,7 @@ const MetaSide = {
   term(text) {
     const t = String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
     if (t.length < 3) return "";
+    if (/ancient greek|skop|laparoscopy \(from/.test(t)) return "";
     if (/^(next|question|score|play|home|atlas|widget|restore|minimize|maximize|board|studio|rad|review|yes|no|prev|back)( question| case| row)?$/.test(t)) return "";
     const named = ["pneumonia","atelectasis","cardiomegaly","consolidation","edema","effusion","emphysema","fibrosis","hernia","infiltration","mass","nodule","pneumothorax","pleural"];
     const hit = named.find(n => t.indexOf(n) >= 0);
@@ -15317,14 +15318,35 @@ const MetaSide = {
   },
   search(text) {
     const q = this.term(text);
-    if (!q) return;
+    if (!q || q === this.last) return;
+    this.last = q;
     this.pending = q;
     if (!this.on) this.toggle(true);
     const frame = document.getElementById("metaSideFrame");
-    if (!frame || frame.dataset.ready !== "1" || !frame.contentWindow) return;
+    if (!frame || !frame.contentWindow) return;
     try { frame.contentWindow.postMessage({ type: "meta-search", q: q }, location.origin); } catch (e) {}
   }
 };
+const SlideRelay = {
+  last: "",
+  read() {
+    const frame = document.getElementById("mbFrame") || document.getElementById("hjFrame");
+    if (!frame) return "";
+    let doc = null;
+    try { doc = frame.contentDocument; } catch (e) { return ""; }
+    if (!doc) return "";
+    const node = doc.querySelector(".media-player .player-caption strong, .player-caption strong, .media-player h1, .media-player h2");
+    return node ? String(node.textContent || "").replace(/\s+/g, " ").trim() : "";
+  },
+  tick() {
+    const text = this.read();
+    if (!text || text === this.last || text.length < 6) return;
+    if (/ancient greek|skop[eé]|laparoscopy \(from/i.test(text)) return;
+    this.last = text;
+    MetaSide.search(text);
+  }
+};
+setInterval(() => SlideRelay.tick(), 1200);
 document.getElementById("miDockBtn").onclick = () => MetaSide.toggle();
 document.getElementById("miRestore").onclick = () => MetaSide.toggle(false);
 const SideFilm = {
@@ -15431,6 +15453,7 @@ window.addEventListener("message", (e) => {
       const line = String(data.text).replace(/\s+/g, " ").trim();
       if (said && document.activeElement !== said && line.length > 8) said.value = line;
       if (line.length > 8 && typeof CapRail.reelFor === "function") CapRail.reelFor(line);
+      if (line.length > 6 && typeof MetaSide !== "undefined") MetaSide.search(line);
     }
     if (!data.follow) {
       const text = String(data.text || "").replace(/\s+/g, " ").trim();
