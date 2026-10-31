@@ -2582,6 +2582,13 @@ body.scan-live.hj-full #phraseDef article {
   white-space: normal;
 }
 body.scan-live.hj-full #phraseDef p { white-space: normal !important; }
+body.scan-live.hj-full #phraseNext {
+  position: sticky; top: 0; align-self: flex-end; z-index: 2;
+  border: 0; border-radius: 999px; background: #2ee6c8; color: #082027;
+  font-weight: 700; font-size: 12px; padding: 4px 10px; cursor: pointer;
+}
+#phraseNext { display: none; }
+body.scan-live.hj-full #phraseNext { display: inline-block; }
 body.scan-live.hj-full #phraseDef .shots { display: flex; gap: 6px; overflow: hidden; margin-top: 6px; }
 body.scan-live.hj-full #phraseDef .shots img { width: 72px; height: 48px; object-fit: cover; border-radius: 6px; flex: 0 0 auto; background: #000; }
 #capFilm { display: none; }
@@ -2631,7 +2638,7 @@ body.scan-live #phraseDef p { margin: 0; font-size: 12px; line-height: 1.4; colo
   <section data-mod="pet"><b>PET</b><div class="mod-row"></div></section>
 </div>
 <aside id="wikiDef" aria-label="Lecture images and definitions"><div id="leftPics"></div></aside>
-<aside id="phraseDef" aria-label="Slide phrase definitions"></aside>
+<aside id="phraseDef" aria-label="Slide phrase definitions"><button type="button" id="phraseNext">Next term</button></aside>
 <div class="rru-exitbar" id="mbBar"><b>Med-b</b><span>Live page</span><button type="button" id="mbAtlas">Atlas</button><button type="button" id="mbExit">Exit</button></div>
 <div id="mbWidgets">
   <button type="button" data-view="board">Board Studio</button>
@@ -5888,6 +5895,12 @@ const ScanLive = {
     if (/tachycard/i.test(raw)) return "tachycardia";
     if (/bradycard/i.test(raw)) return "bradycardia";
     if (/heart rate|normal rate|r-r interval/i.test(raw)) return "heart rate";
+    if (/\bpr interval\b/i.test(raw)) return "PR interval";
+    if (/\bst segment\b|st elevation|st depression/i.test(raw)) return "ST segment";
+    if (/\bp wave\b/i.test(raw)) return "P wave";
+    if (/\bt wave\b/i.test(raw)) return "T wave";
+    if (/\bqt\b|qtc/i.test(raw)) return "QT interval";
+    if (/sinus rhythm/i.test(raw)) return "sinus rhythm";
     if (/\bqrs\b/i.test(raw)) return "QRS complex";
     if (/fibrillat/i.test(raw)) return "fibrillation ECG";
     const stop = /^(the|and|for|with|that|this|from|away|just|having|they|them|then|about|or|if|are|was|what|when|your|have|into|over|than|second|step|is|be|a|an|of|to|in|on)$/;
@@ -5923,10 +5936,37 @@ const ScanLive = {
     const shots = document.createElement("div");
     shots.className = "shots";
     card.appendChild(shots);
-    host.insertBefore(card, host.firstChild);
-    while (host.children.length > 8) host.removeChild(host.lastChild);
+    const next = document.getElementById("phraseNext");
+    host.insertBefore(card, next ? next.nextSibling : host.firstChild);
+    let articles = host.querySelectorAll("article");
+    while (articles.length > 6) {
+      host.removeChild(articles[articles.length - 1]);
+      articles = host.querySelectorAll("article");
+    }
     host.scrollTop = 0;
     this.cardPics(shots, term);
+  },
+  termAt: 0,
+  termsSeen: {},
+  nextTerm() {
+    const cues = (typeof CapRail !== "undefined" && CapRail.cues) || [];
+    const lines = cues.map((c) => String((c && c.text) || c || "")).filter((line) => line.length > 12);
+    if (!lines.length) return;
+    const start = this.termAt || 0;
+    for (let n = 0; n < lines.length; n++) {
+      const i = (start + n) % lines.length;
+      const line = lines[i].replace(/\s+/g, " ").trim();
+      if (/ninja nerd|clinical medicine/i.test(line) && !/rate|rhythm|qrs|interval|wave|segment|tachycard|brady|fibrill|axis|sinus/i.test(line)) continue;
+      const term = this.livePhrase(line);
+      if (!term || term.length < 4 || this.termsSeen[term]) continue;
+      this.termsSeen[term] = 1;
+      this.termAt = (i + 1) % lines.length;
+      const btn = document.getElementById("phraseNext");
+      if (btn) btn.textContent = "Next · " + term;
+      delete this.seenPhrase[line.toLowerCase().slice(0, 160)];
+      this.phrase(line);
+      return;
+    }
   },
   async cardPics(shots, term) {
     if (!shots || !term) return;
@@ -6041,6 +6081,8 @@ const ScanLive = {
   }
 };
 setInterval(() => { if (document.body.classList.contains("scan-live")) ScanLive.audit(); }, 1000);
+const phraseNext = document.getElementById("phraseNext");
+if (phraseNext) phraseNext.addEventListener("click", () => ScanLive.nextTerm());
 const SlideGrab = {
   last: "",
   busy: false,
