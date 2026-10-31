@@ -156,6 +156,7 @@ const BRIDGE = `(function(){
         win.postMessage(JSON.stringify({ event: "command", func: "getCurrentTime", args: [], id: fr.id, channel: "widget" }), "*");
       } catch (e) {}
     }
+    fitPlayer();
     var named = lectureTitle();
     if (named && named !== titleSent) { titleSent = named; post(named); }
     var heads = document.querySelectorAll("h1");
@@ -290,6 +291,19 @@ const BRIDGE = `(function(){
       addFilms(row, localFor(q));
     }
   });
+  var fitted = "";
+  function fitPlayer(){
+    var yt = document.querySelector("iframe[src*='youtube']");
+    if (!yt) return;
+    var id = ((yt.getAttribute("src") || "").match(/embed\\/([A-Za-z0-9_-]{6,15})/) || [])[1] || "";
+    if (!id || fitted === id) return;
+    var b = yt.getBoundingClientRect();
+    if (b.height < 80) return;
+    var room = window.innerHeight - 8;
+    if (b.top >= 64 && b.bottom <= room) { fitted = id; return; }
+    window.scrollTo(0, Math.max(0, window.scrollY + b.top - 68));
+    fitted = id;
+  }
   setInterval(paintLive, 40);
   setInterval(tick, 1000);
 })();`;
