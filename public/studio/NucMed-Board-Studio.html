@@ -2441,13 +2441,23 @@ body.scan-live.medb-full .work,
 body.scan-live.hj-full.wiki-top .work,
 body.scan-live.medb-full.wiki-top .work,
 body.scan-live.hj-full.film-widget .work {
-  left: 200px !important; right: 0 !important; width: auto !important; top: 96px !important; bottom: 120px !important;
+  left: 200px !important; right: 260px !important; width: auto !important; top: 96px !important; bottom: 120px !important;
 }
 body.scan-live.hj-full #capRail,
 body.scan-live.medb-full #capRail {
   bottom: 0 !important; height: 28px !important; padding: 0 8px !important;
   align-items: center; overflow: hidden !important;
 }
+#phraseDef { display: none; }
+body.scan-live #phraseDef {
+  display: block; position: fixed; right: 0; width: 260px; top: 96px; bottom: 120px; z-index: 380;
+  overflow-x: hidden; overflow-y: auto; background: #101820; color: #e8f2f7;
+  border-left: 1px solid #1e3a4a; padding: 10px;
+}
+body.scan-live #phraseDef article { margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid #1e3344; }
+body.scan-live #phraseDef strong { display: block; color: #f3e2b3; font-size: 13px; line-height: 1.35; margin-bottom: 4px; }
+body.scan-live #phraseDef em { display: block; color: #8fd0ff; font-style: normal; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+body.scan-live #phraseDef p { margin: 0; font-size: 12px; line-height: 1.4; color: #d5e4ee; }
 </style></head>
 <body>
 <div id="bootSplash" style="position:fixed;inset:0;z-index:99999;background:#fff;color:#12315c;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,sans-serif;padding:24px;text-align:center">
@@ -2469,6 +2479,7 @@ body.scan-live.medb-full #capRail {
   <section data-mod="live"><b>Live</b><div class="mod-row"></div></section>
 </div>
 <aside id="wikiDef" aria-label="Lecture images and definitions"><div id="leftPics"></div></aside>
+<aside id="phraseDef" aria-label="Slide phrase definitions"></aside>
 <div class="rru-exitbar" id="mbBar"><b>Med-b</b><span>Live page</span><button type="button" id="mbAtlas">Atlas</button><button type="button" id="mbExit">Exit</button></div>
 <div id="mbWidgets">
   <button type="button" data-view="board">Board Studio</button>
@@ -5394,6 +5405,7 @@ const ScanLive = {
   last: "",
   busy: false,
   seen: {},
+  seenPhrase: {},
   dir: 1,
   tick(text) {
     const raw = ((text || "") + " " + this.onScreen()).toLowerCase();
@@ -5543,6 +5555,50 @@ const ScanLive = {
     card.appendChild(p);
     host.appendChild(card);
     while (host.children.length > 8) host.removeChild(host.firstChild);
+  },
+  slideTerm(line) {
+    const low = String(line || "").toLowerCase();
+    const known = ["flip angle", "rf pulse", "radiofrequency pulse", "radiofrequency", "net magnetization", "magnetization", "larmor frequency", "larmor", "precession", "spin echo", "gradient echo", "k-space", "t1 relaxation", "t2 relaxation", "proton density", "slice selection", "repetition time", "echo time", "field of view", "chemical shift", "magnetic field", "longitudinal", "transverse magnetization", "gyromagnetic"];
+    for (let i = 0; i < known.length; i++) if (low.indexOf(known[i]) >= 0) return known[i];
+    const stop = /^(the|and|for|with|that|this|from|away|tips|net|axis|into|over|than|are|was|what|when|your|have|they|them|then|about|slide|lecture|introduction|background|imaging|medical|image)$/;
+    const words = low.replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.test(w));
+    return words.slice(0, 3).join(" ") || line.slice(0, 60);
+  },
+  async phrase(text) {
+    const line = String(text || "").replace(/\s+/g, " ").trim();
+    if (line.length < 16) return;
+    if (/queue started|playable lesson|advances when|imaging medical|brigham|harvard|hopkins/i.test(line)) return;
+    const key = line.toLowerCase().slice(0, 160);
+    if (this.seenPhrase[key]) return;
+    this.seenPhrase[key] = 1;
+    document.body.classList.add("scan-live");
+    const term = this.slideTerm(line);
+    let title = term;
+    let extract = "";
+    try {
+      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(term + " MRI") + "&gsrlimit=1&prop=extracts&exintro=1&explaintext=1&format=json&origin=*").then((r) => r.json());
+      const page = Object.values((data.query && data.query.pages) || {})[0];
+      if (page) {
+        title = page.title || term;
+        extract = String(page.extract || "").replace(/\s+/g, " ").trim();
+      }
+    } catch (e) { return; }
+    if (!extract || /may refer to/i.test(extract)) return;
+    const host = document.getElementById("phraseDef");
+    if (!host) return;
+    const card = document.createElement("article");
+    const h = document.createElement("strong");
+    h.textContent = line.slice(0, 180);
+    const em = document.createElement("em");
+    em.textContent = title;
+    const p = document.createElement("p");
+    p.textContent = extract.slice(0, 380);
+    card.appendChild(h);
+    card.appendChild(em);
+    card.appendChild(p);
+    host.insertBefore(card, host.firstChild);
+    while (host.children.length > 6) host.removeChild(host.lastChild);
+    host.scrollTop = 0;
   },
   glide() {
     if (this._glide) return;
@@ -5957,6 +6013,7 @@ const CapRail = {
     this.line = text;
     this.slideText = text;
     this.slideKey = "";
+    if (typeof ScanLive !== "undefined") ScanLive.phrase(text);
   },
   readLecture() {
     const frames = ["mbFrame", "hjFrame"].map((id) => document.getElementById(id)).filter(Boolean);
@@ -15005,6 +15062,7 @@ window.addEventListener("message", (e) => {
       const spoken = text.length > 42 && !/\|/.test(text);
       if (spoken) {
         CapRail.line = text;
+        if (typeof ScanLive !== "undefined") ScanLive.phrase(text);
         CapRail.readScreen();
       } else {
         CapRail.topic = text.slice(0, 120);
@@ -15020,6 +15078,7 @@ window.addEventListener("message", (e) => {
       if (CapRail.cues && CapRail.cues.length) return;
       if (data.videoId) CapRail.useVideo(data.videoId, "");
       CapRail.line = bit;
+      if (typeof ScanLive !== "undefined") ScanLive.phrase(bit);
       CapRail.readScreen();
     }
   } else if (data.cc && typeof data.t === "number") CapRail.cueAt(data.t);
