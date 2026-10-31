@@ -2677,6 +2677,51 @@ body.scan-live #phraseDef article { margin: 0 0 12px; padding-bottom: 10px; bord
 body.scan-live #phraseDef strong { display: block; color: #f3e2b3; font-size: 13px; line-height: 1.35; margin-bottom: 4px; }
 body.scan-live #phraseDef em { display: block; color: #8fd0ff; font-style: normal; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
 body.scan-live #phraseDef p { margin: 0; font-size: 12px; line-height: 1.4; color: #d5e4ee; }
+
+body.medb-full #libPeek {
+  display: none;
+  position: fixed;
+  left: 12px;
+  top: 138px;
+  width: min(460px, 38vw);
+  bottom: 210px;
+  z-index: 470;
+  background: #07141f;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0,0,0,.45);
+}
+body.medb-full #libPeek.on { display: block; }
+body.medb-full #libPeek img {
+  width: 100%;
+  height: calc(100% - 42px);
+  object-fit: contain;
+  background: #000;
+  display: block;
+}
+body.medb-full #libPeek p {
+  margin: 0;
+  padding: 8px 12px 10px;
+  color: #e8f2f7;
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body.medb-full #libPeek button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  border: 0;
+  border-radius: 999px;
+  background: #e8f2f7;
+  color: #0e1c28;
+  font-weight: 800;
+  padding: 4px 10px;
+  cursor: pointer;
+}
 </style></head>
 <body>
 <div id="bootSplash" style="position:fixed;inset:0;z-index:99999;background:#fff;color:#12315c;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,sans-serif;padding:24px;text-align:center">
@@ -5724,7 +5769,7 @@ const ScanLive = {
     const term = ((body ? body + " " : "") + (words.slice(0, 2).join(" ") || "MRI")).trim();
     document.body.classList.add("scan-live");
     this.audit();
-    if (!this._pump) this._pump = setInterval(() => { if (this.last) this.fill(this.last, (this.round = (this.round || 0) + 1)); this.audit(); }, 8000);
+    if (!this._pump) this._pump = setInterval(() => { if (this.last) this.fill(this.last, (this.round = (this.round || 0) + 1)); this.audit(); }, document.body.classList.contains("medb-full") ? 20000 : 8000);
     if (!this._audit) this._audit = setInterval(() => this.audit(), 3000);
     if (term === this.last || this.busy) return;
     this.last = term;
@@ -5841,7 +5886,25 @@ const ScanLive = {
       const cap = document.createElement("span");
       cap.textContent = this.anatomy(kind, hit.title);
       b.appendChild(cap);
-      b.onclick = () => window.open(hit.page, "_blank", "noopener");
+      b.onclick = (ev) => {
+        if (ev) ev.preventDefault();
+        if (document.body.classList.contains("medb-full")) {
+          var box = document.getElementById("libPeek");
+          if (!box) {
+            box = document.createElement("aside");
+            box.id = "libPeek";
+            box.innerHTML = '<button type="button">Close</button><img alt="" referrerpolicy="no-referrer"><p></p>';
+            box.querySelector("button").onclick = (e) => { if (e) e.stopPropagation(); box.classList.remove("on"); };
+            document.body.appendChild(box);
+          }
+          box.querySelector("img").src = hit.src;
+          box.querySelector("img").alt = hit.title;
+          box.querySelector("p").textContent = hit.title;
+          box.classList.add("on");
+          return;
+        }
+        window.open(hit.page, "_blank", "noopener");
+      };
       host.appendChild(b);
     });
     while (host.children.length > 6) host.removeChild(host.firstChild);

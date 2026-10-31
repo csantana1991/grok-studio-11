@@ -378,9 +378,16 @@
     var el = document.getElementById('imgLibCount')
     if (!el) return
     var words = lectureWords()
+    var medbHold = document.body.classList.contains('medb-full')
+    var nowRank = Date.now()
     if (words !== window.__imgLibWords) {
-      window.__imgLibWords = words
-      window.__imgLibPage = 0
+      if (medbHold && window.__imgLibPicked && window.__imgLibPicked.length && nowRank - (window.__imgLibRanked || 0) < 18000) {
+        words = window.__imgLibWords
+      } else {
+        window.__imgLibWords = words
+        window.__imgLibPage = 0
+        window.__imgLibRanked = nowRank
+      }
     }
     var keys = rankKeys(words)
     var picked = (rows || []).map(function (r) {
@@ -409,6 +416,28 @@
       var img = document.createElement('img')
       img.alt = r.title || r.caption || 'Verified image'
       img.src = displaySrc(r.imageUrl)
+      img.style.cursor = 'pointer'
+      img.onclick = function (ev) {
+        if (ev) { ev.preventDefault(); ev.stopPropagation() }
+        if (!document.body.classList.contains('medb-full')) return
+        var box = document.getElementById('libPeek')
+        if (!box) {
+          box = document.createElement('aside')
+          box.id = 'libPeek'
+          box.innerHTML = '<button type="button">Close</button><img alt="" referrerpolicy="no-referrer"><p></p>'
+          box.querySelector('button').onclick = function (e) {
+            if (e) e.stopPropagation()
+            box.classList.remove('on')
+          }
+          document.body.appendChild(box)
+        }
+        var big = box.querySelector('img')
+        var cap = box.querySelector('p')
+        big.src = img.src
+        big.alt = img.alt
+        cap.textContent = img.alt
+        box.classList.add('on')
+      }
       el.appendChild(img)
     })
     var pause = document.getElementById('imgLibPause')
@@ -419,12 +448,17 @@
         if (window.__imgLibPaused) return
         var list = window.__imgLibPicked || []
         if (list.length <= 18) return
+        var medb = document.body.classList.contains('medb-full')
+        var wait = medb ? 14000 : 3500
+        var now = Date.now()
+        if (now - (window.__imgLibFlipped || 0) < wait) return
+        window.__imgLibFlipped = now
         var pages = Math.ceil(list.length / 18)
         window.__imgLibPage = ((window.__imgLibPage || 0) + 1) % pages
         var held = window.__imgLibWords
         window.__imgLibWords = held
         paintInline(window.__imgLibRows || [])
-      }, 3500)
+      }, 1000)
     }
   }
 
