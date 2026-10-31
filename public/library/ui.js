@@ -416,9 +416,11 @@
       var img = document.createElement('img')
       img.alt = r.title || r.caption || 'Verified image'
       img.src = displaySrc(r.imageUrl)
+      img.style.cursor = 'pointer'
       img.onclick = function (ev) {
         if (!document.body.classList.contains('medb-full')) return
         if (ev) { ev.preventDefault(); ev.stopPropagation() }
+        if (window.showLibPeek) window.showLibPeek(img.currentSrc || img.src, img.alt || '')
       }
       el.appendChild(img)
     })

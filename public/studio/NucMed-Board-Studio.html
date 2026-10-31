@@ -2707,7 +2707,14 @@ body.medb-full #libPeek {
   overflow: hidden;
   box-shadow: 0 16px 40px rgba(0,0,0,.45);
 }
-body.medb-full #libPeek.on { display: none !important; }
+body.medb-full #libPeek.on {
+  display: block !important;
+  left: 10px;
+  top: 112px;
+  width: min(640px, 52vw);
+  bottom: 206px;
+  z-index: 430;
+}
 body.medb-full #libPeek img {
   width: 100%;
   height: calc(100% - 42px);
@@ -5904,6 +5911,7 @@ const ScanLive = {
       b.onclick = (ev) => {
         if (document.body.classList.contains("medb-full")) {
           if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+          if (window.showLibPeek) window.showLibPeek(hit.src, hit.title);
           return;
         }
         window.open(hit.page, "_blank", "noopener");
@@ -15884,6 +15892,33 @@ document.addEventListener("click", (e) => {
 
 
 
+window.showLibPeek = function (src, title) {
+  if (!src || !document.body.classList.contains("medb-full")) return;
+  var box = document.getElementById("libPeek");
+  if (!box) {
+    box = document.createElement("aside");
+    box.id = "libPeek";
+    box.innerHTML = '<button type="button">Close</button><img alt="" referrerpolicy="no-referrer"><p></p>';
+    box.querySelector("button").onclick = function (e) {
+      if (e) e.stopPropagation();
+      box.classList.remove("on");
+    };
+    document.body.appendChild(box);
+  }
+  var big = box.querySelector("img");
+  var cap = box.querySelector("p");
+  big.src = src;
+  big.alt = title || "";
+  cap.textContent = title || "";
+  box.classList.add("on");
+};
+document.addEventListener("click", function (ev) {
+  if (!document.body.classList.contains("medb-full")) return;
+  var node = ev.target && ev.target.closest && ev.target.closest("#imgLibCount img, #qaPics img, #modStrip img");
+  if (!node || !node.src) return;
+  ev.preventDefault();
+  window.showLibPeek(node.currentSrc || node.src, node.alt || "");
+}, true);
 window.COURSE = COURSE;
 window.NMBState = state;
 </script>
