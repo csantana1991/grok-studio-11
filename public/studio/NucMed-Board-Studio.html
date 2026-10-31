@@ -5454,17 +5454,37 @@ const ScanLive = {
   },
   insight(line) {
     const low = String(line || "").toLowerCase();
+    this.slideNow = line;
     if (/heart failure|congestive|\bchf\b|cardiac/.test(low)) {
-      this.slideNow = line;
+      this.topicKey = "heart";
       this.note("Cardiac CT angiography", "Cardiac CT angiography times an iodinated contrast bolus to the coronary arteries, usually with ECG gating. It shows the heart, the coronary lumen, and whether the chambers are enlarged.");
       this.note("Heart failure CT", "A heart-failure chest CT shows an enlarged cardiac silhouette, pulmonary venous congestion, septal lines, and sometimes alveolar edema or pleural fluid. That is the CT example for this lecture.");
       this.best("ct", "heart failure", 0);
       this.phrase("cardiac CT angiography");
+      return;
+    }
+    if (/stroke|ischemi|infarct|hemorrhag|middle cerebral|\bmca\b/.test(low)) {
+      this.topicKey = "brain";
+      this.note("Stroke imaging", "Noncontrast head CT is first, to exclude hemorrhage. MRI diffusion shows the acute infarct within minutes. CT angiography shows the blocked vessel, and CT perfusion separates the core from the penumbra.");
+      this.note("Stroke CT example", "A stroke CT may be normal in the first hours, then show a dense artery, loss of gray-white matter, and swelling. Hemorrhage is bright on that same noncontrast CT.");
+      this.best("ct", "ischemic stroke", 0);
+      this.best("mri", "DWI stroke", 0);
+      this.phrase("CT perfusion");
+      return;
     }
     if (/gradient echo|spin echo|rf pulse|flip angle|pulse sequence|diffusion|perfusion mri/.test(low)) {
+      this.topicKey = "mri";
       this.note("MRI techniques, mixed", "These techniques are read together. A gradient echo uses one RF pulse and gradient reversal. A spin echo adds a 180 degree refocusing pulse. Diffusion and perfusion are added when the lecture moves from structure to motion or tissue injury.");
       this.best("mri", "gradient echo", 0);
+      return;
     }
+    const topic = this.slideTerm(line);
+    if (!topic || topic.length < 4) return;
+    this.topicKey = topic;
+    this.note(topic, "This lecture is on " + topic + ". The row underneath is the matching CT, MRI, X-ray, and PET for that topic, the same way a heart-failure lecture opens its own CT example.");
+    this.best("ct", topic, 0);
+    this.best("mri", topic, 0);
+    this.phrase(topic);
   },
   watch() {
     const frames = ["mbFrame", "hjFrame"].map((id) => document.getElementById(id)).filter(Boolean);
@@ -5475,7 +5495,10 @@ const ScanLive = {
     if (!doc) return;
     const root = doc.querySelector(".media-player, .player-column") || doc.body;
     const lines = String(root.innerText || "").split(/\n+/).map((s) => s.replace(/\s+/g, " ").trim());
-    const hit = lines.find((s) => s.length > 12 && s.length < 220 && /gradient echo|rf pulse|flip angle|pulse sequence|magnetization|precession|heart failure|congestive|cardiac ct|chf/i.test(s));
+    const hit = lines.find((s) => s.length > 12 && s.length < 220 && /gradient echo|rf pulse|flip angle|pulse sequence|magnetization|precession|heart failure|congestive|cardiac ct|\bchf\b|stroke|ischemi|infarct|hemorrhag/i.test(s));
+    const lesson = root.querySelector(".lesson-item.is-current strong, .player-caption strong, h1");
+    const title = lesson ? String(lesson.textContent || "").replace(/\s+/g, " ").trim() : "";
+    if (title) this.hear(title);
     if (hit) this.hear(hit);
   },
   tick(text) {
@@ -5520,6 +5543,12 @@ const ScanLive = {
   },
   queries(kind, term) {
     const slide = String(this.slideNow || term || "").toLowerCase();
+    if (/stroke|ischemi|infarct|hemorrhag|middle cerebral/.test(slide)) {
+      if (kind === "ct") return ["ischemic stroke head CT", "CT angiography brain", "CT perfusion brain", "hemorrhage head CT"];
+      if (kind === "mri") return ["DWI MRI stroke", "FLAIR MRI brain infarct", "brain MRI axial"];
+      if (kind === "pet") return ["FDG PET brain", "brain PET scan"];
+      return ["head CT scan"];
+    }
     if (/heart|cardiac|chf|failure|pulmonary/.test(slide)) {
       if (kind === "ct") return ["heart failure CT pulmonary edema", "cardiac CT angiography", "axial chest CT", "CT pulmonary angiogram"];
       if (kind === "xray") return ["chest x-ray cardiomegaly", "chest radiograph heart"];
@@ -5532,15 +5561,17 @@ const ScanLive = {
       if (kind === "pet") return ["FDG PET brain", "PET CT scan axial", "whole body FDG PET"];
       return ["chest x-ray radiograph", "bone radiograph"];
     }
-    const body = this.bodyHint || "";
-    if (kind === "xray") return [body + " x-ray radiograph", "chest x-ray radiograph", "bone radiograph", term + " radiograph"];
-    if (kind === "ct") return [body + " CT axial", "chest CT axial", "abdominal CT axial", "head CT scan", "CT angiogram"];
-    if (kind === "mri") return [body + " MRI axial", "brain MRI axial", "abdominal MRI liver", "spine MRI", term + " MRI"];
-    return [body + " FDG PET", "PET CT scan", "whole body PET", "nuclear medicine PET scan"];
+    const topic = String(this.topicKey || term || "scan").replace(/\s+/g, " ").trim();
+    if (kind === "xray") return [topic + " x-ray radiograph", "chest x-ray radiograph"];
+    if (kind === "ct") return [topic + " CT", topic + " axial CT", "chest CT axial"];
+    if (kind === "mri") return [topic + " MRI", topic + " MRI axial", "brain MRI axial"];
+    return [topic + " PET", "FDG PET CT", "whole body PET"];
   },
   modOk(kind, blob) {
     const t = String(blob || "").toLowerCase();
-    if (kind === "ct") return /\bct\b|computed tomograph/.test(t) && /chest|lung|heart|cardiac|coronary|abdomen|liver|brain|head|aorta|pelvis|kidney|mediastin|pulmonary|edema/.test(t);
+    const topic = String(this.topicKey || "").toLowerCase();
+    if (topic && topic.length > 3 && t.indexOf(topic.split(" ")[0]) >= 0 && /ct|mri|x-?ray|pet|scan|radiograph|tomograph/.test(t)) return true;
+    if (kind === "ct") return /\bct\b|computed tomograph/.test(t) && /chest|lung|heart|cardiac|coronary|abdomen|liver|brain|head|aorta|pelvis|kidney|mediastin|pulmonary|edema|stroke|infarct/.test(t);
     if (kind === "mri") return /\bmri\b|magnetic resonance|flair|\bt1\b|\bt2\b/.test(t);
     if (kind === "pet") return /\bpet\b|fdg|positron|scintigraph/.test(t);
     return /x-?ray|xray|radiograph/.test(t);
