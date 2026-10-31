@@ -183,26 +183,76 @@ const BRIDGE = `(function(){
     }
     while (row.children.length > 20) row.removeChild(row.firstChild);
   }
-  var stock = ["/meta-image/films/mri-ax-09.webp","/meta-image/films/mri-sag-06.webp","/meta-image/films/ct-th-axi-40.webp","/meta-image/films/pet-ax.webp","/meta-image/films/pet-mip.webp","/meta-image/films/xpa-a.webp"];
+  var packs = {
+    brain: ["/meta-image/films/mri-ax-09.webp","/meta-image/films/mri-sag-06.webp"],
+    chest: ["/meta-image/films/ct-th-axi-40.webp","/meta-image/films/xpa-a.webp","/meta-image/films/pet-ax.webp"],
+    cardiac: ["/meta-image/films/ct-th-axi-40.webp","/meta-image/films/pet-ax.webp"]
+  };
+  function lectureTitle(){
+    var nodes = document.querySelectorAll("h1, h2, h3");
+    for (var i = 0; i < nodes.length; i++) {
+      var s = (nodes[i].textContent || "").replace(/\\s+/g, " ").trim();
+      if (s.length < 4 || s.length > 90) continue;
+      if (/harvard|johns|emory|atlas|results|hj med|residency|diagnostic radiology|mark as watched/i.test(s)) continue;
+      return s;
+    }
+    var text = (document.body.innerText || "").replace(/\\s+/g, " ");
+    var m = text.match(/Next lecture\\s+(.{4,80}?)\\s+(?:CTisus|YouTube|·)/);
+    return m ? m[1] : "";
+  }
+  function queryFor(title){
+    var t = title.toLowerCase();
+    if (/breast|mammo|tomosynthesis/.test(t)) return "breast mammography MRI";
+    if (/cardiac|heart|coronary|myocard/.test(t)) return "cardiac CT angiography";
+    if (/brain|cerebr|stroke|neuro/.test(t)) return "brain MRI";
+    if (/chest|lung|pulmonary|thorax/.test(t)) return "chest CT lung";
+    if (/abdomen|liver|pancrea|bowel/.test(t)) return "abdominal CT";
+    return title + " radiology";
+  }
+  function offTopic(lecture, title){
+    var L = String(lecture || "").toLowerCase();
+    var T = String(title || "").toLowerCase();
+    if (/breast|mammo/.test(L) && /cardiac|myocard|coronary|heart failure|brain mri/.test(T)) return true;
+    if (/cardiac|heart|coronary|myocard/.test(L) && /breast|mammo|gynecomastia/.test(T)) return true;
+    if (/brain|cerebr|stroke/.test(L) && /breast|mammo|cardiac|coronary/.test(T)) return true;
+    return false;
+  }
+  function localFor(q){
+    var t = q.toLowerCase();
+    if (/breast|mammo/.test(t)) return [];
+    if (/brain|cerebr|stroke/.test(t)) return packs.brain;
+    if (/cardiac|heart|coronary/.test(t)) return packs.cardiac;
+    if (/chest|lung|thorax|ct/.test(t)) return packs.chest;
+    return [];
+  }
   function paintLive(){
     var row = filmRow("hjLive", "top");
-    if (row.children.length < 8) addFilms(row, stock);
-    if (row.scrollWidth <= row.clientWidth + 24 && row.children.length) {
-      var clones = [];
-      for (var c = 0; c < row.children.length; c++) clones.push(row.children[c].cloneNode(true));
-      for (var n = 0; n < clones.length; n++) row.appendChild(clones[n]);
-    }
-    if (!window.__hjLiveFetched) {
-      window.__hjLiveFetched = 1;
-      fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent("congestive heart failure CT MRI") + "&gsrlimit=8&prop=pageimages&pithumbsize=320&format=json&origin=*")
+    var title = lectureTitle();
+    var q = title ? queryFor(title) : "";
+    if (q && q !== row.getAttribute("data-q")) {
+      row.setAttribute("data-q", q);
+      row.innerHTML = "";
+      row.scrollLeft = 0;
+      addFilms(row, localFor(q));
+      fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q) + "&gsrlimit=8&prop=pageimages&pithumbsize=320&format=json&origin=*")
         .then(function(r){ return r.json(); })
         .then(function(data){
+          if (row.getAttribute("data-q") !== q) return;
           var pages = (data.query && data.query.pages) || {};
           var urls = [];
-          for (var k in pages) if (pages[k].thumbnail) urls.push(pages[k].thumbnail.source);
+          for (var k in pages) {
+            var p = pages[k];
+            if (!p.thumbnail || offTopic(q, p.title)) continue;
+            urls.push(p.thumbnail.source);
+          }
           addFilms(row, urls);
         })
         .catch(function(){});
+    }
+    if (row.scrollWidth <= row.clientWidth + 24 && row.children.length && row.children.length < 14) {
+      var clones = [];
+      for (var c = 0; c < row.children.length; c++) clones.push(row.children[c].cloneNode(true));
+      for (var n = 0; n < clones.length; n++) row.appendChild(clones[n]);
     }
     row.scrollLeft += 1.1;
     if (row.scrollLeft + row.clientWidth >= row.scrollWidth - 2) row.scrollLeft = 0;
@@ -218,13 +268,25 @@ const BRIDGE = `(function(){
     if (!/image library/i.test(label)) return;
     var row = filmRow("hjLib", "bottom");
     row.style.display = "flex";
-    addFilms(row, stock);
+    var live = document.getElementById("hjLive");
+    var q = live ? (live.getAttribute("data-q") || "") : "";
+    if (q && row.getAttribute("data-q") !== q) {
+      row.setAttribute("data-q", q);
+      row.innerHTML = "";
+      addFilms(row, localFor(q));
+    }
   }, true);
   window.addEventListener("message", function(e){
     if (!e.data || e.data.source !== "hj-library") return;
     var row = filmRow("hjLib", "bottom");
     row.style.display = "flex";
-    addFilms(row, stock);
+    var live = document.getElementById("hjLive");
+    var q = live ? (live.getAttribute("data-q") || "") : "";
+    if (q && row.getAttribute("data-q") !== q) {
+      row.setAttribute("data-q", q);
+      row.innerHTML = "";
+      addFilms(row, localFor(q));
+    }
   });
   setInterval(paintLive, 40);
   setInterval(tick, 1000);
