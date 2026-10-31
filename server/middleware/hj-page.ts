@@ -204,7 +204,7 @@ const BRIDGE = `(function(){
     return m ? m[1] : "";
   }
   function queryFor(title){
-    return String(title || "").replace(/\s+/g, " ").trim().slice(0, 120);
+    return String(title || "").replace(/\\s+/g, " ").trim().slice(0, 120);
   }
   function familyOf(text){
     var t = String(text || "").toLowerCase();
