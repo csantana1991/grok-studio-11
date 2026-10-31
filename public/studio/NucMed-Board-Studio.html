@@ -2450,7 +2450,7 @@ body.scan-live.hj-full.wiki-top .work,
 body.scan-live.medb-full.wiki-top .work,
 body.scan-live.hj-full.film-widget .work,
 body.scan-live.medb-full.film-widget .work {
-  left: 0 !important; right: 0 !important; width: auto !important; top: 96px !important; bottom: 112px !important; z-index: 1 !important;
+  left: 0 !important; right: 300px !important; width: auto !important; top: 96px !important; bottom: 130px !important; z-index: 1 !important;
   overflow: hidden !important;
 }
 body.scan-live.hj-full #hjFrame,
@@ -2462,11 +2462,9 @@ body.scan-live.hj-full #capRail,
 body.scan-live.medb-full #capRail {
   display: none !important;
 }
-body.scan-live #wikiDef,
-body.scan-live #phraseDef { display: none !important; }
-#phraseDef { display: none; }
+body.scan-live #wikiDef { display: none !important; }
 body.scan-live #phraseDef {
-  display: block !important; position: fixed; right: 0; width: 280px; top: 96px; bottom: 160px; z-index: 1200 !important;
+  display: block !important; position: fixed; right: 0; width: 300px; top: 96px; bottom: 130px; z-index: 1200 !important;
   overflow-x: hidden; overflow-y: auto; background: #101820; color: #e8f2f7;
   border-left: 1px solid #1e3a4a; padding: 10px;
 }
@@ -5482,13 +5480,17 @@ const ScanLive = {
       this.best("mri", "gradient echo", 0);
       return;
     }
-    const topic = this.slideTerm(line);
-    if (!topic || topic.length < 4) return;
-    this.topicKey = topic;
-    this.note(topic, "This lecture is on " + topic + ". The row underneath is the matching CT, MRI, X-ray, and PET for that topic, the same way a heart-failure lecture opens its own CT example.");
-    this.best("ct", topic, 0);
-    this.best("mri", topic, 0);
-    this.phrase(topic);
+    if (/quantit|region of interest|\broi\b|dosimetr|radiopharmaceutical/.test(low)) {
+      this.topicKey = "pet";
+      this.note("Absolute quantitation", "Absolute quantitation measures the activity in the tissue per unit volume or mass. The units are µCi/mL or kBq/mL. A region of interest is the area drawn on the scan to count that activity. One ROI compared with another ROI, or with background, is a relative measure. Dosimetry uses the absolute activity to estimate the radiation dose.");
+      this.best("pet", "PET quantitation ROI", 0);
+      this.phrase("region of interest");
+      return;
+    }
+    if (line.length < 48 || /machine learning|artificial intelligence|subfields|board studio|page was/.test(low)) return;
+    this.topicKey = this.slideTerm(line);
+    this.note(line.slice(0, 90), line);
+    this.phrase(this.topicKey);
   },
   watch() {
     const frames = ["mbFrame", "hjFrame"].map((id) => document.getElementById(id)).filter(Boolean);
@@ -5497,12 +5499,9 @@ const ScanLive = {
     let doc = null;
     try { doc = frame.contentDocument; } catch (e) { return; }
     if (!doc) return;
-    const root = doc.querySelector(".media-player, .player-column") || doc.body;
+    const root = doc.querySelector(".media-player, .player-column, .slide, main") || doc.body;
     const lines = String(root.innerText || "").split(/\n+/).map((s) => s.replace(/\s+/g, " ").trim());
-    const hit = lines.find((s) => s.length > 12 && s.length < 220 && /gradient echo|rf pulse|flip angle|pulse sequence|magnetization|precession|heart failure|congestive|cardiac ct|\bchf\b|stroke|ischemi|infarct|hemorrhag/i.test(s));
-    const lesson = root.querySelector(".lesson-item.is-current strong, .player-caption strong, h1");
-    const title = lesson ? String(lesson.textContent || "").replace(/\s+/g, " ").trim() : "";
-    if (title) this.hear(title);
+    const hit = lines.find((s) => s.length > 36 && s.length < 240 && /quantit|region of interest|\broi\b|dosimetr|gradient echo|rf pulse|flip angle|heart failure|stroke|ischemi|infarct/.test(s) && !/machine learning|artificial intelligence|subfields|board studio/i.test(s));
     if (hit) this.hear(hit);
   },
   tick(text) {
@@ -5640,9 +5639,9 @@ const ScanLive = {
     const strip = document.getElementById("modStrip");
     const work = document.querySelector(".work");
     if (strip && work && document.body.classList.contains("scan-live")) {
-      const gap = Math.ceil(strip.getBoundingClientRect().height);
+      const gap = Math.ceil(strip.getBoundingClientRect().height) + 8;
       work.style.setProperty("left", "0", "important");
-      work.style.setProperty("right", "0", "important");
+      work.style.setProperty("right", "300px", "important");
       work.style.setProperty("bottom", gap + "px", "important");
       ["wikiDef", "phraseDef"].forEach((id) => {
         const el = document.getElementById(id);
