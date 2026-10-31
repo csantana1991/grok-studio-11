@@ -2490,6 +2490,15 @@ body.scan-live.hj-full #hjFrame {
   flex: 1 1 auto !important; width: 100% !important; height: 100% !important; min-height: 100% !important;
   position: static !important; inset: auto !important;
 }
+@media (min-width: 981px) {
+  body.medb-full.film-widget .work,
+  body.scan-live.medb-full.film-widget .work,
+  body.hj-full.film-widget .work,
+  body.scan-live.hj-full.film-widget .work {
+    right: min(540px, 44vw) !important;
+    width: auto !important;
+  }
+}
 body.scan-live.hj-full #phraseDef,
 body.scan-live.hj-full #wikiDef { display: none !important; }
 body.hj-full #wikiTop.on {
