@@ -5391,14 +5391,14 @@ const ScanLive = {
     Promise.all([
       this.lane("xray", [term + " x-ray radiograph", "chest x-ray radiograph"], /x-?ray|radiograph/i),
       this.lane("ct", [term + " CT scan axial", "axial CT scan"], /\bct\b|computed tomograph/i),
-      this.lane("mri", [term + " MRI scan", "brain MRI"], /\bmri\b|magnetic resonance/i),
+      this.lane("mri", [term + " brain MRI", "axial brain MRI"], /brain|spine|knee|liver|cardiac|head mri|pelvis|abdomen|shoulder|lumbar/i),
       ...words.slice(0, 3).map((w) => this.define(w))
     ]).finally(() => { this.busy = false; this.glide(); });
   },
   async lane(kind, queries, want) {
     const host = document.querySelector('#modStrip [data-mod="' + kind + '"] .mod-row');
     if (!host) return;
-    const skip = /journal|cover|roentgenology|proceedings|volume|issue|textbook|poster/i;
+    const skip = /journal|cover|roentgenology|proceedings|volume|issue|textbook|poster|warning|plant|maize|root system|logo|icon|symbol|illustration of the machine/i;
     for (let i = 0; i < queries.length; i++) {
       let pages = [];
       try {
