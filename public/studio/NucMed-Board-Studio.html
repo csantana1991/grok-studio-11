@@ -2419,7 +2419,7 @@ body.scan-live #modStrip button {
   flex: 0 0 auto; border: 0; padding: 0; background: transparent; cursor: pointer;
 }
 body.scan-live #modStrip img {
-  width: 96px; height: 72px; object-fit: cover; border-radius: 6px; background: #000; display: block;
+  width: 78px; height: 64px; object-fit: cover; border-radius: 6px; background: #000; display: block;
 }
 body.scan-live #wikiDef {
   display: block; position: fixed; left: 0; right: auto; width: 200px; top: 96px; bottom: 120px; z-index: 380;
@@ -2476,7 +2476,7 @@ body.scan-live #phraseDef p { margin: 0; font-size: 12px; line-height: 1.4; colo
   <section data-mod="xray"><b>X-ray</b><div class="mod-row"></div></section>
   <section data-mod="ct"><b>CT</b><div class="mod-row"></div></section>
   <section data-mod="mri"><b>MRI</b><div class="mod-row"></div></section>
-  <section data-mod="live"><b>Live</b><div class="mod-row"></div></section>
+  <section data-mod="pet"><b>PET</b><div class="mod-row"></div></section>
 </div>
 <aside id="wikiDef" aria-label="Lecture images and definitions"><div id="leftPics"></div></aside>
 <aside id="phraseDef" aria-label="Slide phrase definitions"></aside>
@@ -5409,16 +5409,28 @@ const ScanLive = {
   dir: 1,
   tick(text) {
     const raw = ((text || "") + " " + this.onScreen()).toLowerCase();
-    const bodyMri = /body mri|abdominal|abdomen/.test(raw) && /mri|magnetic/.test(raw);
     const words = (typeof CapRail !== "undefined" ? CapRail.captionWords(text) : "").split(" ").filter((w) => w.length > 3 && CapRail.medicalWord(w) && !/imaging|introduction|background|basic/.test(w));
-    const term = bodyMri ? "abdominal MRI liver" : (words.slice(0, 3).join(" ") || "");
-    if (!term || term === this.last || this.busy) return;
-    this.last = term;
-    this.bodyMri = bodyMri;
-    this.busy = true;
+    const body = this.bodyOf(raw);
+    const term = ((body ? body + " " : "") + (words.slice(0, 2).join(" ") || "MRI")).trim();
     document.body.classList.add("scan-live");
-    this.fill(term).finally(() => { this.busy = false; this.glide(); });
-    (bodyMri ? ["abdominal MRI", "liver", "magnetic resonance"] : words.slice(0, 3)).forEach((w) => this.define(w));
+    if (!this._pump) this._pump = setInterval(() => { if (this.last) this.fill(this.last, (this.round = (this.round || 0) + 1)); }, 8000);
+    if (term === this.last || this.busy) return;
+    this.last = term;
+    this.round = 0;
+    this.bodyHint = body;
+    this.busy = true;
+    this.fill(term, 0).finally(() => { this.busy = false; this.glide(); });
+    words.slice(0, 3).forEach((w) => this.define(w));
+  },
+  bodyOf(text) {
+    const t = String(text || "").toLowerCase();
+    if (/liver|abdomen|abdominal|spleen|pancrea|kidney/.test(t)) return "abdominal";
+    if (/brain|head|neuro|stroke/.test(t)) return "brain";
+    if (/chest|lung|thorax|pulmonary/.test(t)) return "chest";
+    if (/spine|lumbar/.test(t)) return "spine";
+    if (/heart|cardiac/.test(t)) return "cardiac";
+    if (/bone|skeletal/.test(t)) return "bone";
+    return "";
   },
   onScreen() {
     const frames = ["mbFrame", "hjFrame"].map((id) => document.getElementById(id)).filter(Boolean);
@@ -5431,56 +5443,41 @@ const ScanLive = {
       return node ? node.textContent : "";
     } catch (e) { return ""; }
   },
-  async fill(term) {
-    let atlas = null;
-    if (typeof raSearch === "function") {
-      try { atlas = await raSearch(term + " CT MRI x-ray radiograph", true); } catch (e) {}
-    }
-    await Promise.all(["xray", "ct", "mri"].map((kind) => this.best(kind, term, atlas)));
+  async fill(term, round) {
+    const step = Math.max(0, Number(round) || 0);
+    await Promise.all(["xray", "ct", "mri", "pet"].map((kind) => this.best(kind, term, step)));
+  },
+  queries(kind, term) {
+    const body = this.bodyHint || "";
+    if (kind === "xray") return [body + " x-ray radiograph", "chest x-ray radiograph", "bone radiograph", term + " radiograph"];
+    if (kind === "ct") return [body + " CT axial", "chest CT axial", "abdominal CT axial", "head CT scan", "CT angiogram"];
+    if (kind === "mri") return [body + " MRI axial", "brain MRI axial", "abdominal MRI liver", "spine MRI", term + " MRI"];
+    return [body + " FDG PET", "PET CT scan", "whole body PET", "nuclear medicine PET scan"];
   },
   modOk(kind, blob) {
     const t = String(blob || "").toLowerCase();
     if (kind === "ct") return /\bct\b|computed tomograph/.test(t);
     if (kind === "mri") return /\bmri\b|magnetic resonance|flair|\bt1\b|\bt2\b/.test(t);
-    return /x-?ray|xray|radiograph|chest/.test(t);
+    if (kind === "pet") return /\bpet\b|fdg|positron|scintigraph/.test(t);
+    return /x-?ray|xray|radiograph/.test(t);
   },
-  async best(kind, term, atlas) {
-    const q = this.bodyMri
-      ? (kind === "mri" ? "axial abdominal MRI liver" : kind === "ct" ? "axial abdominal CT liver" : "abdominal radiograph")
-      : term + (kind === "xray" ? " chest x-ray radiograph" : kind === "ct" ? " CT" : " MRI");
-    const words = term.split(" ");
-    const hits = [];
-    const add = (src, title, score, page) => {
-      if (!src || hits.some((h) => h.src === src)) return;
-      hits.push({ src, title: String(title || kind).slice(0, 90), score, page: page || src });
-    };
-    if (typeof raMetaPack === "function") {
-      const packed = raMetaPack(q);
-      (packed.figures || []).forEach((f) => {
-        const blob = (f.modality || "") + " " + (f.title || "") + " " + (f.caption || "");
-        if (!this.modOk(kind, blob)) return;
-        if (this.bodyMri && /brain|chest radiograph|hand|wrist|skull/.test(blob) && !/abdomen|liver|renal|spleen|pancrea/.test(blob)) return;
-        let score = 8;
-        words.forEach((w) => { if (blob.toLowerCase().indexOf(w) >= 0) score += 2; });
-        add(f.imageUrl, f.title, score, f.articleUrl);
-      });
-    }
-    const groups = (atlas && atlas.groups) || {};
-    ((groups.articleFigures || []).concat(groups.studyPreviews || [])).forEach((f) => {
-      const src = f.imageUrl || f.previewUrl;
-      const blob = (f.modality || "") + " " + (f.title || "") + " " + (f.caption || "") + " " + (f.collection || "") + " " + (f.badge || "");
-      if (!src || !this.modOk(kind, blob)) return;
-      if (this.bodyMri && /brain|chest radiograph|hand|wrist|skull/.test(blob) && !/abdomen|liver|renal|spleen|pancrea/.test(blob)) return;
-      let score = /meta|nih/i.test(blob) ? 7 : 4;
-      words.forEach((w) => { if (blob.toLowerCase().indexOf(w) >= 0) score += 2; });
-      add(src, f.title || f.caption, score, f.articleUrl || f.fullStudyUrl);
-    });
-    if (hits.length < 2) await this.commons(kind, q, add);
-    hits.sort((a, b) => b.score - a.score);
+  async best(kind, term, round) {
+    const list = this.queries(kind, term).map((q) => q.replace(/\s+/g, " ").trim()).filter(Boolean);
+    const start = round % list.length;
     const host = document.querySelector('#modStrip [data-mod="' + kind + '"] .mod-row');
     if (!host) return;
-    host.innerHTML = "";
-    hits.slice(0, 3).forEach((hit) => {
+    if (!round) host.innerHTML = "";
+    const hits = [];
+    const add = (src, title, page) => {
+      if (!src || hits.some((h) => h.src === src)) return;
+      if (host.querySelector('img[src="' + src.replace(/"/g, "") + '"]')) return;
+      hits.push({ src, title: String(title || kind).slice(0, 90), page: page || src });
+    };
+    const need = round ? 2 : 3;
+    for (let i = 0; i < list.length && hits.length < need; i++) {
+      await this.commons(kind, list[(start + i) % list.length], add, round);
+    }
+    hits.slice(0, need).forEach((hit) => {
       const b = document.createElement("button");
       b.type = "button";
       const img = document.createElement("img");
@@ -5492,6 +5489,7 @@ const ScanLive = {
       host.appendChild(b);
       this.flowLeft(hit.src);
     });
+    while (host.children.length > 6) host.removeChild(host.firstChild);
   },
   flowLeft(src) {
     const pics = document.getElementById("leftPics");
@@ -5517,17 +5515,17 @@ const ScanLive = {
     while (host.children.length > 4) host.removeChild(host.firstChild);
     this.flowLeft(src);
   },
-  async commons(kind, q, add) {
-    const want = kind === "ct" ? /\bct\b|computed tomograph/i : kind === "mri" ? /brain|spine|knee|liver|abdomen/i : /x-?ray|radiograph/i;
-    const skip = /journal|cover|warning|plant|maize|logo|icon|symbol/i;
+  async commons(kind, q, add, round) {
+    const want = kind === "ct" ? /\bct\b|computed tomograph/i : kind === "mri" ? /\bmri\b|magnetic resonance/i : kind === "pet" ? /\bpet\b|fdg|positron/i : /x-?ray|radiograph/i;
+    const skip = /journal|cover|warning|plant|maize|logo|icon|symbol|diagram|illustration|poster/i;
+    const offset = (Number(round) || 0) * 3;
     try {
-      const data = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=6&gsrsearch=" + encodeURIComponent(q) + "&prop=imageinfo&iiprop=url|mime&iiurlwidth=400&format=json&origin=*").then((r) => r.json());
+      const data = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=8&gsroffset=" + offset + "&gsrsearch=" + encodeURIComponent(q) + "&prop=imageinfo&iiprop=url|mime&iiurlwidth=400&format=json&origin=*").then((r) => r.json());
       Object.values((data.query && data.query.pages) || {}).forEach((p) => {
         const info = (p.imageinfo || [])[0];
         const title = String(p.title || "");
         if (!info || !(info.thumburl || info.url) || !want.test(title) || skip.test(title)) return;
-        if (this.bodyMri && !/abdomen|liver|renal|spleen|pancrea|body|kidney/i.test(title)) return;
-        add(info.thumburl || info.url, title.replace(/^File:/, ""), 1, "https://commons.wikimedia.org/wiki/" + encodeURIComponent(title.replace(/ /g, "_")));
+        add(info.thumburl || info.url, title.replace(/^File:/, ""), "https://commons.wikimedia.org/wiki/" + encodeURIComponent(title.replace(/ /g, "_")));
       });
     } catch (e) {}
   },
