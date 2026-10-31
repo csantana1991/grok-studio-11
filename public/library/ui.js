@@ -65,6 +65,7 @@
 
   function paintCount() {
     var el = document.getElementById('imgLibCount')
+    if (!el || el.querySelector('img')) return
     if (!status) {
       el.textContent = 'Image ledger unavailable'
       return
@@ -388,7 +389,7 @@
       var hay = [r.title, r.caption, r.diagnosis, r.bodyRegion, r.modality, src].join(' ').toLowerCase()
       if (/calendar|factory|icon|logo|screenshot|keyboard/.test(hay)) return null
       var score = 0
-      keys.forEach(function (k) { if (k && hay.indexOf(k) >= 0) score += 3 })
+      keys.forEach(function (k) { if (k && hay.indexOf(k) >= 0) score += /electrocardiog|qrs|rhythm|heart rate|^ecg$|^ekg$/.test(k) ? 8 : 3 })
       return score > 0 ? { row: r, score: score } : null
     }).filter(Boolean).sort(function (a, b) { return b.score - a.score }).map(function (x) { return x.row })
     if (!picked.length) {
