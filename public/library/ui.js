@@ -378,10 +378,10 @@
     var el = document.getElementById('imgLibCount')
     if (!el) return
     var words = lectureWords()
-    var medbHold = document.body.classList.contains('medb-full')
+    var medbHold = document.body.classList.contains('medb-full') || document.body.classList.contains('hj-full')
     var nowRank = Date.now()
     if (words !== window.__imgLibWords) {
-      if (medbHold && window.__imgLibPicked && window.__imgLibPicked.length && nowRank - (window.__imgLibRanked || 0) < 18000) {
+      if (medbHold && window.__imgLibPicked && window.__imgLibPicked.length && nowRank - (window.__imgLibRanked || 0) < 20000) {
         words = window.__imgLibWords
       } else {
         window.__imgLibWords = words
@@ -448,8 +448,8 @@
         if (window.__imgLibPaused) return
         var list = window.__imgLibPicked || []
         if (list.length <= 18) return
-        var medb = document.body.classList.contains('medb-full')
-        var wait = medb ? 14000 : 3500
+        var medb = document.body.classList.contains('medb-full') || document.body.classList.contains('hj-full')
+        var wait = medb ? 16000 : 3500
         var now = Date.now()
         if (now - (window.__imgLibFlipped || 0) < wait) return
         window.__imgLibFlipped = now
