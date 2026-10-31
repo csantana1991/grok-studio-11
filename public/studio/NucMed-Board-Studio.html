@@ -5646,15 +5646,34 @@ const CapRail = {
   async readScreen() {
     this.watchPlayers();
     this.readLecture();
-    if (this.slideText) this.slideNet(this.slideText);
+    this.advanceCue();
     if (this.line) this.wikiNet(this.line);
-    if (this.videoId && !this._shotBusy) {
-      const names = ["hq2", "sd2", "hq3"];
-      const name = names[(this._shot || 0) % names.length];
-      this._shot = (this._shot || 0) + 1;
-      this._shotBusy = true;
-      this.ocrFrame("https://i.ytimg.com/vi/" + this.videoId + "/" + name + ".jpg").finally(() => { this._shotBusy = false; });
+    if (this.slideText) this.slideNet(this.slideText);
+  },
+  advanceCue() {
+    if (this.videoId && !(this.cues && this.cues.length) && !this._cueLoad) {
+      this._cueLoad = this.videoId;
+      fetch("/api/pmc/match?source=captions&v=" + encodeURIComponent(this.videoId))
+        .then((r) => r.json())
+        .then((body) => {
+          if (this.videoId !== this._cueLoad) return;
+          this.cues = (body && body.lines) || [];
+          this._cueI = -1;
+        })
+        .catch(() => {});
     }
+    const lines = this.cues || [];
+    if (!lines.length) return;
+    if (this.clock && Date.now() - (this._clockAt || 0) < 4000) return;
+    const now = Date.now();
+    if (this._cueStep && now - this._cueStep < 8000) return;
+    this._cueStep = now;
+    this._cueI = ((this._cueI == null ? -1 : this._cueI) + 1) % lines.length;
+    const text = String((lines[this._cueI] && lines[this._cueI].text) || "").replace(/\s+/g, " ").trim();
+    if (text.length < 8) return;
+    this.line = text;
+    this.slideText = text;
+    this.slideKey = "";
   },
   readLecture() {
     const frame = document.getElementById("mbFrame") || document.getElementById("hjFrame");
@@ -5664,13 +5683,13 @@ const CapRail = {
     if (!doc) return;
     const cap = doc.querySelector(".player-caption, .caption");
     const said = cap ? String(cap.textContent || "").replace(/\s+/g, " ").trim() : "";
-    if (said.length > 8) this.line = said;
+    if (said.length > 24 && !/queue started|playable lesson|residency|brigham|harvard/i.test(said)) this.line = said;
     const current = doc.querySelector(".lesson-item.is-current strong") || doc.querySelector(".lesson-item.is-current");
     const slide = current ? String(current.textContent || "").replace(/\[[^\]]+\]/g, " ").replace(/\s+/g, " ").trim() : "";
     if (slide.length > 4 && !/queue started|playable lesson/i.test(slide)) this.slideText = slide;
   },
   captionWords(text) {
-    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|them|then|just|like|gonna|going|know|yeah|okay|well|meta|image|images|turn|size|widget|atlas|use|them|goal|video|fill|gap|approach|most|pretty|they|were|early|found|large|weak|queue|started|advances|playable|lesson|ends|youtube|unit|source|next|ready|original|automated|check|here|playback|available)$/i;
+    const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|them|then|just|like|gonna|going|know|yeah|okay|well|meta|image|images|turn|size|widget|atlas|use|them|goal|video|fill|gap|approach|most|pretty|they|were|early|found|large|weak|queue|started|advances|playable|lesson|ends|youtube|unit|source|next|ready|original|automated|check|here|playback|available|brigham|harvard|hopkins|emory|women|woman|hospital|residency|university|system|program|faculty|fellow|johns)$/i;
     return String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !stop.test(w)).slice(0, 8).join(" ");
   },
   async wikiNet(text) {
@@ -5702,7 +5721,8 @@ const CapRail = {
       } catch (e) { return; }
     }
     if (!host) return;
-    const hit = pages.filter((p) => p && p.title && p.thumbnail && (this.onTopic(p.title) || this.captionWords(p.title).indexOf(word) >= 0))[0];
+    const bad = /brigham young|portrait|manuscript|lahey|coat of arms|flag of|diploma|painting|hospital & medical|university|college/i;
+    const hit = pages.filter((p) => p && p.title && p.thumbnail && !bad.test(p.title) && (this.onTopic(p.title) || this.captionWords(p.title).indexOf(word) >= 0 || new RegExp(word, "i").test(p.title)))[0];
     if (!hit) return false;
     const href = hit.fullurl || ("https://en.wikipedia.org/wiki/" + encodeURIComponent(hit.title.replace(/ /g, "_")));
     if (host.querySelector('[data-wiki="' + href.replace(/"/g, "") + '"]')) return true;
@@ -5755,12 +5775,8 @@ const CapRail = {
       pages = pages.filter((p) => p && p.thumbnail && p.thumbnail.source && p.title && keep.test(p.title) && !drop.test(p.title));
     }
     if (!pages.length) return;
-    const shown = pages.filter((p) => p && p.thumbnail && p.thumbnail.source).slice(0, 4);
+    const shown = pages.filter((p) => p && p.thumbnail && p.thumbnail.source && !/brigham young|portrait|manuscript|lahey|diploma|painting/i.test(p.title || "")).slice(0, 3);
     if (!shown.length) return;
-    if (row.dataset.q !== q) {
-      row.innerHTML = "";
-      row.dataset.q = q;
-    }
     shown.forEach((p) => {
       this.add(p.thumbnail.source, "Slide · " + (p.title || q));
     });
@@ -5824,6 +5840,9 @@ const CapRail = {
       this.screenWords = [];
       this._boardId = "";
       this.line = "";
+      this.cues = [];
+      this._cueI = -1;
+      this._cueLoad = "";
       this.seenCap = {};
       const top = document.getElementById("wikiTop");
       if (top) top.innerHTML = "";
@@ -5911,7 +5930,10 @@ const CapRail = {
     let hit = lines[0];
     for (let i = 0; i < lines.length; i++) if (lines[i].t <= t) hit = lines[i]; else break;
     if (!hit || !hit.text || hit.text === this.line) return;
+    this._clockAt = Date.now();
     this.line = hit.text;
+    this.slideText = hit.text;
+    this.slideKey = "";
     this.readScreen();
   }
 };
@@ -14654,13 +14676,16 @@ window.addEventListener("message", (e) => {
         CapRail.readScreen();
       } else {
         CapRail.topic = text.slice(0, 120);
-        CapRail.slideKey = "";
-        CapRail.slideNet(text);
+        if (!/brigham|harvard|hopkins|emory|residency|program/i.test(text)) {
+          CapRail.slideKey = "";
+          CapRail.slideNet(text);
+        }
       }
       CapRail.keepFollowing();
     } else {
       const bit = String(data.text || "");
-      if (/meta|image|atlas|academy|nucleus|review|widget|ultimate/i.test(bit) && !/pericard|tampon|effusion|cardio|myocard|murmur|hypertroph|ventric|echo|gradient|magnetic|thyroid|nodule/i.test(bit)) return;
+      if (/brigham|harvard|hopkins|emory|residency/i.test(bit) && bit.split(" ").length < 6) return;
+      if (CapRail.cues && CapRail.cues.length) return;
       if (data.videoId) CapRail.useVideo(data.videoId, "");
       CapRail.line = bit;
       CapRail.readScreen();
