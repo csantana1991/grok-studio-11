@@ -16325,11 +16325,23 @@ window.addEventListener("message", (e) => {
     const medb = document.body.classList.contains("medb-full");
     if (medb && t - last < 48) return;
     last = t;
-    ["wikiTop", "capRail", "qaPics"].forEach((id) => {
+    const hj = document.body.classList.contains("hj-full");
+    ["wikiTop", "capRail", "qaPics", "imgLibCount"].forEach((id) => {
       const el = document.getElementById(id);
-      if (!el || el.scrollWidth <= el.clientWidth + 12) return;
-      if (medb && el.matches(":hover")) return;
-      const speed = medb && id === "qaPics" ? 0.28 : 1.4;
+      if (!el || el.matches(":hover")) return;
+      if (el.scrollWidth <= el.clientWidth + 24) return;
+      const imgs = el.querySelectorAll("img");
+      if (hj) {
+        let loaded = 0;
+        imgs.forEach((img) => { if (img.complete && img.naturalWidth > 0) loaded += 1; });
+        const wide = imgs[0] ? (imgs[0].getBoundingClientRect().width || 80) : 80;
+        const fit = Math.max(1, Math.floor(el.clientWidth / wide));
+        if (loaded < fit || imgs.length <= fit) return;
+      }
+      if (medb && id !== "qaPics" && id !== "imgLibCount") return;
+      const speed = hj ? 0.22 : (medb && (id === "qaPics" || id === "imgLibCount") ? 0.28 : 1.4);
+      if (hj && t - (el._moved || 0) < 40) return;
+      el._moved = t;
       el.scrollLeft += speed;
       if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) el.scrollLeft = 0;
     });

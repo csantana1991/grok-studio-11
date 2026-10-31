@@ -377,9 +377,20 @@
   function paintInline(rows) {
     var el = document.getElementById('imgLibCount')
     if (!el) return
+    function rowReady(host) {
+      if (!host) return false
+      var imgs = host.querySelectorAll('img')
+      if (!imgs.length) return false
+      var loaded = 0
+      imgs.forEach(function (img) { if (img.complete && img.naturalWidth > 0) loaded++ })
+      var wide = imgs[0].getBoundingClientRect().width || 210
+      var fit = Math.max(1, Math.floor(host.clientWidth / wide))
+      return loaded >= fit && imgs.length > fit
+    }
     var words = lectureWords()
     var medbHold = document.body.classList.contains('medb-full') || document.body.classList.contains('hj-full')
     var nowRank = Date.now()
+    if (document.body.classList.contains('hj-full') && window.__imgLibWords && !rowReady(el)) words = window.__imgLibWords
     if (words !== window.__imgLibWords) {
       if (medbHold && window.__imgLibPicked && window.__imgLibPicked.length && nowRank - (window.__imgLibRanked || 0) < 20000) {
         words = window.__imgLibWords
@@ -431,9 +442,18 @@
       window.__imgLibTimer = setInterval(function () {
         if (window.__imgLibPaused) return
         var list = window.__imgLibPicked || []
-        if (list.length <= 18) return
-        var slow = document.body.classList.contains('medb-full') || document.body.classList.contains('hj-full')
-        var wait = document.body.classList.contains('medb-full') ? 22000 : (slow ? 16000 : 3500)
+        var host = document.getElementById('imgLibCount')
+        var hj = document.body.classList.contains('hj-full')
+        if (hj && host) {
+          var imgs = host.querySelectorAll('img')
+          var loaded = 0
+          imgs.forEach(function (img) { if (img.complete && img.naturalWidth > 0) loaded++ })
+          var wide = imgs[0] ? (imgs[0].getBoundingClientRect().width || 210) : 210
+          var fit = Math.max(1, Math.floor(host.clientWidth / wide))
+          if (loaded < fit || list.length <= fit) return
+        } else if (list.length <= 18) return
+        var slow = document.body.classList.contains('medb-full') || hj
+        var wait = document.body.classList.contains('medb-full') ? 22000 : (hj ? 30000 : (slow ? 16000 : 3500))
         var now = Date.now()
         if (now - (window.__imgLibFlipped || 0) < wait) return
         window.__imgLibFlipped = now
