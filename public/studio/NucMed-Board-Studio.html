@@ -2536,6 +2536,37 @@ body.scan-live.hj-full #phraseDef p,
 body.scan-live.medb-full #phraseDef p {
   margin: 0; white-space: nowrap; color: #f4f1ea; font-size: 13px;
 }
+body.scan-live.hj-full #phraseDef {
+  top: 118px !important;
+  bottom: auto !important;
+  left: 10px !important;
+  right: 10px !important;
+  width: auto !important;
+  height: 22vh !important;
+  min-height: 120px;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  overflow: auto !important;
+  z-index: 455;
+  border-radius: 14px;
+  background: #0e1c28;
+  border: 1px solid #2ee6c8;
+  padding: 8px 12px;
+  gap: 8px;
+}
+body.scan-live.hj-full #phraseDef article {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  white-space: normal;
+}
+body.scan-live.hj-full #phraseDef p { white-space: normal !important; }
+@media (min-width: 981px) {
+  body.scan-live.hj-full.film-widget #phraseDef {
+    right: min(560px, 46vw) !important;
+    height: 200px !important;
+  }
+}
 body.scan-live.hj-full #modStrip { display: none !important; }
 body.scan-live.medb-full #modStrip {
   display: flex !important; bottom: 48px; height: 108px; z-index: 440; background: #f7f4ee;
@@ -5820,7 +5851,7 @@ const ScanLive = {
     this.seenPhrase[key] = 1;
     document.body.classList.add("scan-live");
     this.audit();
-    const term = this.slideTerm(line);
+    const term = /ecg|ekg|electrocardiog/.test(line.toLowerCase()) ? "Electrocardiography" : (window.lectureContent ? window.lectureContent(this.slideTerm(line)) : this.slideTerm(line));
     const found = await this.lookup(term);
     if (!found || !this.fits(term, found.title, line)) return;
     this.seenPage = this.seenPage || {};
@@ -6124,7 +6155,7 @@ const LectureSkills = {
     if (typeof ScanLive !== "undefined") {
       ScanLive.topicKey = this.family(this.lecture) || ScanLive.topicKey;
       ScanLive.slideNow = q;
-      if (ScanLive.phrase) ScanLive.phrase(q);
+      if (ScanLive.phrase) ScanLive.phrase(this.slide || q);
       if (ScanLive.fill) ScanLive.fill(q, 0);
     }
     document.querySelectorAll("iframe").forEach((frame) => {
