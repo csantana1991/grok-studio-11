@@ -5853,7 +5853,7 @@ const ScanLive = {
       if (kind === "ct") return [slide + " CT"];
       if (kind === "mri") return [slide + " MRI"];
       if (kind === "xray") return [slide + " x-ray"];
-      return [slide + " PET"];
+      return [slide + " PET", "FDG PET scan", "PET-CT scan", "whole body FDG PET"];
     }
     if (/stroke|ischemi|infarct|hemorrhag|middle cerebral/.test(slide)) {
       if (kind === "ct") return ["ischemic stroke head CT", "CT angiography brain", "CT perfusion brain", "hemorrhage head CT"];
@@ -5919,6 +5919,14 @@ const ScanLive = {
     for (let i = 0; i < list.length && hits.length < need; i++) {
       await this.commons(kind, list[(start + i) % list.length], add, round);
     }
+    if (kind === "pet" && hits.length < 2) {
+      [
+        ["https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/PET-CT_scan_of_nasopharyngeal_cancer.jpg/400px-PET-CT_scan_of_nasopharyngeal_cancer.jpg", "PET-CT scan"],
+        ["https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/RenalCancer-250MBq-F-18-FDG-PET-CT.jpg/400px-RenalCancer-250MBq-F-18-FDG-PET-CT.jpg", "FDG PET-CT abdomen"],
+        ["https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/PET-CT_scanning_of_lymph_node_metastases_in_cancer.jpg/400px-PET-CT_scanning_of_lymph_node_metastases_in_cancer.jpg", "FDG PET-CT"],
+        ["https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/PET_physiologic_muscle_activity.jpg/400px-PET_physiologic_muscle_activity.jpg", "FDG PET whole body"]
+      ].forEach(function (row) { add(row[0], row[1], row[0]); });
+    }
     hits.slice(0, need).forEach((hit) => {
       const b = document.createElement("button");
       b.type = "button";
@@ -5955,6 +5963,7 @@ const ScanLive = {
   belongs(cap, src) {
     const t = (String(cap || "") + " " + String(src || "")).toLowerCase();
     if (/lizard|galliwasp|fourier|spectrum|\.pdf|book|novel|insect|plant|maize/.test(t)) return false;
+    if (/\bpet\b|fdg|positron|pet-ct|pet\/ct/.test(t)) return true;
     if (this.topicKey === "heart" && !/heart|cardiac|coronary|myocard|aorta|ventric|atrium|septal|congenital|slice|scanner|gating|detector|mdct/.test(t)) return false;
     if (this.topicKey === "abdomen" && !/abdomen|pelvis|spleen|splenic|liver|kidney|uterus|endometri|bowel|aorta|mesenter|pancrea|angiograph/.test(t)) return false;
     return /x-?ray|radiograph|\bct\b|computed tomograph|\bmri\b|magnetic resonance|pet[\/\- ]?ct|fdg|positron|scintigraph|tomograph|axial|coronal|sagittal|flair|gradient echo|pulse sequence|nuclear medicine/.test(t);
