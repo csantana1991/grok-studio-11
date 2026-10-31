@@ -5447,8 +5447,6 @@ const ScanLive = {
     this.heard[line] = 1;
     document.body.classList.add("scan-live");
     this.audit();
-    const box = document.getElementById("hjSaid");
-    if (box && document.activeElement !== box) box.value = line;
     this.slideNow = line;
     const tag = document.querySelector("#capRail .cap-tag");
     if (tag) tag.textContent = ("1 Slide · " + this.slideTerm(line)).slice(0, 56);
@@ -6277,6 +6275,18 @@ const CapRail = {
         dragged = false;
       }, true);
     });
+  },
+  async reelFor(text) {
+    const q = String(text || "").replace(/\s+/g, " ").trim().slice(0, 80);
+    if (q.length < 4 || q === this._reelQ) return;
+    this._reelQ = q;
+    let urls = [];
+    try {
+      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(q + " medical") + "&gsrlimit=8&prop=pageimages&pithumbsize=320&format=json&origin=*").then((r) => r.json());
+      urls = Object.values((data.query && data.query.pages) || {}).map((p) => p.thumbnail && p.thumbnail.source).filter(Boolean);
+    } catch (e) { return; }
+    const frame = document.getElementById("mbFrame") || document.getElementById("hjFrame");
+    if (frame && frame.contentWindow && urls.length) frame.contentWindow.postMessage({ source: "studio-reel", urls: urls }, "*");
   },
   march() {
     if (this._march) return;
@@ -15416,6 +15426,12 @@ window.addEventListener("message", (e) => {
       .catch(() => { if (data.videoId === CapRail.videoId) CapRail.scrub([], CapRail.topic); });
   }
   if (data.cc && data.text) {
+    if (data.player && !/skop|etymolog|to see'|is an operation performed/i.test(data.text)) {
+      const said = document.getElementById("hjSaid");
+      const line = String(data.text).replace(/\s+/g, " ").trim();
+      if (said && document.activeElement !== said && line.length > 8) said.value = line;
+      if (line.length > 8 && typeof CapRail.reelFor === "function") CapRail.reelFor(line);
+    }
     if (!data.follow) {
       const text = String(data.text || "").replace(/\s+/g, " ").trim();
       if (/queue started|playable lesson|advances when/i.test(text)) return;

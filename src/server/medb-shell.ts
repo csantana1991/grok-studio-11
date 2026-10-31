@@ -63,7 +63,7 @@ const BRIDGE = `(function(){
     if (text.length < 8 || text === last) return;
     last = text;
     spoken = text;
-    try { parent.postMessage({ source: "hj-caption", cc: true, text: text, videoId: videoId }, "*"); } catch (e) {}
+    try { parent.postMessage({ source: "hj-caption", cc: true, player: true, text: text, videoId: videoId }, "*"); } catch (e) {}
   }
   function loadCues(id){
     if (!id || id === videoId) return;
@@ -127,6 +127,45 @@ const BRIDGE = `(function(){
   function widgetSrc(view, title){
     return "https://teaching-studios.vercel.app/studio/NucMed-Board-Studio.html?view=" + encodeURIComponent(view) + "&embed=1&q=" + encodeURIComponent(title || "");
   }
+  function mountReel(){
+    var player = document.querySelector(".media-player");
+    if (!player) return null;
+    var reel = player.querySelector(".live-reel");
+    if (reel) return reel;
+    if (!document.getElementById("reel-style")) {
+      var st = document.createElement("style");
+      st.id = "reel-style";
+      st.textContent = "@keyframes reelLTR{from{transform:translateX(-45%)}to{transform:translateX(8%)}}";
+      document.head.appendChild(st);
+    }
+    reel = document.createElement("div");
+    reel.className = "live-reel";
+    reel.style.cssText = "position:absolute;left:32%;right:10px;top:14%;height:96px;overflow:hidden;z-index:6;pointer-events:none";
+    var track = document.createElement("div");
+    track.className = "live-reel-track";
+    track.style.cssText = "display:flex;gap:8px;height:96px;width:max-content;animation:reelLTR 24s linear infinite";
+    reel.appendChild(track);
+    if (window.getComputedStyle(player).position === "static") player.style.position = "relative";
+    player.appendChild(reel);
+    return reel;
+  }
+  window.addEventListener("message", function(e){
+    var msg = e.data;
+    if (!msg || msg.source !== "studio-reel" || !msg.urls) return;
+    var reel = mountReel();
+    if (!reel) return;
+    var track = reel.querySelector(".live-reel-track");
+    var urls = msg.urls;
+    for (var i = 0; i < urls.length; i++) {
+      if (track.querySelector('img[src="' + urls[i] + '"]')) continue;
+      var img = document.createElement("img");
+      img.src = urls[i];
+      img.alt = "";
+      img.style.cssText = "height:96px;width:140px;object-fit:cover;border-radius:8px;background:#111";
+      track.appendChild(img);
+    }
+    while (track.children.length > 16) track.removeChild(track.firstChild);
+  });
   function mountDock(){
     var player = document.querySelector(".media-player");
     if (!player) return;
