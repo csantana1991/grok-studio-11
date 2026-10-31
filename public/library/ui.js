@@ -9,6 +9,8 @@
     '#imgLibOpen{border:1px solid #93c5fd;background:#1e3a8a;color:#fff;font:700 12px/1.2 system-ui,sans-serif;padding:8px 10px;border-radius:8px;cursor:pointer}',
     '#imgLibCount{display:flex;gap:4px;align-items:center;overflow-x:auto;max-width:70vw;min-height:46px;background:#0f172a;color:#fff;border:1px solid #334155;border-radius:8px;padding:4px;font:600 11px/1.3 system-ui,sans-serif}',
     '#imgLibCount img{height:40px;width:56px;object-fit:cover;border-radius:4px;flex:0 0 auto;background:#000}',
+    '#imgLibPrev,#imgLibNext{border:1px solid #93c5fd;background:#1e3a8a;color:#fff;font:700 18px/1 system-ui,sans-serif;width:36px;height:46px;border-radius:8px;cursor:pointer}',
+    '#imgLibPrev:disabled,#imgLibNext:disabled{opacity:.35;cursor:default}',
     '#imgLibSheet{position:fixed;inset:0;z-index:70;background:#0b1220;color:#fff;display:none;flex-direction:column}',
     '#imgLibSheet.on{display:flex}',
     '#imgLibSheet header{display:flex;gap:8px;align-items:center;padding:10px;border-bottom:1px solid #334155}',
@@ -39,7 +41,7 @@
 
   var bar = document.createElement('div')
   bar.id = 'imgLibBar'
-  bar.innerHTML = '<button type="button" id="imgLibOpen">Image library</button><span id="imgLibCount">Checking verified images…</span>'
+  bar.innerHTML = '<button type="button" id="imgLibOpen">Image library</button><button type="button" id="imgLibPrev" hidden aria-label="Previous 18 images">‹</button><span id="imgLibCount">Checking verified images…</span><button type="button" id="imgLibNext" hidden aria-label="Next 18 images">›</button>'
   var sheet = document.createElement('div')
   sheet.id = 'imgLibSheet'
   sheet.setAttribute('role', 'dialog')
@@ -369,15 +371,33 @@
       return want.test(hay)
     })
     if (!picked.length) picked = (rows || []).filter(function (r) { return r.imageUrl })
+    window.__imgLibPicked = picked
+    var page = window.__imgLibPage || 0
+    var pages = Math.max(1, Math.ceil(picked.length / 18))
+    if (page >= pages) page = pages - 1
+    if (page < 0) page = 0
+    window.__imgLibPage = page
+    var start = page * 18
     el.innerHTML = ''
-    picked.slice(0, 18).forEach(function (r) {
+    picked.slice(start, start + 18).forEach(function (r) {
       var img = document.createElement('img')
       img.alt = r.title || r.caption || 'Verified image'
       img.src = displaySrc(r.imageUrl)
       el.appendChild(img)
     })
+    var prev = document.getElementById('imgLibPrev')
+    var next = document.getElementById('imgLibNext')
+    if (prev) { prev.hidden = picked.length <= 18; prev.disabled = page <= 0 }
+    if (next) { next.hidden = picked.length <= 18; next.disabled = page >= pages - 1 }
     if (!el.children.length) el.textContent = 'No verified images for this lecture'
   }
+
+  function stepLib(dir) {
+    window.__imgLibPage = (window.__imgLibPage || 0) + dir
+    paintInline(window.__imgLibRows || [])
+  }
+  document.getElementById('imgLibPrev').onclick = function (ev) { if (ev) ev.stopPropagation(); stepLib(-1) }
+  document.getElementById('imgLibNext').onclick = function (ev) { if (ev) ev.stopPropagation(); stepLib(1) }
 
   document.getElementById('imgLibOpen').onclick = function (ev) {
     if (ev) { ev.preventDefault(); ev.stopPropagation() }
@@ -386,6 +406,7 @@
     var file = window.__imgLibRows ? Promise.resolve(window.__imgLibRows) : fetch('/library/display-images.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json() })
     file.then(function (rows) {
       window.__imgLibRows = Array.isArray(rows) ? rows : []
+      window.__imgLibPage = 0
       paintInline(window.__imgLibRows)
     }).catch(function () {
       if (el) el.textContent = 'Images did not load'
