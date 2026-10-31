@@ -2401,6 +2401,41 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
   font-weight: 800;
   line-height: 1;
 }
+#modStrip, #wikiDef { display: none; }
+body.scan-live #modStrip {
+  display: flex; position: fixed; left: 0; right: 0; bottom: 96px; height: 112px; z-index: 380;
+  gap: 6px; padding: 6px; background: #101614; border-top: 1px solid #243028;
+}
+body.scan-live #modStrip section {
+  flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 4px;
+}
+body.scan-live #modStrip b {
+  color: #9fd9c8; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+}
+body.scan-live #modStrip .mod-row {
+  display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; min-height: 72px;
+}
+body.scan-live #modStrip button {
+  flex: 0 0 auto; border: 0; padding: 0; background: transparent; cursor: pointer;
+}
+body.scan-live #modStrip img {
+  width: 96px; height: 72px; object-fit: cover; border-radius: 6px; background: #000; display: block;
+}
+body.scan-live #wikiDef {
+  display: block; position: fixed; right: 0; width: 168px; top: 92px; bottom: 208px; z-index: 380;
+  overflow-x: hidden; overflow-y: auto; background: #0e1c28; color: #e8f2f7;
+  border-left: 1px solid #1e3a4a; padding: 8px;
+}
+body.scan-live #wikiDef article { margin: 0 0 12px; }
+body.scan-live #wikiDef strong { display: block; color: #8fd0ff; font-size: 13px; margin-bottom: 4px; }
+body.scan-live #wikiDef p { margin: 0; font-size: 12px; line-height: 1.35; color: #d5e4ee; }
+body.scan-live.hj-full .work,
+body.scan-live.medb-full .work,
+body.scan-live.hj-full.wiki-top .work,
+body.scan-live.medb-full.wiki-top .work,
+body.scan-live.hj-full.film-widget .work {
+  left: 0 !important; right: 168px !important; top: 92px !important; bottom: 208px !important;
+}
 </style></head>
 <body>
 <div id="bootSplash" style="position:fixed;inset:0;z-index:99999;background:#fff;color:#12315c;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,sans-serif;padding:24px;text-align:center">
@@ -2415,6 +2450,12 @@ body.tabs-up #topbarTools > label.pill { display: none !important; }
 <div id="capPop"><button type="button" id="capPopX">Close</button><img alt="" referrerpolicy="no-referrer"><p></p></div>
 <div class="rru-exitbar hj-exitbar" id="hjBar"><b id="liveLabel">1 SLIDE · 2 CAPTION</b><input id="hjSaid" type="search" placeholder="Slide first, then the caption" autocomplete="off"><button type="button" id="hjAtlas">Atlas</button><button type="button" id="hjExit">Exit</button></div>
 <div id="wikiTop" aria-label="Wikipedia images from the captions"></div>
+<div id="modStrip" aria-label="CT, MRI, and X-ray from the lecture">
+  <section data-mod="xray"><b>X-ray</b><div class="mod-row"></div></section>
+  <section data-mod="ct"><b>CT</b><div class="mod-row"></div></section>
+  <section data-mod="mri"><b>MRI</b><div class="mod-row"></div></section>
+</div>
+<aside id="wikiDef" aria-label="Wikipedia definitions"></aside>
 <div class="rru-exitbar" id="mbBar"><b>Med-b</b><span>Live page</span><button type="button" id="mbAtlas">Atlas</button><button type="button" id="mbExit">Exit</button></div>
 <div id="mbWidgets">
   <button type="button" data-view="radatlas">Rad Atlas</button>
@@ -5335,6 +5376,103 @@ async function liveSentenceImages(text) {
   try { LiveHero.paint(); } catch (e) {}
   try { paintAtlasFilm(); } catch (e) {}
 }
+const ScanLive = {
+  last: "",
+  busy: false,
+  seen: {},
+  dir: 1,
+  tick(text) {
+    const words = (typeof CapRail !== "undefined" ? CapRail.captionWords(text) : "").split(" ").filter((w) => w.length > 3 && CapRail.medicalWord(w));
+    const term = words.slice(0, 3).join(" ");
+    if (!term || term === this.last || this.busy) return;
+    this.last = term;
+    this.busy = true;
+    document.body.classList.add("scan-live");
+    Promise.all([
+      this.lane("xray", term + " x-ray radiograph", /x-?ray|radiograph/i),
+      this.lane("ct", term + " CT scan axial", /\bct\b|computed tomograph/i),
+      this.lane("mri", term + " MRI scan", /\bmri\b|magnetic resonance/i),
+      ...words.slice(0, 3).map((w) => this.define(w))
+    ]).finally(() => { this.busy = false; this.glide(); });
+  },
+  async lane(kind, q, want) {
+    const host = document.querySelector('#modStrip [data-mod="' + kind + '"] .mod-row');
+    if (!host) return;
+    let pages = [];
+    try {
+      const data = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=5&gsrsearch=" + encodeURIComponent(q) + "&prop=imageinfo&iiprop=url|mime&iiurlwidth=400&format=json&origin=*").then((r) => r.json());
+      pages = Object.values((data.query && data.query.pages) || {});
+    } catch (e) { return; }
+    let hits = pages.filter((p) => {
+      const info = (p.imageinfo || [])[0];
+      const title = String(p.title || "");
+      return info && (info.thumburl || info.url) && /image\//.test(info.mime || "image/jpeg") && want.test(title);
+    });
+    if (!hits.length) hits = pages.filter((p) => (p.imageinfo || [])[0] && ((p.imageinfo || [])[0].thumburl || (p.imageinfo || [])[0].url));
+    hits.slice(0, 3).forEach((p) => {
+      const info = (p.imageinfo || [])[0];
+      const src = info.thumburl || info.url;
+      if (host.querySelector('img[src="' + src.replace(/"/g, "") + '"]')) return;
+      const b = document.createElement("button");
+      b.type = "button";
+      const img = document.createElement("img");
+      img.alt = String(p.title || kind).replace(/^File:/, "");
+      img.referrerPolicy = "no-referrer";
+      img.src = src;
+      b.appendChild(img);
+      b.onclick = () => window.open("https://commons.wikimedia.org/wiki/" + encodeURIComponent(String(p.title || "").replace(/ /g, "_")), "_blank", "noopener");
+      host.appendChild(b);
+      while (host.children.length > 6) host.removeChild(host.firstChild);
+    });
+  },
+  async define(term) {
+    const host = document.getElementById("wikiDef");
+    if (!host || !term || this.seen[term]) return;
+    let title = term;
+    let extract = "";
+    try {
+      const data = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(term + " medical imaging") + "&gsrlimit=1&prop=extracts&exintro=1&explaintext=1&format=json&origin=*").then((r) => r.json());
+      const page = Object.values((data.query && data.query.pages) || {})[0];
+      if (page) {
+        title = page.title || term;
+        extract = String(page.extract || "").replace(/\s+/g, " ").trim();
+      }
+    } catch (e) { return; }
+    if (!extract || /may refer to/i.test(extract)) return;
+    this.seen[term] = 1;
+    const card = document.createElement("article");
+    const h = document.createElement("strong");
+    h.textContent = title;
+    const p = document.createElement("p");
+    p.textContent = extract.slice(0, 280);
+    card.appendChild(h);
+    card.appendChild(p);
+    host.appendChild(card);
+    while (host.children.length > 8) host.removeChild(host.firstChild);
+  },
+  glide() {
+    if (this._glide) return;
+    const panel = document.getElementById("wikiDef");
+    if (panel && !panel.dataset.hold) {
+      panel.dataset.hold = "1";
+      panel.addEventListener("pointerdown", () => { this._hold = true; });
+      panel.addEventListener("pointerup", () => { this._hold = false; });
+      panel.addEventListener("pointercancel", () => { this._hold = false; });
+    }
+    let last = 0;
+    const step = (t) => {
+      this._glide = requestAnimationFrame(step);
+      if (t - last < 40 || this._hold) return;
+      last = t;
+      const el = document.getElementById("wikiDef");
+      if (!el || el.scrollHeight <= el.clientHeight + 8) return;
+      el.scrollTop += this.dir;
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) this.dir = -1;
+      if (el.scrollTop <= 0) this.dir = 1;
+    };
+    this._glide = requestAnimationFrame(step);
+  }
+};
 const CapRail = {
   last: "",
   seq: 0,
@@ -5676,6 +5814,7 @@ const CapRail = {
     this.advanceCue();
     if (this.line) this.wikiNet(this.line);
     if (this.slideText) this.slideNet(this.slideText);
+    if (typeof ScanLive !== "undefined") ScanLive.tick(this.line || this.slideText || "");
   },
   advanceCue() {
     if (this.videoId && !(this.cues && this.cues.length) && !this._cueLoad) {
