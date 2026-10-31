@@ -5792,28 +5792,33 @@ const CapRail = {
     }
     if (!host) return;
     const bad = /brigham young|portrait|manuscript|lahey|coat of arms|flag of|diploma|painting|hospital & medical|university|college|vital remains|intelligence gathering|band\b|album|song|novel|football|psychology|weapon|bomb|reactor|missile|warhead|nuclear power|spent fuel/i;
-    const hit = pages.filter((p) => p && p.title && p.thumbnail && !bad.test(p.title) && (this.onTopic(p.title) || this.captionWords(p.title).indexOf(word) >= 0 || new RegExp(word, "i").test(p.title)))[skip % Math.max(1, pages.length)] || pages.filter((p) => p && p.title && p.thumbnail && !bad.test(p.title))[0];
-    if (!hit) return false;
-    const href = hit.fullurl || ("https://en.wikipedia.org/wiki/" + encodeURIComponent(hit.title.replace(/ /g, "_")));
-    if (host.querySelector('[data-wiki="' + href.replace(/"/g, "") + '"]')) return true;
-    const src = hit.thumbnail.source;
-    const b = document.createElement("button");
-    b.type = "button";
-    b.dataset.wiki = href;
-    const img = document.createElement("img");
-    img.alt = "";
-    img.referrerPolicy = "no-referrer";
-    img.src = src;
-    b.appendChild(img);
-    const label = document.createElement("span");
-    label.textContent = "Caption · " + word;
-    b.appendChild(label);
-    b.onclick = () => window.open(href, "_blank", "noopener");
-    host.appendChild(b);
+    const hits = pages.filter((p) => p && p.title && p.thumbnail && !bad.test(p.title) && (this.onTopic(p.title) || this.captionWords(p.title).indexOf(word) >= 0 || new RegExp(word, "i").test(p.title)));
+    const pool = hits.length ? hits : pages.filter((p) => p && p.title && p.thumbnail && !bad.test(p.title));
+    if (!pool.length) return false;
+    let added = false;
+    pool.slice(skip, skip + 4).forEach((hit) => {
+      const href = hit.fullurl || ("https://en.wikipedia.org/wiki/" + encodeURIComponent(hit.title.replace(/ /g, "_")));
+      if (host.querySelector('[data-wiki="' + href.replace(/"/g, "") + '"]')) return;
+      const src = hit.thumbnail.source;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.wiki = href;
+      const img = document.createElement("img");
+      img.alt = "";
+      img.referrerPolicy = "no-referrer";
+      img.src = src;
+      b.appendChild(img);
+      const label = document.createElement("span");
+      label.textContent = "Caption · " + word;
+      b.appendChild(label);
+      b.onclick = () => window.open(href, "_blank", "noopener");
+      host.appendChild(b);
+      added = true;
+    });
     while (host.children.length > 18) host.removeChild(host.firstChild);
-    this.march();
+    if (added) this.march();
     this.pushWidgets(word);
-    return true;
+    return added;
   },
   async slideNet(text) {
     const q = this.captionWords(text);
