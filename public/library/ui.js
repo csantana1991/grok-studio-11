@@ -9,7 +9,7 @@
     '#imgLibOpen{border:1px solid #93c5fd;background:#1e3a8a;color:#fff;font:700 12px/1.2 system-ui,sans-serif;padding:8px 10px;border-radius:8px;cursor:pointer}',
     '#imgLibCount{display:flex;gap:4px;align-items:center;overflow-x:auto;max-width:70vw;min-height:46px;background:#0f172a;color:#fff;border:1px solid #334155;border-radius:8px;padding:4px;font:600 11px/1.3 system-ui,sans-serif}',
     '#imgLibCount img{height:40px;width:56px;object-fit:cover;border-radius:4px;flex:0 0 auto;background:#000}',
-    '#imgLibPrev,#imgLibNext{border:1px solid #93c5fd;background:#1e3a8a;color:#fff;font:700 18px/1 system-ui,sans-serif;width:36px;height:46px;border-radius:8px;cursor:pointer}',
+    '#imgLibPause{border:1px solid #93c5fd;background:#1e3a8a;color:#fff;font:700 12px/1 system-ui,sans-serif;height:46px;padding:0 10px;border-radius:8px;cursor:pointer}',
     '#imgLibPrev:disabled,#imgLibNext:disabled{opacity:.35;cursor:default}',
     '#imgLibSheet{position:fixed;inset:0;z-index:70;background:#0b1220;color:#fff;display:none;flex-direction:column}',
     '#imgLibSheet.on{display:flex}',
@@ -41,7 +41,7 @@
 
   var bar = document.createElement('div')
   bar.id = 'imgLibBar'
-  bar.innerHTML = '<button type="button" id="imgLibOpen">Image library</button><button type="button" id="imgLibPrev" hidden aria-label="Previous 18 images">‹</button><span id="imgLibCount">Checking verified images…</span><button type="button" id="imgLibNext" hidden aria-label="Next 18 images">›</button>'
+  bar.innerHTML = '<button type="button" id="imgLibOpen">Image library</button><span id="imgLibCount">Checking verified images…</span><button type="button" id="imgLibPause" hidden>Pause</button><button type="button" id="imgLibPrev" hidden aria-label="Previous 18 images">‹</button><button type="button" id="imgLibNext" hidden aria-label="Next 18 images">›</button>'
   var sheet = document.createElement('div')
   sheet.id = 'imgLibSheet'
   sheet.setAttribute('role', 'dialog')
@@ -347,7 +347,11 @@
 
   function lectureWords() {
     var said = document.getElementById('hjSaid')
-    var raw = (said && said.value) || ''
+    var ra = document.getElementById('raQ')
+    var raw = (said && said.value) || (ra && ra.value) || ''
+    if (!raw) {
+      try { raw = new URLSearchParams(location.search).get('q') || '' } catch (e) {}
+    }
     if (!raw) {
       var heads = document.querySelectorAll('h1,h2,h3')
       for (var i = 0; i < heads.length; i++) {
@@ -358,24 +362,45 @@
     return raw.toLowerCase()
   }
 
+  function rankKeys(words) {
+    if (/ecg|ekg|electrocardiog|heart rate|qrs|rhythm/.test(words)) return ['electrocardiog', 'ecg', 'ekg', 'qrs', 'rhythm', 'heart rate', 'cardiac', 'tracing']
+    if (/heart|cardiac|coronary/.test(words)) return ['heart', 'cardiac', 'coronary', 'myocard']
+    if (/lung|chest|pulmon/.test(words)) return ['lung', 'chest', 'pulmon']
+    if (/endometri|spleen|abdomen|pelvis|liver|hepatic|pancrea/.test(words)) return ['abdomen', 'pelvis', 'spleen', 'liver', 'kidney', 'pancrea']
+    if (/brain|stroke|neuro/.test(words)) return ['brain', 'head', 'stroke', 'cerebr']
+    return words.replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(function (w) {
+      return w.length > 3 && !/clinical|medicine|ninja|nerd|lecture|interpretation|introduction|image|library/.test(w)
+    }).slice(0, 4)
+  }
+
   function paintInline(rows) {
     var el = document.getElementById('imgLibCount')
     if (!el) return
     var words = lectureWords()
-    var want = /lung|chest|pulmon/.test(words) ? /lung|chest|pulmon/ : /endometri|spleen|abdomen|pelvis/.test(words) ? /abdomen|pelvis|spleen|liver|kidney/ : /heart|cardiac|coronary/.test(words) ? /heart|cardiac|coronary/ : /brain|stroke/.test(words) ? /brain|head|stroke/ : null
-    var picked = (rows || []).filter(function (r) {
+    if (words !== window.__imgLibWords) {
+      window.__imgLibWords = words
+      window.__imgLibPage = 0
+    }
+    var keys = rankKeys(words)
+    var picked = (rows || []).map(function (r) {
       var src = String(r.imageUrl || '')
-      if (!src || r.loadStatus && r.loadStatus !== 'verified') return false
-      if (!want) return true
-      var hay = [r.title, r.caption, r.diagnosis, r.bodyRegion].join(' ').toLowerCase()
-      return want.test(hay)
-    })
-    if (!picked.length) picked = (rows || []).filter(function (r) { return r.imageUrl })
+      if (!src || (r.loadStatus && r.loadStatus !== 'verified')) return null
+      var hay = [r.title, r.caption, r.diagnosis, r.bodyRegion, r.modality, src].join(' ').toLowerCase()
+      if (/calendar|factory|icon|logo|screenshot|keyboard/.test(hay)) return null
+      var score = 0
+      keys.forEach(function (k) { if (k && hay.indexOf(k) >= 0) score += 3 })
+      return score > 0 ? { row: r, score: score } : null
+    }).filter(Boolean).sort(function (a, b) { return b.score - a.score }).map(function (x) { return x.row })
+    if (!picked.length) {
+      picked = (rows || []).filter(function (r) {
+        var hay = [r.title, r.caption, r.imageUrl].join(' ').toLowerCase()
+        return r.imageUrl && !/calendar|factory|icon|logo/.test(hay)
+      })
+    }
     window.__imgLibPicked = picked
     var page = window.__imgLibPage || 0
     var pages = Math.max(1, Math.ceil(picked.length / 18))
-    if (page >= pages) page = pages - 1
-    if (page < 0) page = 0
+    if (page >= pages) page = 0
     window.__imgLibPage = page
     var start = page * 18
     el.innerHTML = ''
@@ -385,33 +410,51 @@
       img.src = displaySrc(r.imageUrl)
       el.appendChild(img)
     })
-    var prev = document.getElementById('imgLibPrev')
-    var next = document.getElementById('imgLibNext')
-    if (prev) { prev.hidden = picked.length <= 18; prev.disabled = page <= 0 }
-    if (next) { next.hidden = picked.length <= 18; next.disabled = page >= pages - 1 }
+    var pause = document.getElementById('imgLibPause')
+    if (pause) pause.hidden = picked.length <= 18
     if (!el.children.length) el.textContent = 'No verified images for this lecture'
+    if (!window.__imgLibTimer) {
+      window.__imgLibTimer = setInterval(function () {
+        if (window.__imgLibPaused) return
+        var list = window.__imgLibPicked || []
+        if (list.length <= 18) return
+        var pages = Math.ceil(list.length / 18)
+        window.__imgLibPage = ((window.__imgLibPage || 0) + 1) % pages
+        var held = window.__imgLibWords
+        window.__imgLibWords = held
+        paintInline(window.__imgLibRows || [])
+      }, 3500)
+    }
   }
 
   function stepLib(dir) {
     window.__imgLibPage = (window.__imgLibPage || 0) + dir
     paintInline(window.__imgLibRows || [])
   }
-  document.getElementById('imgLibPrev').onclick = function (ev) { if (ev) ev.stopPropagation(); stepLib(-1) }
-  document.getElementById('imgLibNext').onclick = function (ev) { if (ev) ev.stopPropagation(); stepLib(1) }
+  document.getElementById('imgLibPause').onclick = function (ev) {
+    if (ev) ev.stopPropagation()
+    window.__imgLibPaused = !window.__imgLibPaused
+    this.textContent = window.__imgLibPaused ? 'Play' : 'Pause'
+  }
 
+  function loadBest() {
+    var file = window.__imgLibRows ? Promise.resolve(window.__imgLibRows) : fetch('/library/display-images.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json() })
+    return file.then(function (rows) {
+      window.__imgLibRows = Array.isArray(rows) ? rows : []
+      paintInline(window.__imgLibRows)
+    })
+  }
   document.getElementById('imgLibOpen').onclick = function (ev) {
     if (ev) { ev.preventDefault(); ev.stopPropagation() }
     var el = document.getElementById('imgLibCount')
     if (el) el.textContent = 'Loading images…'
-    var file = window.__imgLibRows ? Promise.resolve(window.__imgLibRows) : fetch('/library/display-images.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json() })
-    file.then(function (rows) {
-      window.__imgLibRows = Array.isArray(rows) ? rows : []
-      window.__imgLibPage = 0
-      paintInline(window.__imgLibRows)
-    }).catch(function () {
+    window.__imgLibPage = 0
+    window.__imgLibWords = ''
+    loadBest().catch(function () {
       if (el) el.textContent = 'Images did not load'
     })
   }
+  setTimeout(function () { loadBest().catch(function () {}) }, 600)
   document.getElementById('imgLibClose').onclick = function () {
     sheet.classList.remove('on')
   }
