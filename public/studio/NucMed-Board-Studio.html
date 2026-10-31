@@ -5710,12 +5710,15 @@ const CapRail = {
     const slide = current ? String(current.textContent || "").replace(/\[[^\]]+\]/g, " ").replace(/\s+/g, " ").trim() : "";
     if (slide.length > 4 && !(this.cues && this.cues.length) && !/queue started|playable lesson/i.test(slide)) this.slideText = slide;
   },
+  medicalWord(word) {
+    return /nucle|medic|radio|scan|imag|scint|physiol|tracer|gamma|camera|spect|thyroid|bone|perfus|uptake|isotope|photon|emission|tomograph|organ|liver|kidney|heart|lung|brain|tumor|cancer|metast|therap|diagnos|anatom|contrast|lesion|nodule|cardiac|pulmonary|renal|hepatic|skeletal|oncolog|fluor|collimat|detector|decay|dose|pet|mri|axial|abdomen|spleen|pancrea|signal|proton|tesla|sequence|echo|perfusion|fdg/i.test(word);
+  },
   captionWords(text) {
     const stop = /^(the|and|for|with|that|this|from|what|when|your|into|over|than|are|was|were|has|have|not|but|its|you|can|all|any|out|our|how|who|about|them|then|just|like|gonna|going|know|yeah|okay|well|meta|image|images|turn|size|widget|atlas|use|them|goal|video|fill|gap|approach|most|pretty|they|were|early|found|large|weak|queue|started|advances|playable|lesson|ends|youtube|unit|source|next|ready|original|automated|check|here|playback|available|brigham|harvard|hopkins|emory|women|woman|hospital|residency|university|system|program|faculty|fellow|johns)$/i;
     return String(text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !stop.test(w)).slice(0, 8).join(" ");
   },
   async wikiNet(text) {
-    const words = this.captionWords(text).split(" ").filter((w) => w.length > 3 && !/meta|image|turn|size/.test(w));
+    const words = this.captionWords(text).split(" ").filter((w) => w.length > 3 && this.medicalWord(w));
     if (!words.length) return;
     this.seenCap = this.seenCap || {};
     const said = document.getElementById("hjSaid");
@@ -5734,7 +5737,10 @@ const CapRail = {
     try {
       const data = await fetch("/api/pmc/match?source=openi&q=" + encodeURIComponent(word) + "&n=4").then((r) => r.json());
       const row = (data.results || []).find((r) => r && r.url);
-      if (row) pages = [{ title: word, thumbnail: { source: row.url }, fullurl: row.url }];
+      const cap = row ? String(row.caption || row.title || "") : "";
+      if (row && /scan|nucle|radio|imag|scint|pet|spect|thyroid|bone|tracer|gamma|organ|lesion|tomograph|perfusion|dose/i.test(cap + " " + word)) {
+        pages = [{ title: (cap || word).slice(0, 80), thumbnail: { source: row.url }, fullurl: row.url }];
+      }
     } catch (e) {}
     if (!pages.length) {
       try {
@@ -5743,7 +5749,7 @@ const CapRail = {
       } catch (e) { return; }
     }
     if (!host) return;
-    const bad = /brigham young|portrait|manuscript|lahey|coat of arms|flag of|diploma|painting|hospital & medical|university|college/i;
+    const bad = /brigham young|portrait|manuscript|lahey|coat of arms|flag of|diploma|painting|hospital & medical|university|college|vital remains|intelligence gathering|band\b|album|song|novel|football|psychology/i;
     const hit = pages.filter((p) => p && p.title && p.thumbnail && !bad.test(p.title) && (this.onTopic(p.title) || this.captionWords(p.title).indexOf(word) >= 0 || new RegExp(word, "i").test(p.title)))[0];
     if (!hit) return false;
     const href = hit.fullurl || ("https://en.wikipedia.org/wiki/" + encodeURIComponent(hit.title.replace(/ /g, "_")));
