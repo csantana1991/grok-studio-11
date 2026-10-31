@@ -87,12 +87,8 @@ const BRIDGE = `(function(){
       var fr = frames[i];
       var src = fr.getAttribute("src") || "";
       if (src.indexOf("youtube") < 0) continue;
-      if (fr.getAttribute("data-arm") !== "1") {
-        fr.setAttribute("data-arm", "1");
-        if (src.indexOf("enablejsapi") < 0) {
-          fr.setAttribute("src", src + (src.indexOf("?") >= 0 ? "&" : "?") + "enablejsapi=1");
-        }
-      }
+      if (fr.getAttribute("data-arm") !== "1") fr.setAttribute("data-arm", "1");
+      if (src.indexOf("enablejsapi") < 0) continue;
       try { fr.contentWindow.postMessage(JSON.stringify({ event: "listening", id: "studio", channel: "widget" }), "*"); } catch (e) {}
     }
   }
