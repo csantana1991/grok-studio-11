@@ -29,11 +29,15 @@
     var win = document.getElementById("winBar");
     var dock = document.getElementById("dockHandle");
     var script = document.querySelector(".media-row .script");
+    var strip = document.getElementById("modStrip");
+    var player = document.getElementById("playerDock");
     if (!yes) {
       showEl(wikiDef);
       showEl(win);
       showEl(dock);
       showEl(script);
+      showEl(strip);
+      showEl(player);
       document.querySelectorAll(".lesson-fig-row").forEach(showEl);
       return;
     }
@@ -49,6 +53,8 @@
     hideEl(wikiDef);
     hideEl(win);
     hideEl(dock);
+    hideEl(strip);
+    hideEl(player);
     document.querySelectorAll(".wiki-panel, .def-panel, aside.wiki").forEach(function (el) {
       el.style.setProperty("display", "none", "important");
     });
@@ -76,7 +82,7 @@
       fig.style.setProperty("background", "#fff", "important");
       fig.style.setProperty("margin", "0 auto", "important");
     }
-    var room = Math.max(220, (stage ? stage.clientHeight : window.innerHeight) - 8);
+    var room = Math.max(220, (stage ? stage.clientHeight : window.innerHeight) - 72);
     var img = document.getElementById("lessonFigMain");
     if (img) {
       img.style.setProperty("display", "block", "important");
