@@ -64,7 +64,11 @@
       stage.style.setProperty("display", "flex", "important");
       stage.style.setProperty("align-items", "flex-start", "important");
       stage.style.setProperty("justify-content", "center", "important");
+      stage.scrollTop = 0;
     }
+    var work = document.getElementById("work");
+    if (work) work.scrollTop = 0;
+    if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
     var fig = document.querySelector("#lessonFigs figure");
     if (fig) {
       fig.style.setProperty("background", "#fff", "important");
