@@ -14,8 +14,31 @@
     .replace("body.scan-live.medb-full #phraseDef:not(:has(article)) { display: none !important; }", "body.scan-live.medb-full #phraseDef { display: flex !important; animation: none !important; transition: none !important; }")
     .replace('Array.from(defs.querySelectorAll("article")).forEach((node) => node.remove());', 'if (!document.body.classList.contains("medb-full")) Array.from(defs.querySelectorAll("article")).forEach((node) => node.remove());')
     .replace('if (typeof ScanLive !== "undefined") ScanLive.seenPhrase = {};', 'if (typeof ScanLive !== "undefined" && !document.body.classList.contains("medb-full")) ScanLive.seenPhrase = {};')
-    .replace("bottom: 78px; height: 116px;", "bottom: 2px !important; height: 86px !important; padding: 1px 6px !important; gap: 2px !important;");
-  var tail = "<style>body.medb-full .work,body.scan-live.medb-full .work{bottom:96px !important}body.medb-full #modStrip,body.scan-live.medb-full #modStrip{bottom:2px !important;height:86px !important;padding:1px 6px !important;gap:2px !important}body.medb-full #modStrip .mod-row{min-height:46px !important;gap:4px !important}body.medb-full #modStrip img{width:60px !important;height:44px !important}.vid-panel,.vid-split,#colSplit{display:none !important}.media-row{grid-template-columns:minmax(0,1fr) !important}body:not(.nav-open) #sidebar{display:none !important}body .app,body.nav-min .app,body.nav-max .app{grid-template-columns:minmax(0,1fr) !important}.menu-btn{display:grid !important}</style>";
+    .replace("bottom: 78px; height: 116px;", "bottom: 2px !important; height: 86px !important; padding: 1px 6px !important; gap: 2px !important;")
+    .replace("const src = this.clipSrc();\n    if (!v || !src) return;", "const src = this.clipSrc();\n    if (!v || !src) { try { var pb = document.getElementById(\"playBtn\"); if (pb) pb.click(); } catch (err) {} return; }")
+    .replace("try { speechSynthesis.speak(u); }", "try { speechSynthesis.speak(u); if (speechSynthesis.resume) speechSynthesis.resume(); }");
+  var tail = "<style>"
+    + "body.medb-full .work,body.scan-live.medb-full .work{bottom:96px !important}"
+    + "body.medb-full #modStrip,body.scan-live.medb-full #modStrip{bottom:2px !important;height:86px !important;padding:1px 6px !important;gap:2px !important}"
+    + "body.medb-full #modStrip .mod-row{min-height:46px !important;gap:4px !important}"
+    + "body.medb-full #modStrip img{width:60px !important;height:44px !important}"
+    + ".app,.main,.work,.stage{min-width:0 !important;max-width:100% !important}"
+    + ".media-row{display:flex !important;flex-direction:column !important;width:100% !important;min-width:0 !important;overflow:visible !important;grid-template-columns:minmax(0,1fr) !important}"
+    + ".vid-split,#colSplit{display:none !important}"
+    + ".vid-panel,.vid-panel.is-max{display:flex !important;position:relative !important;inset:auto !important;left:auto !important;right:auto !important;top:auto !important;bottom:auto !important;width:100% !important;max-width:100% !important;height:auto !important;min-height:140px !important;max-height:36vh !important;overflow:hidden !important;z-index:1 !important}"
+    + ".script{width:100% !important;min-width:0 !important;max-width:100% !important}"
+    + ".script img,.lesson-figs img,#lessonFigMain{max-width:100% !important;height:auto !important;object-fit:contain !important}"
+    + ".stage>.pager,body.lesson-audio .stage>.pager{position:relative !important;left:auto !important;right:auto !important;bottom:auto !important;width:auto !important;z-index:6;display:flex;flex-wrap:wrap;gap:8px}"
+    + "#playerDock{position:relative !important;width:100% !important;left:auto !important;right:auto !important;z-index:5}"
+    + "#playerDock .player-row{position:relative;z-index:30}"
+    + "#winBar{position:relative !important;left:auto !important;width:100% !important;max-width:100% !important}"
+    + "body:not(.nav-open) #sidebar{display:none !important}"
+    + "body.nav-open #sidebar{display:flex !important;position:fixed !important;z-index:80 !important;inset:0 auto 0 0 !important;width:min(88vw,340px) !important;height:100dvh !important;background:#fff}"
+    + "body .app,body.nav-min .app,body.nav-max .app{grid-template-columns:minmax(0,1fr) !important}"
+    + ".menu-btn{display:grid !important}"
+    + "body.atlas-open .work{display:flex !important;flex-direction:column !important}"
+    + ".atlas-drawer,.live-pop{position:relative !important;width:100% !important;max-width:100% !important;max-height:42vh !important;left:auto !important;right:auto !important;top:auto !important}"
+    + "</style>";
   var join = "";
   try {
     var code = await (await fetch("/studio/med-join.js")).text();
