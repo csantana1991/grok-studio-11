@@ -8,15 +8,32 @@
     }
   }
 
+  function hideEl(el) {
+    if (!el || el.dataset.protocolHidden) return;
+    el.dataset.protocolHidden = "1";
+    el.dataset.protocolDisplay = el.style.display || "";
+    el.style.setProperty("display", "none", "important");
+  }
+  function showEl(el) {
+    if (!el || !el.dataset.protocolHidden) return;
+    if (el.dataset.protocolDisplay) el.style.display = el.dataset.protocolDisplay;
+    else el.style.removeProperty("display");
+    delete el.dataset.protocolHidden;
+    delete el.dataset.protocolDisplay;
+  }
+
   function fit() {
     var yes = reading();
     if (document.body) document.body.classList.toggle("protocol-read", yes);
     var wikiDef = document.getElementById("wikiDef");
+    var win = document.getElementById("winBar");
+    var dock = document.getElementById("dockHandle");
+    var script = document.querySelector(".media-row .script");
     if (!yes) {
-      if (wikiDef && wikiDef.dataset.protocolHidden) {
-        wikiDef.style.removeProperty("display");
-        delete wikiDef.dataset.protocolHidden;
-      }
+      showEl(wikiDef);
+      showEl(win);
+      showEl(dock);
+      showEl(script);
       return;
     }
     document.body.classList.remove("wiki-top", "clip-on");
@@ -28,10 +45,9 @@
     if (bar) bar.style.setProperty("display", "none", "important");
     var film = document.getElementById("atlasFilm");
     if (film) film.style.setProperty("display", "none", "important");
-    if (wikiDef) {
-      wikiDef.dataset.protocolHidden = "1";
-      wikiDef.style.setProperty("display", "none", "important");
-    }
+    hideEl(wikiDef);
+    hideEl(win);
+    hideEl(dock);
     document.querySelectorAll(".wiki-panel, .def-panel, aside.wiki").forEach(function (el) {
       el.style.setProperty("display", "none", "important");
     });
@@ -39,19 +55,34 @@
     if (vid) vid.style.setProperty("display", "none", "important");
     var split = document.querySelector(".vid-split");
     if (split) split.style.setProperty("display", "none", "important");
+    hideEl(script);
     var stage = document.querySelector(".stage");
     var figs = document.getElementById("lessonFigs");
     if (stage && figs && figs.parentNode !== stage) stage.insertBefore(figs, stage.firstChild);
+    if (stage) {
+      stage.style.setProperty("overflow", "hidden", "important");
+      stage.style.setProperty("display", "flex", "important");
+      stage.style.setProperty("align-items", "flex-start", "important");
+      stage.style.setProperty("justify-content", "center", "important");
+    }
     var fig = document.querySelector("#lessonFigs figure");
-    if (fig) fig.style.setProperty("background", "#fff", "important");
+    if (fig) {
+      fig.style.setProperty("background", "#fff", "important");
+      fig.style.setProperty("margin", "0 auto", "important");
+    }
+    var header = document.querySelector("header");
+    var top = header ? header.getBoundingClientRect().bottom : 72;
+    var room = Math.max(240, window.innerHeight - top - 64);
     var img = document.getElementById("lessonFigMain");
     if (img) {
       img.style.setProperty("display", "block", "important");
-      img.style.setProperty("width", "100%", "important");
+      img.style.setProperty("width", "auto", "important");
+      img.style.setProperty("max-width", "100%", "important");
       img.style.setProperty("height", "auto", "important");
-      img.style.setProperty("max-height", "none", "important");
+      img.style.setProperty("max-height", room + "px", "important");
       img.style.setProperty("object-fit", "contain", "important");
       img.style.setProperty("background", "#fff", "important");
+      img.style.setProperty("margin", "0 auto", "important");
     }
   }
 
@@ -89,6 +120,7 @@
       var copy = {};
       for (var k in lesson) copy[k] = lesson[k];
       copy.audio = pack(lesson.audio);
+      window.__protoLines = copy.audio;
       return orig(copy);
     }
     wrapped.__packed = true;
@@ -165,7 +197,7 @@
       if (old) old.remove();
       var bar = document.createElement("div");
       bar.id = "protoNav";
-      bar.style.cssText = "position:fixed;z-index:5000;left:50%;transform:translateX(-50%);bottom:70px;display:none;gap:8px;align-items:center;background:#fff;border:1px solid #8aa4c8;border-radius:999px;padding:6px 8px;box-shadow:0 6px 18px rgba(0,0,0,.2)";
+      bar.style.cssText = "position:fixed;z-index:5000;left:50%;transform:translateX(-50%);bottom:8px;display:none;gap:8px;align-items:center;background:#fff;border:1px solid #8aa4c8;border-radius:999px;padding:6px 8px;box-shadow:0 6px 18px rgba(0,0,0,.2)";
       bar.innerHTML = '<button type="button" id="protoPrev" aria-label="Previous page" style="min-width:72px;height:40px;border-radius:999px;border:1px solid #8aa4c8;background:#eef4ff;font-weight:700;">← Back</button><button type="button" id="protoPlay" aria-label="Play this page" style="min-width:84px;height:40px;border-radius:999px;border:0;background:#1d4ed8;color:#fff;font-weight:700;">Play</button><button type="button" id="protoNext" aria-label="Next page" style="min-width:88px;height:40px;border-radius:999px;border:1px solid #8aa4c8;background:#eef4ff;font-weight:700;">Forward →</button><span id="protoCount" style="font-weight:700;min-width:64px;text-align:center;"></span>';
       document.body.appendChild(bar);
       document.getElementById("protoPrev").addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); step(-1); });
@@ -189,6 +221,8 @@
       if (head) head.style.display = "none";
       var headPlay = document.getElementById("protoHeadPlay");
       if (headPlay) headPlay.style.display = "none";
+      var say = document.getElementById("protoSay");
+      if (say) say.style.display = "none";
       return;
     }
     var mod = currentModule();
@@ -209,6 +243,19 @@
     var next = document.getElementById("protoNext");
     if (prev) prev.disabled = n <= 1;
     if (next) next.disabled = n >= total;
+    var say = document.getElementById("protoSay");
+    if (!say) {
+      say = document.createElement("div");
+      say.id = "protoSay";
+      say.style.cssText = "position:fixed;z-index:5000;left:10px;right:10px;top:76px;display:none;background:#111;color:#ffe14a;font-weight:700;font-size:16px;line-height:1.35;padding:8px 12px;border-radius:10px;max-height:3.2em;overflow:hidden;";
+      document.body.appendChild(say);
+    }
+    var lines = window.__protoLines;
+    var line = (state && state.speaking && lines && lines[state.para]) ? String(lines[state.para]) : "";
+    var header = document.querySelector("header");
+    if (header) say.style.top = (header.getBoundingClientRect().bottom + 4) + "px";
+    say.style.display = line ? "block" : "none";
+    say.textContent = line;
   }
 
   fit();
