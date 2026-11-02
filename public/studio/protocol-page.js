@@ -27,7 +27,6 @@
     var stage = document.querySelector(".stage");
     var figs = document.getElementById("lessonFigs");
     if (stage && figs) stage.insertBefore(figs, stage.firstChild);
-    if (stage) stage.scrollTop = 0;
     var img = document.getElementById("lessonFigMain");
     if (img) {
       img.style.setProperty("display", "block", "important");
@@ -38,7 +37,8 @@
       img.style.setProperty("background", "#fff", "important");
     }
   }
-  setInterval(fit, 300);
-  document.addEventListener("click", function () { setTimeout(fit, 30); setTimeout(fit, 300); }, true);
   fit();
+  document.addEventListener("click", function () { setTimeout(fit, 30); setTimeout(fit, 300); }, true);
+  setTimeout(fit, 1000);
+  setTimeout(fit, 3000);
 })();
