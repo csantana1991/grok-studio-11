@@ -233,6 +233,8 @@
       if (headPlay) headPlay.style.display = "none";
       var say = document.getElementById("protoSay");
       if (say) say.style.display = "none";
+      var mark = document.getElementById("protoMark");
+      if (mark) mark.style.display = "none";
       return;
     }
     var mod = currentModule();
@@ -264,8 +266,37 @@
     var line = (state && state.speaking && lines && lines[state.para]) ? String(lines[state.para]) : "";
     var header = document.querySelector("header");
     if (header) say.style.top = (header.getBoundingClientRect().bottom + 4) + "px";
+    var part = "";
+    if (line && lines && lines.length) part = "Now reading " + ((state.para || 0) + 1) + " of " + lines.length + ". ";
     say.style.display = line ? "block" : "none";
-    say.textContent = line;
+    say.textContent = part + line;
+    placeMark();
+  }
+
+  function placeMark() {
+    var mark = document.getElementById("protoMark");
+    if (!mark) {
+      mark = document.createElement("div");
+      mark.id = "protoMark";
+      mark.style.cssText = "position:fixed;z-index:4500;pointer-events:none;display:none;background:rgba(255,225,74,.38);border-top:3px solid #111;border-bottom:3px solid #111;box-shadow:0 0 0 1px #ffe14a;";
+      document.body.appendChild(mark);
+    }
+    var img = document.getElementById("lessonFigMain");
+    var lines = window.__protoLines || [];
+    var talking = !!(reading() && state && state.speaking && lines.length && img);
+    if (!talking) { mark.style.display = "none"; return; }
+    var r = img.getBoundingClientRect();
+    if (r.width < 40 || r.height < 40) { mark.style.display = "none"; return; }
+    var n = lines.length;
+    var i = Math.min(state.para || 0, n - 1);
+    var band = Math.max(28, r.height / Math.max(n, 1));
+    var span = Math.max(0, r.height - band);
+    var top = r.top + (n <= 1 ? 0 : span * (i / (n - 1)));
+    mark.style.display = "block";
+    mark.style.left = Math.round(r.left) + "px";
+    mark.style.width = Math.round(r.width) + "px";
+    mark.style.top = Math.round(top) + "px";
+    mark.style.height = Math.round(band) + "px";
   }
 
   fit();
