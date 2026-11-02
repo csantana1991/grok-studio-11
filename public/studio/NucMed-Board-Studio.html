@@ -15,7 +15,7 @@
     .replace('Array.from(defs.querySelectorAll("article")).forEach((node) => node.remove());', 'if (!document.body.classList.contains("medb-full")) Array.from(defs.querySelectorAll("article")).forEach((node) => node.remove());')
     .replace('if (typeof ScanLive !== "undefined") ScanLive.seenPhrase = {};', 'if (typeof ScanLive !== "undefined" && !document.body.classList.contains("medb-full")) ScanLive.seenPhrase = {};')
     .replace("bottom: 78px; height: 116px;", "bottom: 2px !important; height: 86px !important; padding: 1px 6px !important; gap: 2px !important;")
-    .replace("const src = this.clipSrc();\n    if (!v || !src) return;", "const src = this.clipSrc();\n    if (!v || !src) { try { var pb = document.getElementById(\"playBtn\"); if (pb) pb.click(); } catch (err) {} return; }")
+    .replace("const src = this.clipSrc();\n    if (!v || !src) return;", "const src = this.clipSrc();\n    var mod = (typeof currentModule === \"function\") ? currentModule() : null;\n    var protocol = mod && /protocol/i.test((mod.id || \"\") + \" \" + (mod.title || \"\"));\n    if (protocol || !v || !src) { try { var pb = document.getElementById(\"playBtn\"); if (pb) pb.click(); } catch (err) {} return; }")
     .replace("try { speechSynthesis.speak(u); }", "try { speechSynthesis.speak(u); if (speechSynthesis.resume) speechSynthesis.resume(); }");
   var tail = "<style>"
     + "body.medb-full .work,body.scan-live.medb-full .work{bottom:96px !important}"
