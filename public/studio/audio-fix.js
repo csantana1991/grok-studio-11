@@ -40,7 +40,6 @@
     window.speakLesson = wrapped;
   }
 
-  /* Also patch the raw speak path if it exists globally */
   if (typeof window.__speakRaw === "function" && !window.__speakRaw.__audioFix) {
     var raw = window.__speakRaw;
     window.__speakRaw = function (u) { safeSpeak(u); };
@@ -76,7 +75,25 @@
       if (nx && typeof speakLesson === "function") speakLesson(nx);
     });
   }
-
   ensurePlayAll();
   setInterval(ensurePlayAll, 1000);
+
+  /* Protocol layout: entire page visible, nothing overlapping, no internal scroll */
+  function ensureLayout() {
+    if (document.getElementById("protoLayoutFix")) return;
+    var st = document.createElement("style");
+    st.id = "protoLayoutFix";
+    st.textContent = "
+      body.protocol-read .stage{overflow:hidden !important}
+      body.protocol-read .script{overflow:auto !important;max-height:calc(100dvh - 96px) !important}
+      body.protocol-read .script img,#lessonFigMain{max-height:calc(100dvh - 120px) !important;width:auto !important;max-width:100% !important}
+      body.protocol-read #playerDock{position:fixed !important;bottom:0 !important;left:0 !important;right:0 !important;z-index:40 !important}
+      body.protocol-read #modStrip{z-index:41 !important}
+      #protoPlayAll{background:#0b5cff;color:#fff;border:0;border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer;margin-left:8px}
+      #protoPlayAll.is-on{background:#b00020}
+    ";
+    document.head.appendChild(st);
+  }
+  ensureLayout();
+  setInterval(ensureLayout, 2000);
 })();
