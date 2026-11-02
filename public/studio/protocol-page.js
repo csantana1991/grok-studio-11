@@ -34,6 +34,7 @@
       showEl(win);
       showEl(dock);
       showEl(script);
+      document.querySelectorAll(".lesson-fig-row").forEach(showEl);
       return;
     }
     document.body.classList.remove("wiki-top", "clip-on");
@@ -55,15 +56,16 @@
     if (vid) vid.style.setProperty("display", "none", "important");
     var split = document.querySelector(".vid-split");
     if (split) split.style.setProperty("display", "none", "important");
-    hideEl(script);
+    document.querySelectorAll(".lesson-fig-row").forEach(function (el) { hideEl(el); });
     var stage = document.querySelector(".stage");
     var figs = document.getElementById("lessonFigs");
     if (stage && figs && figs.parentNode !== stage) stage.insertBefore(figs, stage.firstChild);
     if (stage) {
       stage.style.setProperty("overflow", "hidden", "important");
       stage.style.setProperty("display", "flex", "important");
-      stage.style.setProperty("align-items", "flex-start", "important");
-      stage.style.setProperty("justify-content", "center", "important");
+      stage.style.setProperty("flex-direction", "column", "important");
+      stage.style.setProperty("align-items", "center", "important");
+      stage.style.setProperty("justify-content", "flex-start", "important");
       stage.scrollTop = 0;
     }
     var work = document.getElementById("work");
@@ -74,9 +76,7 @@
       fig.style.setProperty("background", "#fff", "important");
       fig.style.setProperty("margin", "0 auto", "important");
     }
-    var header = document.querySelector("header");
-    var top = header ? header.getBoundingClientRect().bottom : 72;
-    var room = Math.max(240, window.innerHeight - top - 64);
+    var room = Math.max(220, (stage ? stage.clientHeight : window.innerHeight) - 8);
     var img = document.getElementById("lessonFigMain");
     if (img) {
       img.style.setProperty("display", "block", "important");
