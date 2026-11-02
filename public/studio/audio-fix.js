@@ -32,23 +32,11 @@
   if (typeof speakLesson === "function" && !speakLesson.__audioFix) {
     var orig = speakLesson;
     function wrapped(lesson) {
-      if (!lesson) return orig(lesson);
-      var copy = {};
-      for (var k in lesson) copy[k] = lesson[k];
-      var lines = copy.audio;
-      if (lines && lines.length) {
-        copy.audio = lines.map(function (line) {
-          return {
-            text: line.text || line,
-            start: line.start,
-            end: line.end,
-            _speak: function (u) { safeSpeak(u); }
-          };
-        });
-      }
-      return orig(copy);
+      wake();
+      return orig(lesson);
     }
     wrapped.__audioFix = true;
+    wrapped.__packed = speakLesson.__packed;
     window.speakLesson = wrapped;
   }
 

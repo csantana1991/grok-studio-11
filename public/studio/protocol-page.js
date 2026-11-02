@@ -114,6 +114,16 @@
     paintNav();
   }
 
+  function togglePlay(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    var mod = (typeof currentModule === "function") ? currentModule() : null;
+    var lesson = mod && mod.lessons && mod.lessons[state.lesson || 0];
+    if (!lesson) return;
+    if (state.speaking && typeof stopSpeech === "function") stopSpeech();
+    else if (typeof speakLesson === "function") speakLesson(lesson);
+    paintNav();
+  }
+
   function ensureNav() {
     var anchor = document.getElementById("tabsDown") || document.getElementById("fsUp");
     if (anchor && !document.getElementById("protoBack")) {
@@ -131,6 +141,12 @@
       okay.textContent = "Okay";
       okay.title = "Okay, next page";
       okay.setAttribute("aria-label", "Okay, next page");
+      var play = document.createElement("button");
+      play.id = "protoHeadPlay";
+      play.type = "button";
+      play.textContent = "▶ Play";
+      play.title = "Play this page";
+      play.setAttribute("aria-label", "Play this page");
       var fwd = document.createElement("button");
       fwd.id = "protoFwd";
       fwd.type = "button";
@@ -141,12 +157,15 @@
         b.style.cssText = "min-width:40px;height:34px;border-radius:999px;border:1px solid #8aa4c8;background:#fff;color:#123;font-size:20px;font-weight:700;line-height:1;";
       });
       okay.style.cssText = "min-width:64px;height:34px;border-radius:999px;border:0;background:#1d4ed8;color:#fff;font-size:15px;font-weight:700;";
+      play.style.cssText = "min-width:72px;height:34px;border-radius:999px;border:0;background:#0f766e;color:#fff;font-size:15px;font-weight:700;";
       count.style.cssText = "font-size:13px;font-weight:700;color:#123;min-width:64px;text-align:center;";
       anchor.parentNode.insertBefore(back, anchor.nextSibling);
-      anchor.parentNode.insertBefore(okay, back.nextSibling);
+      anchor.parentNode.insertBefore(play, back.nextSibling);
+      anchor.parentNode.insertBefore(okay, play.nextSibling);
       anchor.parentNode.insertBefore(count, okay.nextSibling);
       anchor.parentNode.insertBefore(fwd, count.nextSibling);
       back.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); step(-1); });
+      play.addEventListener("click", togglePlay);
       okay.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); step(1); });
       fwd.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); step(1); });
     }
@@ -154,9 +173,10 @@
       var bar = document.createElement("div");
       bar.id = "protoNav";
       bar.style.cssText = "position:fixed;z-index:5000;left:50%;transform:translateX(-50%);bottom:70px;display:none;flex-direction:column;gap:4px;align-items:center;background:#fff;border:1px solid #8aa4c8;border-radius:18px;padding:6px 8px;box-shadow:0 6px 18px rgba(0,0,0,.2)";
-      bar.innerHTML = '<div style="display:flex;gap:8px;align-items:center;"><button type="button" id="protoPrev" aria-label="Previous page" style="min-width:64px;height:40px;border-radius:999px;border:1px solid #8aa4c8;background:#eef4ff;font-weight:700;">← Back</button><button type="button" id="protoOkay" aria-label="Okay, next page" style="min-width:84px;height:40px;border-radius:999px;border:0;background:#1d4ed8;color:#fff;font-weight:700;">Okay</button><button type="button" id="protoNext" aria-label="Next page" style="min-width:88px;height:40px;border-radius:999px;border:1px solid #8aa4c8;background:#eef4ff;font-weight:700;">Forward →</button></div><span id="protoCount" style="font-weight:700;text-align:center;"></span>';
+      bar.innerHTML = '<button type="button" id="protoPlay" aria-label="Play this page" style="width:100%;height:42px;border-radius:999px;border:0;background:#0f766e;color:#fff;font-weight:700;">▶ Play</button><div style="display:flex;gap:8px;align-items:center;"><button type="button" id="protoPrev" aria-label="Previous page" style="min-width:64px;height:40px;border-radius:999px;border:1px solid #8aa4c8;background:#eef4ff;font-weight:700;">← Back</button><button type="button" id="protoOkay" aria-label="Okay, next page" style="min-width:84px;height:40px;border-radius:999px;border:0;background:#1d4ed8;color:#fff;font-weight:700;">Okay</button><button type="button" id="protoNext" aria-label="Next page" style="min-width:88px;height:40px;border-radius:999px;border:1px solid #8aa4c8;background:#eef4ff;font-weight:700;">Forward →</button></div><span id="protoCount" style="font-weight:700;text-align:center;"></span>';
       document.body.appendChild(bar);
       document.getElementById("protoPrev").addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); step(-1); });
+      document.getElementById("protoPlay").addEventListener("click", togglePlay);
       document.getElementById("protoOkay").addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); step(1); });
       document.getElementById("protoNext").addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); step(1); });
     }
@@ -177,6 +197,8 @@
       if (head) head.style.display = "none";
       var headOkay = document.getElementById("protoHeadOkay");
       if (headOkay) headOkay.style.display = "none";
+      var headPlay = document.getElementById("protoHeadPlay");
+      if (headPlay) headPlay.style.display = "none";
       return;
     }
     var mod = currentModule();
@@ -189,6 +211,11 @@
     if (head) { head.style.display = "inline-block"; head.textContent = label; }
     var headOkay = document.getElementById("protoHeadOkay");
     if (headOkay) { headOkay.style.display = "inline-flex"; headOkay.disabled = n >= total; }
+    var talking = !!(state && state.speaking);
+    var headPlay = document.getElementById("protoHeadPlay");
+    if (headPlay) { headPlay.style.display = "inline-flex"; headPlay.textContent = talking ? "Pause" : "▶ Play"; }
+    var play = document.getElementById("protoPlay");
+    if (play) play.textContent = talking ? "Pause" : "▶ Play";
     if (count) count.textContent = label;
     var prev = document.getElementById("protoPrev");
     var next = document.getElementById("protoNext");
