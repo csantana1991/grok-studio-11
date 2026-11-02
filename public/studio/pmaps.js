@@ -71,4 +71,5 @@
   }
   try { if (typeof renderNav === "function") renderNav(); } catch (e) {}
   try { if (typeof updateBar === "function") updateBar(); } catch (e) {}
+  setInterval(pinMap, 500);
 })();
