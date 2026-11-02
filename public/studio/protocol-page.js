@@ -95,8 +95,96 @@
     window.speakLesson = wrapped;
   }
 
+  function step(dir) {
+    var mod = (typeof currentModule === "function") ? currentModule() : null;
+    if (!mod || !mod.lessons || typeof state === "undefined") return;
+    var n = (state.lesson || 0) + dir;
+    if (n < 0 || n >= mod.lessons.length) return;
+    var keep = !!(state.speaking || state.playAll);
+    if (typeof stopSpeech === "function") stopSpeech();
+    state.lesson = n;
+    if (typeof render === "function") render();
+    var stage = document.querySelector(".stage");
+    if (stage) stage.scrollTop = 0;
+    window.scrollTo(0, 0);
+    if (keep) {
+      var nx = currentModule() && currentModule().lessons[state.lesson];
+      if (nx && typeof speakLesson === "function") speakLesson(nx);
+    }
+    paintNav();
+  }
+
+  function ensureNav() {
+    var anchor = document.getElementById("tabsDown") || document.getElementById("fsUp");
+    if (anchor && !document.getElementById("protoBack")) {
+      var back = document.createElement("button");
+      back.id = "protoBack";
+      back.type = "button";
+      back.textContent = "←";
+      back.title = "Previous page";
+      back.setAttribute("aria-label", "Previous page");
+      var count = document.createElement("span");
+      count.id = "protoHeadCount";
+      var fwd = document.createElement("button");
+      fwd.id = "protoFwd";
+      fwd.type = "button";
+      fwd.textContent = "→";
+      fwd.title = "Next page";
+      fwd.setAttribute("aria-label", "Next page");
+      [back, fwd].forEach(function (b) {
+        b.style.cssText = "min-width:40px;height:34px;border-radius:999px;border:1px solid #8aa4c8;background:#fff;color:#123;font-size:20px;font-weight:700;line-height:1;";
+      });
+      count.style.cssText = "font-size:13px;font-weight:700;color:#123;min-width:64px;text-align:center;";
+      anchor.parentNode.insertBefore(back, anchor.nextSibling);
+      anchor.parentNode.insertBefore(count, back.nextSibling);
+      anchor.parentNode.insertBefore(fwd, count.nextSibling);
+      back.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); step(-1); });
+      fwd.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); step(1); });
+    }
+    if (!document.getElementById("protoNav")) {
+      var bar = document.createElement("div");
+      bar.id = "protoNav";
+      bar.style.cssText = "position:fixed;z-index:5000;left:50%;transform:translateX(-50%);bottom:70px;display:none;gap:10px;align-items:center;background:#fff;border:1px solid #8aa4c8;border-radius:999px;padding:6px 8px;box-shadow:0 6px 18px rgba(0,0,0,.2)";
+      bar.innerHTML = '<button type="button" id="protoPrev" aria-label="Previous page" style="min-width:64px;height:40px;border-radius:999px;border:1px solid #8aa4c8;background:#eef4ff;font-weight:700;">← Back</button><span id="protoCount" style="font-weight:700;min-width:72px;text-align:center;"></span><button type="button" id="protoNext" aria-label="Next page" style="min-width:88px;height:40px;border-radius:999px;border:1px solid #8aa4c8;background:#eef4ff;font-weight:700;">Forward →</button>';
+      document.body.appendChild(bar);
+      document.getElementById("protoPrev").addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); step(-1); });
+      document.getElementById("protoNext").addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); step(1); });
+    }
+  }
+
+  function paintNav() {
+    ensureNav();
+    var yes = reading();
+    var bar = document.getElementById("protoNav");
+    var back = document.getElementById("protoBack");
+    var fwd = document.getElementById("protoFwd");
+    var head = document.getElementById("protoHeadCount");
+    var count = document.getElementById("protoCount");
+    if (!yes) {
+      if (bar) bar.style.display = "none";
+      if (back) back.style.display = "none";
+      if (fwd) fwd.style.display = "none";
+      if (head) head.style.display = "none";
+      return;
+    }
+    var mod = currentModule();
+    var total = mod && mod.lessons ? mod.lessons.length : 0;
+    var n = (state.lesson || 0) + 1;
+    var label = n + " / " + total;
+    if (bar) bar.style.display = "flex";
+    if (back) { back.style.display = "inline-flex"; back.disabled = n <= 1; }
+    if (fwd) { fwd.style.display = "inline-flex"; fwd.disabled = n >= total; }
+    if (head) { head.style.display = "inline-block"; head.textContent = label; }
+    if (count) count.textContent = label;
+    var prev = document.getElementById("protoPrev");
+    var next = document.getElementById("protoNext");
+    if (prev) prev.disabled = n <= 1;
+    if (next) next.disabled = n >= total;
+  }
+
   fit();
   hook();
-  document.addEventListener("click", function () { setTimeout(fit, 40); }, true);
-  setInterval(function () { fit(); hook(); }, 800);
+  paintNav();
+  document.addEventListener("click", function () { setTimeout(fit, 40); setTimeout(paintNav, 80); }, true);
+  setInterval(function () { fit(); hook(); paintNav(); }, 800);
 })();
