@@ -25,6 +25,24 @@
   }
 
   function pinMap() {
+    try {
+      var modNow = (typeof currentModule === "function") ? currentModule() : null;
+      var reading = !!(modNow && /protocol/i.test((modNow.id || "") + " " + (modNow.title || "")) && window.state && state.view === "module");
+      document.body.classList.toggle("protocol-read", reading);
+      if (reading) {
+        document.body.classList.remove("wiki-top", "clip-on");
+        var wiki = document.getElementById("wikiTop");
+        if (wiki) wiki.classList.remove("on");
+        var phrase = document.getElementById("phraseDef");
+        if (phrase) phrase.style.setProperty("display", "none", "important");
+        var stage = document.querySelector(".stage");
+        var fig = document.getElementById("lessonFigMain");
+        if (stage && fig) {
+          var top = fig.getBoundingClientRect().top - stage.getBoundingClientRect().top + stage.scrollTop - 8;
+          stage.scrollTop = Math.max(0, top);
+        }
+      }
+    } catch (err) {}
     const st = window.NMBState;
     const still = document.getElementById("lessonStill");
     if (!st || !ids.has(st.moduleId)) {
