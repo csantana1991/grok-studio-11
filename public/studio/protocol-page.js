@@ -11,7 +11,14 @@
   function fit() {
     var yes = reading();
     if (document.body) document.body.classList.toggle("protocol-read", yes);
-    if (!yes) return;
+    var wikiDef = document.getElementById("wikiDef");
+    if (!yes) {
+      if (wikiDef && wikiDef.dataset.protocolHidden) {
+        wikiDef.style.removeProperty("display");
+        delete wikiDef.dataset.protocolHidden;
+      }
+      return;
+    }
     document.body.classList.remove("wiki-top", "clip-on");
     var wiki = document.getElementById("wikiTop");
     if (wiki) wiki.classList.remove("on");
@@ -21,6 +28,13 @@
     if (bar) bar.style.setProperty("display", "none", "important");
     var film = document.getElementById("atlasFilm");
     if (film) film.style.setProperty("display", "none", "important");
+    if (wikiDef) {
+      wikiDef.dataset.protocolHidden = "1";
+      wikiDef.style.setProperty("display", "none", "important");
+    }
+    document.querySelectorAll(".wiki-panel, .def-panel, aside.wiki").forEach(function (el) {
+      el.style.setProperty("display", "none", "important");
+    });
     var vid = document.querySelector(".vid-panel");
     if (vid) vid.style.setProperty("display", "none", "important");
     var split = document.querySelector(".vid-split");
@@ -28,6 +42,8 @@
     var stage = document.querySelector(".stage");
     var figs = document.getElementById("lessonFigs");
     if (stage && figs && figs.parentNode !== stage) stage.insertBefore(figs, stage.firstChild);
+    var fig = document.querySelector("#lessonFigs figure");
+    if (fig) fig.style.setProperty("background", "#fff", "important");
     var img = document.getElementById("lessonFigMain");
     if (img) {
       img.style.setProperty("display", "block", "important");
