@@ -1,0 +1,22 @@
+/* sidebar-kill.css — force sidebar off, add play-all control */
+body #sidebar{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;min-width:0!important;overflow:hidden!important}
+body.nav-open #sidebar{display:none!important}
+.app,.main{grid-template-columns:minmax(0,1fr)!important}
+.menu-btn{display:none!important}
+
+/* Play-all button injected next to font controls */
+#protoPlayAll{
+  display:inline-flex!important;align-items:center;gap:6px;
+  height:34px;padding:0 14px;border-radius:999px;
+  border:1px solid #3ee0c4;background:#0b1a14;color:#3ee0c4;
+  font-weight:700;font-size:13px;cursor:pointer;letter-spacing:.3px
+}
+#protoPlayAll.is-on{background:#3ee0c4;color:#08141c}
+#protoPlayAll:disabled{opacity:.45;cursor:default}
+
+body.protocol-read .stage>.pager{display:flex!important;flex-wrap:wrap;gap:8px;position:relative!important}
+body.protocol-read #playerDock{display:flex!important}
+
+/* Make sure protocol text isn't clipped */
+body.protocol-read .script{overflow:auto!important;max-height:calc(100dvh - 160px)!important}
+body.protocol-read #lessonFigMain{max-height:none!important}
