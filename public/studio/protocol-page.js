@@ -1,11 +1,4 @@
 (function () {
-  var intervalId = null;
-  var speech = window.speechSynthesis;
-  var utter = null;
-  var playing = false;
-  var pageIndex = 0;
-  var pages = [];
-
   function reading() {
     try {
       var mod = (typeof currentModule === "function") ? currentModule() : null;
@@ -32,12 +25,9 @@
     if (vid) vid.style.setProperty("display", "none", "important");
     var split = document.querySelector(".vid-split");
     if (split) split.style.setProperty("display", "none", "important");
-    // Hide the stubborn left nav panel while a protocol is open
-    var left = document.getElementById("leftNav") || document.querySelector(".left-nav, .nav-left, #sidebar, .sidebar");
-    if (left) left.style.setProperty("display", "none", "important");
     var stage = document.querySelector(".stage");
     var figs = document.getElementById("lessonFigs");
-    if (stage && figs) stage.insertBefore(figs, stage.firstChild);
+    if (stage && figs && figs.parentNode !== stage) stage.insertBefore(figs, stage.firstChild);
     var img = document.getElementById("lessonFigMain");
     if (img) {
       img.style.setProperty("display", "block", "important");
@@ -49,114 +39,48 @@
     }
   }
 
-  function collectPages() {
-    pages = [];
-    var img = document.getElementById("lessonFigMain");
-    if (img && img.src) pages.push({ label: "Page 1", text: (img.alt || "") });
-    // Also gather any page list if the app exposes one
-    if (typeof lessonPages !== "undefined" && Array.isArray(lessonPages)) {
-      pages = lessonPages.map(function (p, i) { return { label: "Page " + (i + 1), text: p.text || p.title || "" }; });
-    }
-    if (!pages.length) pages = [{ label: "Page 1", text: "" });
-  }
-
-  function speakPage(i) {
-    if (!speech) return;
-    if (utter) { speech.cancel(); utter = null; }
-    pageIndex = i;
-    var p = pages[pageIndex];
-    var text = (p && p.text) ? p.text : ("Page " + (pageIndex + 1));
-    utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1;
-    utter.onend = function () {
-      if (pageIndex < pages.length - 1) {
-        pageIndex++;
-        speakPage(pageIndex);
+  function pack(lines) {
+    var text = (lines || []).join(" ").replace(/\s+/g, " ").trim();
+    text = text.replace(/\bpage\s+\d+\s+of\s+\d+\b/ig, " ");
+    text = text.replace(/\bconfidential(?:\s+and\s+proprietary)?\b/ig, " ");
+    text = text.replace(/This page is on the screen\. Read the sheet\. There is little separate body text on this page\./g, "");
+    text = text.replace(/\s+/g, " ").trim();
+    if (text.length < 12) return ["Figure page. The sheet is on the screen."];
+    var bits = text.split(/(?<=[.;:])\s+/);
+    var out = [];
+    var buf = "";
+    bits.forEach(function (bit) {
+      bit = (bit || "").trim();
+      if (!bit) return;
+      if (buf && buf.length + 1 + bit.length > 320) {
+        out.push(buf);
+        buf = bit;
       } else {
-        playing = false;
-        updateBtn();
+        buf = buf ? buf + " " + bit : bit;
       }
-    };
-    speech.speak(utter);
-    playing = true;
-    updateBtn();
+    });
+    if (buf) out.push(buf);
+    return out.length ? out : [text];
   }
 
-  function togglePlay() {
-    if (!speech) return;
-    if (playing) {
-      speech.cancel();
-      playing = false;
-      updateBtn();
-    } else {
-      collectPages();
-      speakPage(pageIndex);
+  function hook() {
+    if (typeof speakLesson !== "function" || speakLesson.__packed) return;
+    var orig = speakLesson;
+    function wrapped(lesson) {
+      var mod = (typeof currentModule === "function") ? currentModule() : null;
+      var protocol = mod && /protocol/i.test((mod.id || "") + " " + (mod.title || ""));
+      if (!(protocol && lesson && lesson.audio && lesson.audio.length)) return orig(lesson);
+      var copy = {};
+      for (var k in lesson) copy[k] = lesson[k];
+      copy.audio = pack(lesson.audio);
+      return orig(copy);
     }
+    wrapped.__packed = true;
+    window.speakLesson = wrapped;
   }
 
-  function nextPage() {
-    if (pageIndex < pages.length - 1) {
-      pageIndex++;
-      if (playing) speakPage(pageIndex);
-    }
-  }
-
-  function prevPage() {
-    if (pageIndex > 0) {
-      pageIndex--;
-      if (playing) speakPage(pageIndex);
-    }
-  }
-
-  function updateBtn() {
-    var btn = document.getElementById("protocolPlayBtn");
-    if (btn) btn.textContent = playing ? "Pause" : "Play";
-  }
-
-  function ensureControls() {
-    if (document.getElementById("protocolPlayBtn")) return;
-    var ref = document.querySelector("button");
-    // Find the A+ button to anchor next to
-    var buttons = document.querySelectorAll("button");
-    var anchor = null;
-    for (var i = 0; i < buttons.length; i++) {
-      if (/^A\+$/.test((buttons[i].textContent || "").trim())) { anchor = buttons[i]; break; }
-    }
-    if (!anchor || !anchor.parentNode) return;
-    var wrap = document.createElement("span");
-    wrap.style.display = "inline-flex";
-    wrap.style.gap = "6px";
-    wrap.style.marginLeft = "8px";
-    wrap.style.verticalAlign = "middle";
-
-    function mk(label, fn) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.textContent = label;
-      b.style.padding = "4px 10px";
-      b.style.borderRadius = "8px";
-      b.style.border = "1px solid #cfe0ff";
-      b.style.background = "#eef4ff";
-      b.style.cursor = "pointer";
-      b.style.fontWeight = "600";
-      b.addEventListener("click", fn);
-      return b;
-    }
-
-    var playBtn = mk("Play", togglePlay);
-    playBtn.id = "protocolPlayBtn";
-    var prevBtn = mk("Prev", prevPage);
-    var nextBtn = mk("Next", nextPage);
-    wrap.appendChild(prevBtn);
-    wrap.appendChild(playBtn);
-    wrap.appendChild(nextBtn);
-    anchor.parentNode.insertBefore(wrap, anchor.nextSibling);
-  }
-
-  // Run fit once on load and on clicks, but DO NOT reset scroll or loop
   fit();
-  ensureControls();
-  document.addEventListener("click", function () { setTimeout(fit, 30); }, true);
-  setTimeout(fit, 1000);
-  setTimeout(ensureControls, 1500);
+  hook();
+  document.addEventListener("click", function () { setTimeout(fit, 40); }, true);
+  setInterval(function () { fit(); hook(); }, 800);
 })();
