@@ -302,6 +302,21 @@
     mark.style.height = Math.round(band) + "px";
   }
 
+  // Force open protocol modules from course map clicks
+  document.addEventListener("click", function (e) {
+    var item = e.target.closest(".nav-item, [data-mod]");
+    if (!item) return;
+    var id = item.dataset.mod || item.getAttribute("data-mod") || "";
+    var text = (item.textContent || "").toLowerCase();
+    if (/protocol/i.test(id + " " + text) && typeof openModule === "function") {
+      e.preventDefault();
+      e.stopPropagation();
+      openModule(id);
+      document.body.classList.remove("nav-open");
+      setTimeout(function () { fit(); paintNav(); }, 100);
+    }
+  }, true);
+
   fit();
   hook();
   paintNav();
