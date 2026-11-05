@@ -39,6 +39,8 @@
       showEl(strip);
       showEl(player);
       document.querySelectorAll(".lesson-fig-row").forEach(showEl);
+      var stageOff = document.querySelector(".stage");
+      if (stageOff) stageOff.style.paddingBottom = "";
       return;
     }
     document.body.classList.remove("wiki-top", "clip-on");
@@ -72,6 +74,7 @@
       stage.style.setProperty("flex-direction", "column", "important");
       stage.style.setProperty("align-items", "center", "important");
       stage.style.setProperty("justify-content", "flex-start", "important");
+      stage.style.paddingBottom = "100px";
       stage.scrollTop = 0;
     }
     var work = document.getElementById("work");
@@ -82,7 +85,7 @@
       fig.style.setProperty("background", "#fff", "important");
       fig.style.setProperty("margin", "0 auto", "important");
     }
-    var room = Math.max(220, (stage ? stage.clientHeight : window.innerHeight) - 72);
+    var room = Math.max(220, (stage ? stage.clientHeight : window.innerHeight) - 160);
     var img = document.getElementById("lessonFigMain");
     if (img) {
       img.style.setProperty("display", "block", "important");
@@ -190,10 +193,10 @@
       fwd.title = "Next page";
       fwd.setAttribute("aria-label", "Next page");
       [back, fwd].forEach(function (b) {
-        b.style.cssText = "min-width:40px;height:34px;border-radius:999px;border:1px solid #8aa4c8;background:#fff;color:#123;font-size:20px;font-weight:700;line-height:1;";
+        b.style.cssText = "min-width:44px;height:40px;border-radius:999px;border:1px solid #8aa4c8;background:#fff;color:#123;font-size:22px;font-weight:700;line-height:1;";
       });
-      play.style.cssText = "min-width:72px;height:34px;border-radius:999px;border:0;background:#1d4ed8;color:#fff;font-size:15px;font-weight:700;";
-      count.style.cssText = "font-size:13px;font-weight:700;color:#123;min-width:64px;text-align:center;";
+      play.style.cssText = "min-width:80px;height:40px;border-radius:999px;border:0;background:#1d4ed8;color:#fff;font-size:16px;font-weight:700;";
+      count.style.cssText = "font-size:14px;font-weight:700;color:#123;min-width:70px;text-align:center;";
       anchor.parentNode.insertBefore(back, anchor.nextSibling);
       anchor.parentNode.insertBefore(play, back.nextSibling);
       anchor.parentNode.insertBefore(count, play.nextSibling);
@@ -207,8 +210,8 @@
       if (old) old.remove();
       var bar = document.createElement("div");
       bar.id = "protoNav";
-      bar.style.cssText = "position:fixed;z-index:5000;left:50%;transform:translateX(-50%);bottom:8px;display:none;gap:8px;align-items:center;background:#fff;border:1px solid #8aa4c8;border-radius:999px;padding:6px 8px;box-shadow:0 6px 18px rgba(0,0,0,.2)";
-      bar.innerHTML = '<button type="button" id="protoPrev" aria-label="Previous page" style="min-width:72px;height:40px;border-radius:999px;border:1px solid #8aa4c8;background:#eef4ff;font-weight:700;">← Back</button><button type="button" id="protoPlay" aria-label="Play this page" style="min-width:84px;height:40px;border-radius:999px;border:0;background:#1d4ed8;color:#fff;font-weight:700;">Play</button><button type="button" id="protoNext" aria-label="Next page" style="min-width:88px;height:40px;border-radius:999px;border:1px solid #8aa4c8;background:#eef4ff;font-weight:700;">Forward →</button><span id="protoCount" style="font-weight:700;min-width:64px;text-align:center;"></span>';
+      bar.style.cssText = "position:fixed;z-index:5000;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom));display:none;gap:10px;align-items:center;background:#fff;border:1px solid #8aa4c8;border-radius:999px;padding:8px 10px;box-shadow:0 6px 18px rgba(0,0,0,.25)";
+      bar.innerHTML = '<button type="button" id="protoPrev" aria-label="Previous page" style="min-width:80px;height:48px;border-radius:999px;border:1px solid #8aa4c8;background:#eef4ff;font-weight:700;font-size:16px;">← Back</button><button type="button" id="protoPlay" aria-label="Play this page" style="min-width:96px;height:48px;border-radius:999px;border:0;background:#1d4ed8;color:#fff;font-weight:700;font-size:16px;">Play</button><button type="button" id="protoNext" aria-label="Next page" style="min-width:100px;height:48px;border-radius:999px;border:1px solid #8aa4c8;background:#eef4ff;font-weight:700;font-size:16px;">Forward →</button><span id="protoCount" style="font-weight:700;min-width:70px;text-align:center;font-size:15px;"></span>';
       document.body.appendChild(bar);
       document.getElementById("protoPrev").addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); step(-1); });
       document.getElementById("protoPlay").addEventListener("click", togglePlay);
